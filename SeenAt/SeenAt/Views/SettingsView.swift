@@ -12,6 +12,8 @@ struct SettingsView: View {
 
     @State private var showingExporter = false
     @State private var exportCSV: String = ""
+    @State private var showingDeleteSightingsAlert = false
+    @State private var showingResetAlert = false
 
     var body: some View {
         Form {
@@ -45,12 +47,21 @@ struct SettingsView: View {
 
             Section("Data") {
                 Button("Delete All Sightings", role: .destructive) {
-                    deleteAllSightings()
+                    showingDeleteSightingsAlert = true
                 }
-
                 Button("Reset All Data", role: .destructive) {
-                    resetAllData()
+                    showingResetAlert = true
                 }
+            }
+            .confirmationDialog("Delete All Sightings?", isPresented: $showingDeleteSightingsAlert) {
+                Button("Delete", role: .destructive) { deleteAllSightings() }
+            } message: {
+                Text("This will remove all jersey sightings from all events. Events will be preserved.")
+            }
+            .confirmationDialog("Reset All Data?", isPresented: $showingResetAlert) {
+                Button("Reset", role: .destructive) { resetAllData() }
+            } message: {
+                Text("This will delete all events and sightings. This action cannot be undone.")
             }
 
             Section("About") {

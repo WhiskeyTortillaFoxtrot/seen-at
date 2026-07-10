@@ -39,6 +39,7 @@ enum VenueDirectory {
         "Truist Park": VenueInfo(name: "Truist Park", address: "755 Battery Ave SE, Atlanta, GA 30339", latitude: 33.8908, longitude: -84.4683),
         "Wrigley Field": VenueInfo(name: "Wrigley Field", address: "1060 W Addison St, Chicago, IL 60613", latitude: 41.9484, longitude: -87.6553),
         "Yankee Stadium": VenueInfo(name: "Yankee Stadium", address: "1 E 161st St, Bronx, NY 10451", latitude: 40.8296, longitude: -73.9262),
+        "Busch Stadium": VenueInfo(name: "Busch Stadium", address: "700 Clark Ave, St. Louis, MO 63102", latitude: 38.6226, longitude: -90.1928),
 
         // NBA
         "State Farm Arena": VenueInfo(name: "State Farm Arena", address: "1 State Farm Dr, Atlanta, GA 30303", latitude: 33.7573, longitude: -84.3960),

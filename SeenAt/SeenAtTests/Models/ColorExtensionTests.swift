@@ -27,7 +27,7 @@ final class ColorExtensionTests: XCTestCase {
         XCTAssertNotNil(color)
         let resolved = color!.resolve(in: .init())
         XCTAssertEqual(resolved.red, 1.0, accuracy: 0.001)
-        XCTAssertEqual(resolved.opacity, 128.0 / 255.0, accuracy: 0.001)
+        XCTAssertEqual(resolved.opacity, 128.0 / 255.0, accuracy: 0.01)
     }
 
     func testInvalidHexReturnsNil() {

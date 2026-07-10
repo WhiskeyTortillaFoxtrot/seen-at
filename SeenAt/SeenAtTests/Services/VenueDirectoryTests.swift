@@ -20,9 +20,8 @@ final class VenueDirectoryTests: XCTestCase {
         XCTAssertNil(info)
     }
 
-    func testAllMLBVenuesPresent() {
-        let expectedCount = 30
-        XCTAssertEqual(VenueDirectory.all.count, expectedCount)
+    func testAllVenuesPresent() {
+        XCTAssertEqual(VenueDirectory.all.count, 116)
     }
 
     func testAllVenuesHaveValidCoordinates() {

@@ -21,20 +21,13 @@ struct AddSightingView: View {
     @State private var playerNumber: String = ""
     @State private var selectedPhotoItem: PhotosPickerItem?
     @State private var photoData: Data?
-    @State private var photoMode: PhotoMode = .appStorage
-    @State private var searchText: String = ""
-
-    enum PhotoMode: String, CaseIterable {
-        case appStorage = "In App"
-        case photoLibrary = "Photos Library"
-    }
 
     var body: some View {
         Form {
             Section("Team") {
                 Picker("Select Team", selection: $selectedTeam) {
                     Text("Choose...").tag(nil as Team?)
-                    ForEach(sortedTeams(allTeams, searchText: searchText, eventTitle: event.title, favoriteTeamNames: favoriteTeamNames)) { team in
+                    ForEach(sortedTeams(allTeams, searchText: "", eventTitle: event.title, favoriteTeamNames: favoriteTeamNames)) { team in
                         HStack {
                             Circle()
                                 .fill(team.primaryColor)
@@ -59,29 +52,16 @@ struct AddSightingView: View {
 
             if event.watchLocation != .tv {
                 Section("Photo (Optional)") {
-                    Picker("Photo Mode", selection: $photoMode) {
-                        ForEach(PhotoMode.allCases, id: \.self) { mode in
-                            Text(mode.rawValue).tag(mode)
+                    PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
+                        if let photoData, let image = UIImage(data: photoData) {
+                            Image(uiImage: image)
+                                .resizable()
+                                .scaledToFit()
+                                .frame(maxHeight: 200)
+                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                        } else {
+                            Label("Select Photo", systemImage: "photo")
                         }
-                    }
-                    .pickerStyle(.segmented)
-
-                    if photoMode == .appStorage {
-                        PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
-                            if let photoData, let image = UIImage(data: photoData) {
-                                Image(uiImage: image)
-                                    .resizable()
-                                    .scaledToFit()
-                                    .frame(maxHeight: 200)
-                                    .clipShape(RoundedRectangle(cornerRadius: 8))
-                            } else {
-                                Label("Select Photo", systemImage: "photo")
-                            }
-                        }
-                    } else {
-                        Label("Photo will be saved to your library", systemImage: "photo.on.rectangle.angled")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
                     }
                 }
             }
@@ -116,8 +96,7 @@ struct AddSightingView: View {
             firstName: playerFirstName.trimmingCharacters(in: .whitespaces).isEmpty ? nil : playerFirstName.trimmingCharacters(in: .whitespaces),
             lastName: playerLastName.trimmingCharacters(in: .whitespaces).isEmpty ? nil : playerLastName.trimmingCharacters(in: .whitespaces),
             playerNumber: playerNumber.trimmingCharacters(in: .whitespaces).isEmpty ? nil : playerNumber.trimmingCharacters(in: .whitespaces),
-            photoData: photoMode == .appStorage ? photoData : nil,
-            photoLocalIdentifier: photoMode == .photoLibrary ? UUID().uuidString : nil,
+            photoData: photoData,
             event: event
         )
         context.insert(sighting)

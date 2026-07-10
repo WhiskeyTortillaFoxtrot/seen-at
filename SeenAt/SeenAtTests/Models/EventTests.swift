@@ -102,7 +102,7 @@ final class EventTests: XCTestCase {
         context.insert(team)
 
         let s1 = TestDataFactory.makeSighting(team: team, firstName: "John", lastName: "Doe", event: event)
-        let s2 = TestDataFactory.makeSighting(team: team, firstName: nil, lastName: nil, event: event)
+        let s2 = TestDataFactory.makeSighting(team: nil, firstName: nil, lastName: nil, event: event)
         context.insert(s1)
         context.insert(s2)
 
