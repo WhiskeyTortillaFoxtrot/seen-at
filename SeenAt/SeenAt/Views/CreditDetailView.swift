@@ -29,10 +29,18 @@ struct CreditDetailView: View {
                             .padding(.horizontal)
                     }
 
-                    if let attributed = try? AttributedString(markdown: entry.creditText) {
-                        Text(attributed)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.horizontal)
+                    Text(entry.title)
+                        .font(.title2)
+                        .fontWeight(.bold)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal)
+
+                    if !entry.body.isEmpty {
+                        if let attributed = try? AttributedString(markdown: entry.body) {
+                            Text(attributed)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.horizontal)
+                        }
                     }
                 }
                 .padding(.vertical)
