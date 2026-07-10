@@ -13,9 +13,34 @@ final class StadiumPhotoServiceTests: XCTestCase {
         XCTAssertNil(image)
     }
 
-    func testVenuenameConversion() {
+    func testVenueNameConversionFindsWrigleyField() {
         let image = StadiumPhotoService.image(for: "Wrigley Field")
         // wrigley-field.jpg is in the shared build products — service resolves
         // "Wrigley Field" → "wrigley-field" and finds it at bundle root
+        XCTAssertNotNil(image)
+    }
+
+    func testVenueNameConversionFindsFenwayPark() {
+        let image = StadiumPhotoService.image(for: "Fenway Park")
+        XCTAssertNotNil(image)
+    }
+
+    func testVenueNameConversionFindsCentreBell() {
+        let image = StadiumPhotoService.image(for: "Centre Bell")
+        XCTAssertNotNil(image)
+    }
+
+    func testHasImageForKnownVenue() {
+        XCTAssertTrue(VenueImageService.hasImage(for: "Wrigley Field"))
+    }
+
+    func testHasImageForUnknownVenue() {
+        XCTAssertFalse(VenueImageService.hasImage(for: "Nonexistent Stadium"))
+    }
+
+    func testNormalizeRemovesParentheses() {
+        // Normalize strips '(', ')', so "Fenway (Park)" → "fenway-park"
+        let image = StadiumPhotoService.image(for: "Fenway (Park)")
+        XCTAssertNotNil(image)
     }
 }

@@ -93,8 +93,9 @@ struct LiveTrackingView: View {
 
             Text("\(event.totalCount)")
                 .font(.system(size: 72, weight: .bold, design: .rounded))
-                .foregroundStyle(homeTeamColor)
-                .shadow(color: homeTeamColor.opacity(0.5), radius: 8, y: 4)
+                .foregroundStyle(.white)
+                .shadow(color: homeTeamColor.opacity(0.6), radius: 2, x: 1, y: 1)
+                .shadow(color: homeTeamColor.opacity(0.3), radius: 8, y: 4)
                 .contentTransition(.numericText())
 
             Text("jerseys spotted")
@@ -122,9 +123,11 @@ struct LiveTrackingView: View {
                     photo
                         .resizable()
                         .aspectRatio(contentMode: .fill)
+                    Color.black.opacity(0.5)
+                } else {
+                    homeTeamSecondaryColor
+                        .overlay(Color.black.opacity(0.3))
                 }
-                homeTeamSecondaryColor
-                    .overlay(Color.black.opacity(0.3))
             }
         }
     }
