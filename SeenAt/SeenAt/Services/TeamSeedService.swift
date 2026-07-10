@@ -13,8 +13,9 @@ enum TeamSeedService {
             ("nba", NBATeams.all),
             ("nfl", NFLTeams.all),
             ("nhl", NHLTeams.all),
-            ("lovb", LOVBTeams.all),
-        ]
+    ("lovb", LOVBTeams.all),
+    ("mls", MLSTeams.all),
+]
 
         for (sport, teams) in leagueTeams {
             if !seededSports.contains(sport) {

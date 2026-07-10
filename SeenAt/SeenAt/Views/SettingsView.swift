@@ -24,6 +24,7 @@ struct SettingsView: View {
                     Text("NFL").tag("nfl")
                     Text("NHL").tag("nhl")
                     Text("LOVB").tag("lovb")
+                    Text("MLS").tag("mls")
                 }
                 .pickerStyle(.menu)
 
