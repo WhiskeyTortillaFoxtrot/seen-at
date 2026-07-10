@@ -26,7 +26,7 @@ final class TeamSeedServiceTests: XCTestCase {
         await TeamSeedService.seedIfNeeded(modelContext: context)
 
         let afterCount = try? context.fetchCount(FetchDescriptor<Team>())
-        XCTAssertEqual(afterCount, 130)
+        XCTAssertEqual(afterCount, 158)
     }
 
     func testDoesNotReseed() async {
@@ -37,12 +37,12 @@ final class TeamSeedServiceTests: XCTestCase {
         try? context.save()
 
         let countAfterManual = try? context.fetchCount(FetchDescriptor<Team>())
-        XCTAssertEqual(countAfterManual, 131)
+        XCTAssertEqual(countAfterManual, 159)
 
         await TeamSeedService.seedIfNeeded(modelContext: context)
 
         let countAfterSecondSeed = try? context.fetchCount(FetchDescriptor<Team>())
-        XCTAssertEqual(countAfterSecondSeed, 131)
+        XCTAssertEqual(countAfterSecondSeed, 159)
     }
 
     func testSeededTeamsAreBuiltIn() async {
@@ -50,7 +50,7 @@ final class TeamSeedServiceTests: XCTestCase {
 
         let predicate = #Predicate<Team> { $0.isBuiltIn == true }
         let builtInCount = try? context.fetchCount(FetchDescriptor<Team>(predicate: predicate))
-        XCTAssertEqual(builtInCount, 130)
+        XCTAssertEqual(builtInCount, 158)
     }
 
     func testSeededTeamsHaveCorrectNames() async {

@@ -70,6 +70,7 @@ struct FavoriteTeamsView: View {
         case "nfl": return "NFL"
         case "nhl": return "NHL"
         case "lovb": return "LOVB"
+        case "mls": return "MLS"
         default: return sport.uppercased()
         }
     }

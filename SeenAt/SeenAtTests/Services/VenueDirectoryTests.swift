@@ -21,7 +21,7 @@ final class VenueDirectoryTests: XCTestCase {
     }
 
     func testAllVenuesPresent() {
-        XCTAssertEqual(VenueDirectory.all.count, 116)
+        XCTAssertEqual(VenueDirectory.all.count, 139)
     }
 
     func testAllVenuesHaveValidCoordinates() {
