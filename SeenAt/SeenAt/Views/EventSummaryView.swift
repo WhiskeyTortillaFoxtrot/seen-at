@@ -70,8 +70,7 @@ struct EventSummaryView: View {
             showingAddSighting = true
         } label: {
             Label("Add Sighting", systemImage: "plus.circle.fill")
-                .font(.title3)
-                .fontWeight(.semibold)
+                .font(.urbanist(.title3, weight: .semibold))
                 .frame(maxWidth: .infinity, minHeight: 44)
         }
         .buttonStyle(.borderedProminent)
@@ -82,8 +81,7 @@ struct EventSummaryView: View {
             showLiveTracking = true
         } label: {
             Label("Live Tracking", systemImage: "antenna.radiowaves.left.and.right")
-                .font(.title3)
-                .fontWeight(.semibold)
+                .font(.urbanist(.title3, weight: .semibold))
                 .frame(maxWidth: .infinity, minHeight: 44)
         }
         .buttonStyle(.bordered)
@@ -93,29 +91,29 @@ struct EventSummaryView: View {
         VStack(spacing: 8) {
             let countOutline = topTeamColors.first?.opacity(0.5) ?? .black.opacity(0.15)
             Text("\(event.totalCount)")
-                .font(.system(size: 64, weight: .bold, design: .rounded))
+                .font(.urbanist(size: 64, weight: .bold))
                 .foregroundStyle(.white)
                 .shadow(color: countOutline, radius: 2, x: 1, y: 1)
 
             Text("Total Jerseys Seen")
-                .font(.title3)
+                .font(.urbanist(.title3))
                 .foregroundStyle(.white.opacity(0.85))
 
             Text(event.title)
-                .font(.subheadline)
+                .font(.urbanist(.subheadline))
                 .foregroundStyle(.white.opacity(0.7))
 
             if let venue = event.venue {
                 if event.watchLocation == .tv {
                     Label("Watching on TV · \(venue)", systemImage: "tv")
-                        .font(.caption)
+                        .font(.urbanist(.caption))
                         .foregroundStyle(.white.opacity(0.8))
                 } else {
                     Button {
                         openInMaps(venue: venue)
                     } label: {
                         Label(venue, systemImage: "mappin")
-                            .font(.caption)
+                            .font(.urbanist(.caption))
                             .foregroundStyle(.white.opacity(0.8))
                     }
                     .buttonStyle(.plain)
@@ -125,7 +123,7 @@ struct EventSummaryView: View {
             if let url = event.gameUrl, let link = URL(string: url) {
                 Link(destination: link) {
                     Label("Match Stats", systemImage: "safari")
-                        .font(.caption)
+                        .font(.urbanist(.caption))
                         .foregroundStyle(.white.opacity(0.8))
                 }
             }
@@ -154,7 +152,7 @@ struct EventSummaryView: View {
     private var teamBreakdownCard: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("By Team")
-                .font(.headline)
+                .font(.urbanist(.headline))
 
             ChartToggle(usePieChart: $showPieChart)
 
@@ -177,7 +175,7 @@ struct EventSummaryView: View {
                             HStack(spacing: 4) {
                                 TeamBarRow(team: team, count: count, total: event.totalCount)
                                 Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
-                                    .font(.caption)
+                                    .font(.urbanist(.caption))
                                     .foregroundStyle(.tertiary)
                             }
                         }
@@ -187,7 +185,7 @@ struct EventSummaryView: View {
                             let players = event.players(for: team)
                             if players.isEmpty {
                                 Text("No names recorded")
-                                    .font(.caption)
+                                    .font(.urbanist(.caption))
                                     .foregroundStyle(.tertiary)
                                     .frame(maxWidth: .infinity, alignment: .center)
                                     .padding(.vertical, 4)
@@ -200,11 +198,11 @@ struct EventSummaryView: View {
                                                 .frame(width: 8, height: 8)
 
                                             Text(name)
-                                                .font(.subheadline)
+                                                .font(.urbanist(.subheadline))
 
                                             if count > 1 {
                                                 Text("\(count)x")
-                                                    .font(.caption)
+                                                    .font(.urbanist(.caption))
                                                     .foregroundStyle(.secondary)
                                             }
 
@@ -214,7 +212,7 @@ struct EventSummaryView: View {
                                                 EventActionHandler.incrementPlayer(team: team, name: name, event: event, context: context, lastIncrementTimes: &lastIncrementTimes)
                                             } label: {
                                                 Image(systemName: "plus.circle")
-                                                    .font(.title3)
+                                                    .font(.urbanist(.title3))
                                                     .foregroundStyle(team.primaryColor)
                                             }
                                             .buttonStyle(.plain)
@@ -249,7 +247,7 @@ struct EventSummaryView: View {
     private var playerBreakdownCard: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("By Player")
-                .font(.headline)
+                .font(.urbanist(.headline))
 
             ForEach(event.playerBreakdown, id: \.playerName) { team, name, count in
                 HStack(spacing: 0) {
@@ -260,17 +258,16 @@ struct EventSummaryView: View {
 
                     HStack {
                         Text(team.abbreviation)
-                            .font(.caption)
+                            .font(.urbanist(.caption))
                             .foregroundStyle(.secondary)
 
                         Text(name)
-                            .font(.subheadline)
+                            .font(.urbanist(.subheadline))
 
                         Spacer()
 
                         Text("\(count)")
-                            .font(.subheadline)
-                            .fontWeight(.bold)
+                            .font(.urbanist(.subheadline, weight: .bold))
                             .foregroundStyle(team.primaryColor)
                     }
                     .padding(.leading, 8)
@@ -288,7 +285,7 @@ struct EventSummaryView: View {
         if !sightingsWithPhotos.isEmpty {
             VStack(alignment: .leading, spacing: 12) {
                 Text("Photos")
-                    .font(.headline)
+                    .font(.urbanist(.headline))
 
                 LazyVGrid(columns: [.init(.adaptive(minimum: 100), spacing: 8)], spacing: 8) {
                     ForEach(sightingsWithPhotos, id: \.persistentModelID) { sighting in
@@ -301,7 +298,7 @@ struct EventSummaryView: View {
                                     .clipShape(RoundedRectangle(cornerRadius: 8))
                             }
                             Text(sighting.displayName)
-                                .font(.caption2)
+                                .font(.urbanist(.caption2))
                                 .foregroundStyle(.secondary)
                                 .lineLimit(1)
                         }
@@ -329,7 +326,7 @@ struct EventSummaryView: View {
         let summary = ExportService.generateSummary(for: event)
         return ShareLink(item: summary) {
             Label("Share Summary", systemImage: "square.and.arrow.up")
-                .font(.headline)
+                .font(.urbanist(.headline))
                 .frame(maxWidth: .infinity, minHeight: 44)
         }
         .buttonStyle(.borderedProminent)

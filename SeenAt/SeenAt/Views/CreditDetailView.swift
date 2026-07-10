@@ -23,15 +23,14 @@ struct CreditDetailView: View {
                             .clipShape(RoundedRectangle(cornerRadius: 8))
                             .overlay {
                                 Image(systemName: "photo")
-                                    .font(.largeTitle)
+                                    .font(.urbanist(.largeTitle))
                                     .foregroundStyle(.secondary)
                             }
                             .padding(.horizontal)
                     }
 
                     Text(entry.title)
-                        .font(.title2)
-                        .fontWeight(.bold)
+                        .font(.urbanist(.title2, weight: .bold))
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.horizontal)
 

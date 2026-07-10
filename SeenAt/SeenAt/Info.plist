@@ -44,6 +44,13 @@
         <key>UIApplicationSupportsMultipleScenes</key>
         <false/>
     </dict>
+    <key>UIAppFonts</key>
+    <array>
+        <string>Urbanist-Regular.ttf</string>
+        <string>Urbanist-Medium.ttf</string>
+        <string>Urbanist-SemiBold.ttf</string>
+        <string>Urbanist-Bold.ttf</string>
+    </array>
     <key>UILaunchScreen</key>
     <dict/>
     <key>UISupportedInterfaceOrientations</key>

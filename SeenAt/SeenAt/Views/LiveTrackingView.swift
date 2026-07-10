@@ -75,8 +75,7 @@ struct LiveTrackingView: View {
     private var headerSection: some View {
         VStack(spacing: 12) {
             Text(event.title)
-                .font(.title3)
-                .fontWeight(.semibold)
+                .font(.urbanist(.title3, weight: .semibold))
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.white)
                 .shadow(radius: 1)
@@ -84,32 +83,31 @@ struct LiveTrackingView: View {
             if let venue = event.venue {
                 if event.watchLocation == .tv {
                     Label("Watching on TV · \(venue)", systemImage: "tv")
-                        .font(.subheadline)
+                        .font(.urbanist(.subheadline))
                         .foregroundStyle(.white.opacity(0.7))
                 } else {
                     Text(venue)
-                        .font(.subheadline)
+                        .font(.urbanist(.subheadline))
                         .foregroundStyle(.white.opacity(0.7))
                 }
             }
 
             Text("\(event.totalCount)")
-                .font(.system(size: 72, weight: .bold, design: .rounded))
+                .font(.urbanist(size: 72, weight: .bold))
                 .foregroundStyle(.white)
                 .shadow(color: homeTeamColor.opacity(0.6), radius: 2, x: 1, y: 1)
                 .shadow(color: homeTeamColor.opacity(0.3), radius: 8, y: 4)
                 .contentTransition(.numericText())
 
             Text("jerseys spotted")
-                .font(.subheadline)
+                .font(.urbanist(.subheadline))
                 .foregroundStyle(.white.opacity(0.8))
 
             Button {
                 showingAddSighting = true
             } label: {
                 Label("Add Sighting", systemImage: "plus.circle.fill")
-                    .font(.title2)
-                    .fontWeight(.semibold)
+                    .font(.urbanist(.title2, weight: .semibold))
                     .frame(maxWidth: 280, minHeight: 50)
             }
             .buttonStyle(.borderedProminent)
@@ -160,7 +158,7 @@ struct LiveTrackingView: View {
                 }
             } header: {
                 Text("By Team")
-                    .font(.headline)
+                    .font(.urbanist(.headline))
             }
         }
     }
@@ -181,8 +179,7 @@ struct LiveTrackingView: View {
                             HStack {
                                 if let team = sighting.team {
                                     Text(team.abbreviation)
-                                        .font(.subheadline)
-                                        .fontWeight(.medium)
+                                        .font(.urbanist(.subheadline, weight: .medium))
                                 }
 
                                 if hasPhoto, let data = sighting.photoData, let image = UIImage(data: data) {
@@ -193,20 +190,20 @@ struct LiveTrackingView: View {
                                         .clipShape(RoundedRectangle(cornerRadius: 6))
                                 } else {
                                     Image(systemName: "tshirt")
-                                        .font(.title3)
+                                        .font(.urbanist(.title3))
                                         .foregroundStyle(.secondary)
                                         .frame(width: 36, height: 36)
                                 }
 
                                 if !sighting.displayName.isEmpty {
                                     Text(sighting.displayName)
-                                        .font(.subheadline)
+                                        .font(.urbanist(.subheadline))
                                 }
 
                                 Spacer()
 
                                 Text(sighting.timestamp, style: .time)
-                                    .font(.caption)
+                                    .font(.urbanist(.caption))
                                     .foregroundStyle(.secondary)
                             }
                             .padding(.leading, 8)
@@ -242,7 +239,7 @@ struct LiveTrackingView: View {
                 }
             } header: {
                 Text("Recent")
-                    .font(.headline)
+                    .font(.urbanist(.headline))
             }
         }
     }
@@ -261,13 +258,12 @@ struct TeamBarRow: View {
         HStack(spacing: 12) {
             Image(systemName: team.sportIcon)
                 .foregroundStyle(team.primaryColor)
-                .font(.system(size: 20))
+                .font(.urbanist(size: 20))
                 .frame(width: 24, height: 24)
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(team.name)
-                    .font(.subheadline)
-                    .fontWeight(.medium)
+                    .font(.urbanist(.subheadline, weight: .medium))
 
                 GeometryReader { geo in
                     ZStack(alignment: .leading) {
@@ -284,8 +280,7 @@ struct TeamBarRow: View {
             }
 
             Text("\(count)")
-                .font(.title3)
-                .fontWeight(.bold)
+                .font(.urbanist(.title3, weight: .bold))
                 .foregroundStyle(team.primaryColor)
                 .frame(minWidth: 32, alignment: .trailing)
         }
@@ -310,7 +305,7 @@ struct FullScreenPhotoView: View {
                     dismiss()
                 } label: {
                     Image(systemName: "xmark.circle.fill")
-                        .font(.title)
+                        .font(.urbanist(.title))
                         .foregroundStyle(.white.opacity(0.8))
                         .padding()
                 }

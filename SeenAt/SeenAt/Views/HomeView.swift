@@ -129,21 +129,21 @@ struct HomeView: View {
         } label: {
             HStack(spacing: 12) {
                 Image(systemName: "plus.circle.fill")
-                    .font(.title2)
+                    .font(.urbanist(.title2))
                     .foregroundStyle(Color.accentColor)
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Track a New Game")
-                        .font(.headline)
+                        .font(.urbanist(.headline))
                     Text("Start tracking jerseys at today's game")
-                        .font(.caption)
+                        .font(.urbanist(.caption))
                         .foregroundStyle(.secondary)
                 }
 
                 Spacer()
 
                 Image(systemName: "chevron.right")
-                    .font(.caption)
+                    .font(.urbanist(.caption))
                     .foregroundStyle(.tertiary)
             }
             .padding(.vertical, 4)
@@ -198,34 +198,33 @@ struct EventRow: View {
             VStack(spacing: 0) {
                 Spacer()
                 Text(monthText)
-                    .font(.caption)
+                    .font(.urbanist(.caption))
                     .foregroundStyle(.secondary)
                 Text(dayText)
-                    .font(.title)
-                    .fontWeight(.semibold)
+                    .font(.urbanist(.title, weight: .semibold))
                 Spacer()
             }
             .frame(minWidth: 44)
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(awayTeamName)
-                    .font(.headline)
+                    .font(.urbanist(.headline))
                 Text(homeTeamName)
-                    .font(.headline)
+                    .font(.urbanist(.headline))
 
                 if let venue = event.venue {
                     HStack(spacing: 2) {
                         Image(systemName: event.watchLocation == .tv ? "tv" : "mappin")
-                            .font(.caption)
+                            .font(.urbanist(.caption))
                         Text(venue)
-                            .font(.caption)
+                            .font(.urbanist(.caption))
                     }
                     .foregroundStyle(.secondary)
                 }
 
                 HStack {
                     Label("\(event.totalCount)", systemImage: "tshirt")
-                        .font(.subheadline)
+                        .font(.urbanist(.subheadline))
                         .foregroundStyle(leadingColor)
                         .padding(.horizontal, 8)
                         .padding(.vertical, 2)
@@ -242,7 +241,7 @@ struct EventRow: View {
                         }
                         if event.teamBreakdown.count > 5 {
                             Text("+\(event.teamBreakdown.count - 5)")
-                                .font(.caption2)
+                                .font(.urbanist(.caption2))
                                 .foregroundStyle(.secondary)
                         }
                     }

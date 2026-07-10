@@ -71,10 +71,10 @@ struct StatsView: View {
         HStack(spacing: 24) {
             VStack(spacing: 4) {
                 Text("\(totalGames)")
-                    .font(.system(size: 48, weight: .bold, design: .rounded))
+                    .font(.urbanist(size: 48, weight: .bold))
                     .foregroundStyle(.white)
                 Text("Games Tracked")
-                    .font(.subheadline)
+                    .font(.urbanist(.subheadline))
                     .foregroundStyle(.white.opacity(0.85))
             }
             .frame(maxWidth: .infinity)
@@ -85,10 +85,10 @@ struct StatsView: View {
 
             VStack(spacing: 4) {
                 Text("\(totalSightings)")
-                    .font(.system(size: 48, weight: .bold, design: .rounded))
+                    .font(.urbanist(size: 48, weight: .bold))
                     .foregroundStyle(.white)
                 Text("Jerseys Seen")
-                    .font(.subheadline)
+                    .font(.urbanist(.subheadline))
                     .foregroundStyle(.white.opacity(0.85))
             }
             .frame(maxWidth: .infinity)
@@ -107,7 +107,7 @@ struct StatsView: View {
     private var byTeamCard: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("By Team")
-                .font(.headline)
+                .font(.urbanist(.headline))
 
             ChartToggle(usePieChart: $showPieChart)
 
@@ -131,28 +131,26 @@ struct StatsView: View {
     private var byLeagueCard: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("By League")
-                .font(.headline)
+                .font(.urbanist(.headline))
 
             ForEach(leagueTotals, id: \.sport) { sport, count in
                 HStack {
                     Image(systemName: Team.sportIcon(for: sport))
                         .foregroundStyle(sportColor(sport))
-                        .font(.system(size: 14))
+                        .font(.urbanist(size: 14))
                         .frame(width: 16, height: 16)
 
                     Text(sport)
-                        .font(.subheadline)
-                        .fontWeight(.medium)
+                        .font(.urbanist(.subheadline, weight: .medium))
 
                     Spacer()
 
                     Text("\(count)")
-                        .font(.subheadline)
-                        .fontWeight(.bold)
+                        .font(.urbanist(.subheadline, weight: .bold))
                         .foregroundStyle(.primary)
 
                     Text("jerseys")
-                        .font(.caption)
+                        .font(.urbanist(.caption))
                         .foregroundStyle(.secondary)
                 }
 
@@ -169,7 +167,7 @@ struct StatsView: View {
     private var topPlayersCard: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Top Players")
-                .font(.headline)
+                .font(.urbanist(.headline))
 
             ForEach(Array(topPlayers.enumerated()), id: \.element.name) { index, player in
                 HStack(spacing: 0) {
@@ -180,35 +178,32 @@ struct StatsView: View {
 
                     HStack(spacing: 8) {
                         Text("\(index + 1).")
-                            .font(.subheadline)
+                            .font(.urbanist(.subheadline))
                             .foregroundStyle(.secondary)
                             .frame(width: 24, alignment: .leading)
 
                         Text(player.team.abbreviation)
-                            .font(.subheadline)
-                            .fontWeight(.medium)
+                            .font(.urbanist(.subheadline, weight: .medium))
 
                         Text("(\(player.team.sport.uppercased()))")
-                            .font(.caption)
+                            .font(.urbanist(.caption))
                             .foregroundStyle(.secondary)
 
                         if let number = player.playerNumber, !number.isEmpty {
                             Text("#\(number)")
-                                .font(.caption)
+                                .font(.urbanist(.caption))
                                 .foregroundStyle(.secondary)
                         }
 
                         if !player.name.hasPrefix("#") {
                             Text(player.name)
-                                .font(.subheadline)
-                                .fontWeight(.medium)
+                                .font(.urbanist(.subheadline, weight: .medium))
                         }
 
                         Spacer()
 
                         Text("\(player.count)")
-                            .font(.subheadline)
-                            .fontWeight(.bold)
+                            .font(.urbanist(.subheadline, weight: .bold))
                             .foregroundStyle(player.team.primaryColor)
                     }
                     .padding(.leading, 8)

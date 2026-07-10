@@ -62,6 +62,8 @@ targets:
     sources:
       - path: SeenAtWidget
       - path: SeenAt/Models/SeenAtActivityAttributes.swift
+      - path: SeenAt/Extensions/Font+Urbanist.swift
+      - path: SeenAt/Resources/Fonts
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.seenat.app.widget
