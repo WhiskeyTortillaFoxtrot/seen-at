@@ -45,6 +45,7 @@
 		706E3F96206C4B44E02731E2 /* NHLTeams.swift in Sources */ = {isa = PBXBuildFile; fileRef = E11BA07ADF84388270AF996D /* NHLTeams.swift */; };
 		7469497059B686D33AEE4210 /* EventActionHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD9B348129F7CB69CAB3767D /* EventActionHandlerTests.swift */; };
 		7A26E7BC21AE6457DF5D8218 /* centre-bell.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 6A5D9A8CD15BBCB5EAD575AA /* centre-bell.jpg */; };
+		7CFF4586E3E34393A35EC25C /* PieChartTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8EF2753EF51BD2816286529C /* PieChartTests.swift */; };
 		7EA3826B4F1DACA12904F40E /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 08D5D92A49ADAEF9F6D7DDD8 /* Assets.xcassets */; };
 		7F489EF5C08191699D69A514 /* CreditEntryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C37E2FC83ED9D8D50451AD0 /* CreditEntryTests.swift */; };
 		802E268AD7CA443FA2F8EE88 /* VenueImageService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 047F6E1DD86AD6271A2F3A72 /* VenueImageService.swift */; };
@@ -77,6 +78,7 @@
 		E99E9FAE935C6F40D5CBA521 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 343AB3AF124CC5301F19FAE7 /* SettingsView.swift */; };
 		EC8B2A431B3EB17A6491F718 /* ESPNService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E8729992D35C423D22FE74B /* ESPNService.swift */; };
 		F2CC56CBAC266F6CFE505D1B /* AddSightingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBBDEE4AA6446C25A87720A5 /* AddSightingView.swift */; };
+		F3EC6F11701696EC440CA63C /* TeamPieChart.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C70D9CF1938329C979692A5 /* TeamPieChart.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -127,6 +129,7 @@
 		6A5D9A8CD15BBCB5EAD575AA /* centre-bell.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = "centre-bell.jpg"; sourceTree = "<group>"; };
 		6AD959FDE9712D6963DC5592 /* EventFormView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventFormView.swift; sourceTree = "<group>"; };
 		6BA0E5B85B2EBD4E09A236D3 /* TeamSeedServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TeamSeedServiceTests.swift; sourceTree = "<group>"; };
+		6C70D9CF1938329C979692A5 /* TeamPieChart.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TeamPieChart.swift; sourceTree = "<group>"; };
 		6EEC232C01FF9F356A1C14B7 /* TeamTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TeamTests.swift; sourceTree = "<group>"; };
 		6EF9E6A974D8D38344B5FED3 /* LeagueAPIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LeagueAPIService.swift; sourceTree = "<group>"; };
 		6F7817ADA6236C4A85D61576 /* ExportServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportServiceTests.swift; sourceTree = "<group>"; };
@@ -142,6 +145,7 @@
 		8677173C21E6E26B97D5DF9F /* TestDataFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestDataFactory.swift; sourceTree = "<group>"; };
 		8CE3025DB9AD892205B2AE3D /* Event.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Event.swift; sourceTree = "<group>"; };
 		8D59C0DB294235C0ADF99949 /* wrigley-field.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = "wrigley-field.jpg"; sourceTree = "<group>"; };
+		8EF2753EF51BD2816286529C /* PieChartTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PieChartTests.swift; sourceTree = "<group>"; };
 		9C37E2FC83ED9D8D50451AD0 /* CreditEntryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreditEntryTests.swift; sourceTree = "<group>"; };
 		A339779DD94248855BF65F27 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		A34687B3EBC8FC003D5DDDD6 /* StadiumPhotoServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StadiumPhotoServiceTests.swift; sourceTree = "<group>"; };
@@ -276,6 +280,7 @@
 				FD9B348129F7CB69CAB3767D /* EventActionHandlerTests.swift */,
 				24B47A2831BBAB45A5472EC1 /* EventRowTests.swift */,
 				EE5BAC7836DCD18C4FED123A /* GameSortingTests.swift */,
+				8EF2753EF51BD2816286529C /* PieChartTests.swift */,
 				56A35634C808C5E3E75EDFA3 /* SearchViewTests.swift */,
 				EA9714E350C0AA34B7FD93F7 /* TeamSortingTests.swift */,
 			);
@@ -286,6 +291,7 @@
 			isa = PBXGroup;
 			children = (
 				764F2314F18C43B08F2D761A /* ChartToggle.swift */,
+				6C70D9CF1938329C979692A5 /* TeamPieChart.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -557,6 +563,7 @@
 				870B4EA4C1C74D07CB7A2F56 /* JerseySightingTests.swift in Sources */,
 				40A944CF0609EAE68A2D9066 /* MLBAPIServiceTests.swift in Sources */,
 				545A7D45FA4C75E0FE59280D /* MockURLProtocol.swift in Sources */,
+				7CFF4586E3E34393A35EC25C /* PieChartTests.swift in Sources */,
 				440D2216AC5C31341BA754B3 /* SearchViewTests.swift in Sources */,
 				42F367B3A5DAA57EBAA5B2CA /* StadiumPhotoServiceTests.swift in Sources */,
 				C25A519A167D48D94C38654A /* SwiftDataCRUDTests.swift in Sources */,
@@ -619,6 +626,7 @@
 				E4ED3A5B007F0991AB683EDE /* StadiumPhotoService.swift in Sources */,
 				39FECB4B690F49A4B1509854 /* StatsView.swift in Sources */,
 				5BF8BFCA8D1BFA4E656E2B29 /* Team.swift in Sources */,
+				F3EC6F11701696EC440CA63C /* TeamPieChart.swift in Sources */,
 				AFEECC9C480DAD544556CBDE /* TeamSeedService.swift in Sources */,
 				A1CCB3B2C4E1C9699C17E107 /* TeamSorting.swift in Sources */,
 				4B931C82A535C3D838F2D4D6 /* VenueDirectory.swift in Sources */,

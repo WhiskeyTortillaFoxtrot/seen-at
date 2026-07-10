@@ -159,21 +159,7 @@ struct EventSummaryView: View {
             ChartToggle(usePieChart: $showPieChart)
 
             if showPieChart {
-                Chart(event.teamBreakdown, id: \.team.id) { team, count in
-                    SectorMark(
-                        angle: .value("Count", count),
-                        innerRadius: .ratio(0.5),
-                        angularInset: 2
-                    )
-                    .foregroundStyle(team.primaryColor)
-                    .annotation(position: .overlay) {
-                        Text("\(count)")
-                            .font(.caption2)
-                            .fontWeight(.semibold)
-                            .foregroundStyle(.white)
-                    }
-                }
-                .frame(height: 220)
+                TeamPieChart(breakdown: event.teamBreakdown)
             } else {
                 ForEach(event.teamBreakdown, id: \.team.id) { team, count in
                     let isExpanded = expandedTeams.contains(team.id)
