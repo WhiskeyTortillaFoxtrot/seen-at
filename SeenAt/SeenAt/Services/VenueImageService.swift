@@ -1,14 +1,24 @@
 import SwiftUI
+import UIKit
 
 enum VenueImageService {
+    private nonisolated(unsafe) static let cache = NSCache<NSString, UIImage>()
+
     static func image(for venueKey: String) -> Image? {
         let normalized = normalize(venueKey)
         guard !normalized.isEmpty else { return nil }
+
+        let cacheKey = normalized as NSString
+        if let cached = cache.object(forKey: cacheKey) {
+            return Image(uiImage: cached)
+        }
+
         for ext in ["png", "jpg", "jpeg"] {
             guard let url = Bundle.main.url(forResource: normalized, withExtension: ext),
                   let data = try? Data(contentsOf: url),
                   let uiImage = UIImage(data: data)
             else { continue }
+            cache.setObject(uiImage, forKey: cacheKey)
             return Image(uiImage: uiImage)
         }
         return nil

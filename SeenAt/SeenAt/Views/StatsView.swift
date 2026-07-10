@@ -42,15 +42,21 @@ struct StatsView: View {
     }
 
     var body: some View {
+        let games = totalGames
+        let sightings = totalSightings
+        let teams = teamTotals
+        let leagues = leagueTotals
+        let players = topPlayers
+
         ScrollView {
             VStack(spacing: 20) {
-                if totalGames == 0 {
+                if games == 0 {
                     emptyState
                 } else {
-                    totalGamesCard
-                    byTeamCard
-                    byLeagueCard
-                    topPlayersCard
+                    totalGamesCard(games: games, sightings: sightings)
+                    byTeamCard(teams: teams, sightings: sightings)
+                    byLeagueCard(leagues: leagues)
+                    topPlayersCard(players: players)
                 }
             }
             .padding()
@@ -67,10 +73,10 @@ struct StatsView: View {
         )
     }
 
-    private var totalGamesCard: some View {
+    private func totalGamesCard(games: Int, sightings: Int) -> some View {
         HStack(spacing: 24) {
             VStack(spacing: 4) {
-                Text("\(totalGames)")
+                Text("\(games)")
                     .font(.urbanist(size: 48, weight: .bold))
                     .foregroundStyle(.white)
                 Text("Games Tracked")
@@ -84,7 +90,7 @@ struct StatsView: View {
                 .background(.white.opacity(0.3))
 
             VStack(spacing: 4) {
-                Text("\(totalSightings)")
+                Text("\(sightings)")
                     .font(.urbanist(size: 48, weight: .bold))
                     .foregroundStyle(.white)
                 Text("Jerseys Seen")
@@ -104,7 +110,7 @@ struct StatsView: View {
         .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 
-    private var byTeamCard: some View {
+    private func byTeamCard(teams: [(team: Team, count: Int)], sightings: Int) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("By Team")
                 .font(.urbanist(.headline))
@@ -112,12 +118,12 @@ struct StatsView: View {
             ChartToggle(usePieChart: $showPieChart)
 
             if showPieChart {
-                TeamPieChart(breakdown: teamTotals)
+                TeamPieChart(breakdown: teams)
             } else {
-                ForEach(teamTotals, id: \.team.id) { team, count in
-                    TeamBarRow(team: team, count: count, total: totalSightings)
+                ForEach(teams, id: \.team.id) { team, count in
+                    TeamBarRow(team: team, count: count, total: sightings)
 
-                    if team != teamTotals.last?.team {
+                    if team != teams.last?.team {
                         Divider()
                     }
                 }
@@ -128,12 +134,12 @@ struct StatsView: View {
         .shadow(color: .black.opacity(0.05), radius: 4, y: 2)
     }
 
-    private var byLeagueCard: some View {
+    private func byLeagueCard(leagues: [(sport: String, count: Int)]) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("By League")
                 .font(.urbanist(.headline))
 
-            ForEach(leagueTotals, id: \.sport) { sport, count in
+            ForEach(leagues, id: \.sport) { sport, count in
                 HStack {
                     Image(systemName: Team.sportIcon(for: sport))
                         .foregroundStyle(sportColor(sport))
@@ -154,7 +160,7 @@ struct StatsView: View {
                         .foregroundStyle(.secondary)
                 }
 
-                if sport != leagueTotals.last?.sport {
+                if sport != leagues.last?.sport {
                     Divider()
                 }
             }
@@ -164,12 +170,12 @@ struct StatsView: View {
         .shadow(color: .black.opacity(0.05), radius: 4, y: 2)
     }
 
-    private var topPlayersCard: some View {
+    private func topPlayersCard(players: [(name: String, team: Team, playerNumber: String?, count: Int)]) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Top Players")
                 .font(.urbanist(.headline))
 
-            ForEach(Array(topPlayers.enumerated()), id: \.element.name) { index, player in
+            ForEach(Array(players.enumerated()), id: \.element.name) { index, player in
                 HStack(spacing: 0) {
                     Rectangle()
                         .fill(player.team.primaryColor)
@@ -209,7 +215,7 @@ struct StatsView: View {
                     .padding(.leading, 8)
                 }
 
-                if player.name != topPlayers.last?.name {
+                if player.name != players.last?.name {
                     Divider()
                 }
             }

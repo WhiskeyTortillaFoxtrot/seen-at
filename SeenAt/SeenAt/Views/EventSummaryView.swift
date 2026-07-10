@@ -18,9 +18,14 @@ struct EventSummaryView: View {
     }
 
     var body: some View {
+        let teamBreakdown = event.teamBreakdown
+        let playerBreakdown = event.playerBreakdown
+        let topColors = teamBreakdown.prefix(2).map { $0.team.primaryColor }
+        let topTeamColors = topColors.isEmpty ? [Color.accentColor] : topColors
+
         ScrollView {
             VStack(spacing: 20) {
-                totalCountCard
+                totalCountCard(topTeamColors: topTeamColors)
 
                 addSightingButton
 
@@ -28,12 +33,12 @@ struct EventSummaryView: View {
                     liveTrackingButton
                 }
 
-                if !event.teamBreakdown.isEmpty {
-                    teamBreakdownCard
+                if !teamBreakdown.isEmpty {
+                    teamBreakdownCard(teamBreakdown: teamBreakdown)
                 }
 
-                if !event.playerBreakdown.isEmpty {
-                    playerBreakdownCard
+                if !playerBreakdown.isEmpty {
+                    playerBreakdownCard(playerBreakdown: playerBreakdown)
                 }
 
                 if !event.sightings.isEmpty, event.watchLocation != .tv {
@@ -87,7 +92,7 @@ struct EventSummaryView: View {
         .buttonStyle(.bordered)
     }
 
-    private var totalCountCard: some View {
+    private func totalCountCard(topTeamColors: [Color]) -> some View {
         VStack(spacing: 8) {
             let countOutline = topTeamColors.first?.opacity(0.5) ?? .black.opacity(0.15)
             Text("\(event.totalCount)")
@@ -149,7 +154,7 @@ struct EventSummaryView: View {
         .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 
-    private var teamBreakdownCard: some View {
+    private func teamBreakdownCard(teamBreakdown: [(team: Team, count: Int)]) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("By Team")
                 .font(.urbanist(.headline))
@@ -157,9 +162,9 @@ struct EventSummaryView: View {
             ChartToggle(usePieChart: $showPieChart)
 
             if showPieChart {
-                TeamPieChart(breakdown: event.teamBreakdown)
+                TeamPieChart(breakdown: teamBreakdown)
             } else {
-                ForEach(event.teamBreakdown, id: \.team.id) { team, count in
+                ForEach(teamBreakdown, id: \.team.id) { team, count in
                     let isExpanded = expandedTeams.contains(team.id)
 
                     VStack(spacing: 8) {
@@ -232,7 +237,7 @@ struct EventSummaryView: View {
                         }
                     }
 
-                    if team != event.teamBreakdown.last?.team {
+                    if team != teamBreakdown.last?.team {
                         Divider()
                     }
                 }
@@ -244,12 +249,12 @@ struct EventSummaryView: View {
     }
 
     @ViewBuilder
-    private var playerBreakdownCard: some View {
+    private func playerBreakdownCard(playerBreakdown: [(team: Team, playerName: String, count: Int)]) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("By Player")
                 .font(.urbanist(.headline))
 
-            ForEach(event.playerBreakdown, id: \.playerName) { team, name, count in
+            ForEach(playerBreakdown, id: \.playerName) { team, name, count in
                 HStack(spacing: 0) {
                     Rectangle()
                         .fill(team.primaryColor)
