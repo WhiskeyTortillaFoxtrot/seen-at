@@ -17,26 +17,50 @@ struct FavoriteTeamsView: View {
     }
 
     var body: some View {
-        List {
-            ForEach(teamsByLeague, id: \.0) { league, teams in
-                Section(league) {
-                    ForEach(teams) { team in
-                        Button {
-                            toggle(team.name)
-                        } label: {
-                            HStack {
-                                Circle()
-                                    .fill(team.primaryColor)
-                                    .frame(width: 12, height: 12)
-                                Text(team.name)
-                                Spacer()
-                                if favoriteNames.contains(team.name) {
-                                    Image(systemName: "checkmark")
-                                        .foregroundStyle(Color.accentColor)
+        ScrollViewReader { proxy in
+            List {
+                Section {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 12) {
+                            ForEach(teamsByLeague, id: \.0) { league, _ in
+                                Button(league) {
+                                    withAnimation {
+                                        proxy.scrollTo(league, anchor: .top)
+                                    }
+                                }
+                                .buttonStyle(.borderedProminent)
+                                .tint(.accentColor)
+                                .controlSize(.small)
+                            }
+                        }
+                        .padding(.horizontal, 4)
+                        .padding(.vertical, 6)
+                    }
+                    .listRowInsets(EdgeInsets())
+                    .listRowBackground(Color.clear)
+                }
+
+                ForEach(teamsByLeague, id: \.0) { league, teams in
+                    Section(league) {
+                        ForEach(teams) { team in
+                            Button {
+                                toggle(team.name)
+                            } label: {
+                                HStack {
+                                    Circle()
+                                        .fill(team.primaryColor)
+                                        .frame(width: 12, height: 12)
+                                    Text(team.name)
+                                    Spacer()
+                                    if favoriteNames.contains(team.name) {
+                                        Image(systemName: "checkmark")
+                                            .foregroundStyle(Color.accentColor)
+                                    }
                                 }
                             }
                         }
                     }
+                    .id(league)
                 }
             }
         }
