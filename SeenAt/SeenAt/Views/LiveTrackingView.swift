@@ -123,7 +123,7 @@ struct LiveTrackingView: View {
                         .resizable()
                         .aspectRatio(contentMode: .fill)
                 }
-                homeTeamSecondaryColor
+                homeTeamSecondaryColor.opacity(0.65)
                     .overlay(Color.black.opacity(0.3))
             }
         }
