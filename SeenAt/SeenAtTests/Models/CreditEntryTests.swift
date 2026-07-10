@@ -40,10 +40,10 @@ final class CreditEntryTests: XCTestCase {
 
     func testRealWorldFormat() {
         let entry = CreditEntry(
-            identifier: "centre-bell",
-            creditText: "**Centre Bell** Photo by [Amaury TRAVER](https://unsplash.com/@beyondreality) on [Unsplash](https://unsplash.com/photos/425oIpJ1nWA)"
+            identifier: "bell-centre",
+            creditText: "**Bell Centre** Photo by [Amaury TRAVER](https://unsplash.com/@beyondreality) on [Unsplash](https://unsplash.com/photos/425oIpJ1nWA)"
         )
-        XCTAssertEqual(entry.title, "Centre Bell")
+        XCTAssertEqual(entry.title, "Bell Centre")
         XCTAssertEqual(entry.body, "Photo by [Amaury TRAVER](https://unsplash.com/@beyondreality) on [Unsplash](https://unsplash.com/photos/425oIpJ1nWA)")
     }
 }

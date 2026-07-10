@@ -3,9 +3,9 @@
 ## A
 
 ## B
+bell-centre, **Bell Centre** Photo by [Amaury TRAVER](https://unsplash.com/@beyondreality) on [Unsplash](https://unsplash.com/photos/an-overhead-view-of-a-hockey-rink-in-a-stadium-425oIpJ1nWA)
 
 ## C
-centre-bell, **Centre Bell** Photo by [Amaury TRAVER](https://unsplash.com/@beyondreality) on [Unsplash](https://unsplash.com/photos/an-overhead-view-of-a-hockey-rink-in-a-stadium-425oIpJ1nWA)
 
 ## D
 
