@@ -152,21 +152,7 @@ struct LiveTrackingView: View {
                     .padding(.vertical, 4)
 
                 if showPieChart {
-                    Chart(breakdown, id: \.team.id) { team, count in
-                        SectorMark(
-                            angle: .value("Count", count),
-                            innerRadius: .ratio(0.5),
-                            angularInset: 2
-                        )
-                        .foregroundStyle(team.primaryColor)
-                        .annotation(position: .overlay) {
-                            Text("\(count)")
-                                .font(.caption2)
-                                .fontWeight(.semibold)
-                                .foregroundStyle(.white)
-                        }
-                    }
-                    .frame(height: 220)
+                    TeamPieChart(breakdown: breakdown)
                 } else {
                     ForEach(breakdown, id: \.team.id) { team, count in
                         TeamBarRow(team: team, count: count, total: total)
