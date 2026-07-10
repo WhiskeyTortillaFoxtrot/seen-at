@@ -97,7 +97,7 @@ struct EventFormView: View {
                     Label(error, systemImage: "wifi.slash")
                         .foregroundStyle(.secondary)
                     Button("Retry") { fetchGames() }
-                        .font(.subheadline)
+                        .font(.urbanist(.subheadline))
                 }
             } header: {
                 Label("\(leagueLabel) Games", systemImage: sportIcon)
@@ -173,7 +173,7 @@ struct EventFormView: View {
                 Button("Start Tracking") {
                     saveManual()
                 }
-                .font(.headline)
+                .font(.urbanist(.headline))
                 .frame(maxWidth: .infinity)
                 .disabled(manualTeamsDisabled)
             }
@@ -274,17 +274,17 @@ struct LeagueGameRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(game.title)
-                .font(.headline)
+                .font(.urbanist(.headline))
                 .foregroundStyle(.primary)
 
             HStack(spacing: 8) {
                 Label(game.venueName, systemImage: "mappin")
-                    .font(.caption)
+                    .font(.urbanist(.caption))
                     .foregroundStyle(.secondary)
 
                 if let dayNight = game.dayNight {
                     Text(dayNight == "day" ? "Day Game" : "Night Game")
-                        .font(.caption)
+                        .font(.urbanist(.caption))
                         .foregroundStyle(.secondary)
                 }
             }
@@ -293,7 +293,7 @@ struct LeagueGameRow: View {
         .overlay(alignment: .topTrailing) {
             if isFavorite {
                 Image(systemName: "star.fill")
-                    .font(.caption2)
+                    .font(.urbanist(.caption2))
                     .foregroundStyle(.yellow)
                     .offset(x: 4, y: -4)
             }

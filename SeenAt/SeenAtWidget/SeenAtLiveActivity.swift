@@ -18,8 +18,7 @@ struct SeenAtWidget: Widget {
                 }
                 DynamicIslandExpandedRegion(.bottom) {
                     Text(context.attributes.gameTitle)
-                        .font(.caption)
-                        .fontWeight(.medium)
+                        .font(.urbanist(.caption, weight: .medium))
                         .lineLimit(1)
                 }
             } compactLeading: {
@@ -44,33 +43,30 @@ private struct LockScreenView: View {
                 TeamColorDot(hex: context.attributes.awayTeamColor)
 
                 Text(context.attributes.gameTitle)
-                    .font(.headline)
-                    .fontWeight(.bold)
+                    .font(.urbanist(.headline, weight: .bold))
                     .lineLimit(1)
 
                 Spacer()
 
                 HStack(spacing: 4) {
                     Text("\(context.state.jerseyCount)")
-                        .font(.title3)
-                        .fontWeight(.bold)
+                        .font(.urbanist(.title3, weight: .bold))
                     Image(systemName: "tshirt")
-                        .font(.caption)
+                        .font(.urbanist(.caption))
                 }
             }
 
             if !context.state.mostRecentJerseyName.isEmpty {
                 HStack(spacing: 4) {
                     Text("Last sighting:")
-                        .font(.subheadline)
+                        .font(.urbanist(.subheadline))
                         .foregroundStyle(.secondary)
                     Text(context.state.mostRecentJerseyName)
-                        .font(.subheadline)
-                        .fontWeight(.semibold)
+                        .font(.urbanist(.subheadline, weight: .semibold))
                 }
             } else {
                 Text("No sightings yet")
-                    .font(.subheadline)
+                    .font(.urbanist(.subheadline))
                     .foregroundStyle(.secondary)
             }
         }
@@ -96,9 +92,9 @@ private struct JerseyCountCompact: View {
     var body: some View {
         HStack(spacing: 2) {
             Text("\(count)")
-                .fontWeight(.bold)
+                .font(.urbanist(.body, weight: .bold))
             Image(systemName: "tshirt")
-                .font(.caption2)
+                .font(.urbanist(.caption2))
         }
     }
 }

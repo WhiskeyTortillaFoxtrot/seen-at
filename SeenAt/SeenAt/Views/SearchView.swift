@@ -36,17 +36,17 @@ struct SearchView: View {
                             HStack {
                                 VStack(spacing: 2) {
                                     Text(result.event.date, format: .dateTime.month(.abbreviated))
-                                        .font(.caption)
+                                        .font(.urbanist(.caption))
                                     Text(result.event.date, format: .dateTime.day())
-                                        .font(.title3.weight(.semibold))
+                                        .font(.urbanist(.title3, weight: .semibold))
                                 }
                                 .frame(minWidth: 44)
 
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(result.event.title)
-                                        .font(.headline)
+                                        .font(.urbanist(.headline))
                                     Text(result.matchedBy)
-                                        .font(.caption)
+                                        .font(.urbanist(.caption))
                                         .foregroundStyle(.secondary)
                                 }
                             }

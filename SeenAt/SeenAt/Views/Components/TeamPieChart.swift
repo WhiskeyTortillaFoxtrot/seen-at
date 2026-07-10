@@ -80,9 +80,9 @@ struct TeamPieChart: View {
                 .annotation(position: .overlay) {
                     VStack(spacing: 0) {
                         Text(item.team.abbreviation)
-                            .font(.caption2.weight(.semibold))
+                            .font(.urbanist(.caption2, weight: .semibold))
                         Text("\(item.count)")
-                            .font(.caption2)
+                            .font(.urbanist(.caption2))
                     }
                     .foregroundStyle(item.color.isLight ? .black : .white)
                 }
@@ -101,10 +101,10 @@ struct TeamPieChart: View {
                         .fill(item.color)
                         .frame(width: 10, height: 10)
                     Text(item.team.name)
-                        .font(.subheadline.weight(.medium))
+                        .font(.urbanist(.subheadline, weight: .medium))
                     Spacer()
                     Text("\(item.count) (\(pct)%)")
-                        .font(.subheadline)
+                        .font(.urbanist(.subheadline))
                         .foregroundStyle(.secondary)
                 }
                 .padding(.horizontal, 4)

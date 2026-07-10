@@ -33,7 +33,7 @@ struct AddSightingView: View {
                                 .fill(team.primaryColor)
                                 .frame(width: 12, height: 12)
                             Text(team.name)
-                                .fontWeight(favoriteTeamNames.contains(team.name) ? .bold : .regular)
+                                .font(favoriteTeamNames.contains(team.name) ? .urbanist(.body, weight: .bold) : .urbanist(.body))
                         }
                         .tag(team as Team?)
                     }
@@ -69,7 +69,7 @@ struct AddSightingView: View {
             Button("Add Sighting") {
                 addSighting()
             }
-            .font(.headline)
+            .font(.urbanist(.headline))
             .frame(maxWidth: .infinity)
             .disabled(selectedTeam == nil)
         }

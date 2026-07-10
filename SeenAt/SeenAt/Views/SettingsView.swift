@@ -70,6 +70,10 @@ struct SettingsView: View {
                     PhotoCreditsView()
                 }
 
+                NavigationLink("Credits") {
+                    CreditsView()
+                }
+
                 HStack {
                     Text("Version")
                     Spacer()

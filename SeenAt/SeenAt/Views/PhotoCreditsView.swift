@@ -44,12 +44,11 @@ struct PhotoCreditsView: View {
 
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(entry.title)
-                                    .font(.headline)
-                                    .fontWeight(.bold)
+                                    .font(.urbanist(.headline, weight: .bold))
                                 if !entry.body.isEmpty {
                                     if let attributed = try? AttributedString(markdown: entry.body) {
                                         Text(attributed)
-                                            .font(.caption)
+                                            .font(.urbanist(.caption))
                                     }
                                 }
                             }

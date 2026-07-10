@@ -17,6 +17,7 @@
 		2FE2E59B93EBF38EC3ADFD2E /* SearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6877C6DFBECAD563382283B2 /* SearchView.swift */; };
 		3012836679845AD44B5CCB3A /* TestDataFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8677173C21E6E26B97D5DF9F /* TestDataFactory.swift */; };
 		31571970CEB6D0993BFDC7E4 /* FavoriteTeamsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A76A23F5AC06EF0D59016C7 /* FavoriteTeamsView.swift */; };
+		31951369C72660F34562031C /* Urbanist-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = A13D9DA43ADDED66D220DCA5 /* Urbanist-Bold.ttf */; };
 		330A1A53A79189E262E77E33 /* MLBAPIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E868B332592B68CC3070E304 /* MLBAPIService.swift */; };
 		34BD7A50043B22F1C0091E56 /* TestModelContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30AA9D41D92B6B7ADE795F7 /* TestModelContainer.swift */; };
 		35FEA209574B5095AD4BC384 /* SeedData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 82D47D502FC040B51F68748F /* SeedData.swift */; };
@@ -40,9 +41,12 @@
 		671D7B154522703FC0896373 /* LiveTrackingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ECD99B85F36CD97EA4EF2A08 /* LiveTrackingView.swift */; };
 		67E082AC0C9B0744D0D67420 /* ExportServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F7817ADA6236C4A85D61576 /* ExportServiceTests.swift */; };
 		6C8A7350565D58FC9C29F610 /* ExportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE0B9D7FB9C68D2E44833939 /* ExportService.swift */; };
+		6CBEF4BE0F9216DE66A9D638 /* Urbanist-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = D9C8FC861AEAC7A3563A0E20 /* Urbanist-SemiBold.ttf */; };
 		6E2E0AA10714DC4BB46A53E1 /* Event.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8CE3025DB9AD892205B2AE3D /* Event.swift */; };
+		6FCF37A9681BC264F3C36B30 /* CreditsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4786C20D9AC813B8AA01D3A /* CreditsView.swift */; };
 		705BF30ECF55D8B76E112EDB /* NBATeams.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEC5A2C920B5BCC99D535118 /* NBATeams.swift */; };
 		706E3F96206C4B44E02731E2 /* NHLTeams.swift in Sources */ = {isa = PBXBuildFile; fileRef = E11BA07ADF84388270AF996D /* NHLTeams.swift */; };
+		73BD36F50CA7C1B559496F52 /* Urbanist-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 550C6E4076BE51573BC13EE0 /* Urbanist-Medium.ttf */; };
 		7469497059B686D33AEE4210 /* EventActionHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD9B348129F7CB69CAB3767D /* EventActionHandlerTests.swift */; };
 		7A26E7BC21AE6457DF5D8218 /* centre-bell.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 6A5D9A8CD15BBCB5EAD575AA /* centre-bell.jpg */; };
 		7CFF4586E3E34393A35EC25C /* PieChartTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8EF2753EF51BD2816286529C /* PieChartTests.swift */; };
@@ -51,9 +55,13 @@
 		802E268AD7CA443FA2F8EE88 /* VenueImageService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 047F6E1DD86AD6271A2F3A72 /* VenueImageService.swift */; };
 		870B4EA4C1C74D07CB7A2F56 /* JerseySightingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1838A27397CA31346037537 /* JerseySightingTests.swift */; };
 		882236A04BEC49E39988ADB9 /* PhotoCredits.md in Resources */ = {isa = PBXBuildFile; fileRef = 4A2DCA6832EB3EA34257AD9B /* PhotoCredits.md */; };
+		8C97A3F0F56B0B1DE1EF21D7 /* Urbanist-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 5BDD088B44D365447ACB6E48 /* Urbanist-Regular.ttf */; };
+		92F9735778B1C2207DB7E704 /* Urbanist-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 5BDD088B44D365447ACB6E48 /* Urbanist-Regular.ttf */; };
 		9325B7D07D3D8C7EEB44CD04 /* GameSorting.swift in Sources */ = {isa = PBXBuildFile; fileRef = B438899A3329974B7045EBB5 /* GameSorting.swift */; };
+		942202E058FAAA01B40EC574 /* Urbanist-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 550C6E4076BE51573BC13EE0 /* Urbanist-Medium.ttf */; };
 		9849F7AA880B8ADDC667E220 /* EventFormView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AD959FDE9712D6963DC5592 /* EventFormView.swift */; };
 		988A5AD444BF7B28BE21D5DA /* LeagueAPIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EF9E6A974D8D38344B5FED3 /* LeagueAPIService.swift */; };
+		9B445276BCDF2FE84C579983 /* Font+Urbanist.swift in Sources */ = {isa = PBXBuildFile; fileRef = E67CFCBD2AE817E9AF383246 /* Font+Urbanist.swift */; };
 		9CD17260EA2DA291908DADED /* EventLifecycleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74C78639AB94907F42E68A18 /* EventLifecycleTests.swift */; };
 		9D2039B42FF0B80F0789C202 /* SchemaMigration.swift in Sources */ = {isa = PBXBuildFile; fileRef = D50C813E1214DA20D1EDE66A /* SchemaMigration.swift */; };
 		9F97656A3A662776E5C6246A /* NHLAPIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36CDE7F21980DFD6D1066D9E /* NHLAPIService.swift */; };
@@ -65,11 +73,14 @@
 		B23D581368B6251C563682A0 /* SeenAtLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CBCF67891D59F640A9F0468 /* SeenAtLiveActivity.swift */; };
 		B788D75447BEF4AFBB32FC0C /* Color+Luminance.swift in Sources */ = {isa = PBXBuildFile; fileRef = CFCE3D2CA6E12438C051CB35 /* Color+Luminance.swift */; };
 		BF5ADD074B19025DA5688B64 /* LiveActivityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = E31BBA7EDD221ABE3183274F /* LiveActivityManager.swift */; };
+		BF9F3B29B384740A2A4693EF /* Urbanist-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = A13D9DA43ADDED66D220DCA5 /* Urbanist-Bold.ttf */; };
 		BFA7F26E564CC566550FADEA /* wrigley-field.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 8D59C0DB294235C0ADF99949 /* wrigley-field.jpg */; };
 		C25A519A167D48D94C38654A /* SwiftDataCRUDTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10053D4D3221D5F96A2DA028 /* SwiftDataCRUDTests.swift */; };
+		C2BD632C74BAB449DCFE790A /* Urbanist-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = D9C8FC861AEAC7A3563A0E20 /* Urbanist-SemiBold.ttf */; };
 		CC73E3DABD4E63A8D0CA7764 /* SeenAtApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DF0DAC39EA5375ADBF126CB /* SeenAtApp.swift */; };
 		CF676D4BEC61B12DC8D75D44 /* EventRowTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24B47A2831BBAB45A5472EC1 /* EventRowTests.swift */; };
 		D0E7EB02F41D8CF6B3F2DAA0 /* EventSummaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A38F229B8DA6985D9DC80822 /* EventSummaryView.swift */; };
+		D14B065F15CAFB096BC4A874 /* Font+Urbanist.swift in Sources */ = {isa = PBXBuildFile; fileRef = E67CFCBD2AE817E9AF383246 /* Font+Urbanist.swift */; };
 		D609B6B2C4097B3112DDDFFF /* ChartToggle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 764F2314F18C43B08F2D761A /* ChartToggle.swift */; };
 		D706DB797BE11AD06A4D8101 /* VenueDirectoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F998A72914DC11CAD43F69CA /* VenueDirectoryTests.swift */; };
 		D781EA88D3B254F9012079FA /* ColorExtensionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2969EB6E3B98ED17E1909BC9 /* ColorExtensionTests.swift */; };
@@ -120,8 +131,10 @@
 		4A2DCA6832EB3EA34257AD9B /* PhotoCredits.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = PhotoCredits.md; sourceTree = "<group>"; };
 		4BF02A7055A6EE0498F819D4 /* StadiumPhotoService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StadiumPhotoService.swift; sourceTree = "<group>"; };
 		4E8729992D35C423D22FE74B /* ESPNService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ESPNService.swift; sourceTree = "<group>"; };
+		550C6E4076BE51573BC13EE0 /* Urbanist-Medium.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Urbanist-Medium.ttf"; sourceTree = "<group>"; };
 		56A35634C808C5E3E75EDFA3 /* SearchViewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchViewTests.swift; sourceTree = "<group>"; };
 		58662D680E0ABD5FB3898567 /* SeenAt.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = SeenAt.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		5BDD088B44D365447ACB6E48 /* Urbanist-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Urbanist-Regular.ttf"; sourceTree = "<group>"; };
 		5ED9C27A38D86BAEB08BAE5F /* MLSTeams.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MLSTeams.swift; sourceTree = "<group>"; };
 		66C98BF0197F7599ED24DDE8 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		66F75AE8CF34E65A2F67EC0D /* EventActionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventActionHandler.swift; sourceTree = "<group>"; };
@@ -147,9 +160,11 @@
 		8D59C0DB294235C0ADF99949 /* wrigley-field.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = "wrigley-field.jpg"; sourceTree = "<group>"; };
 		8EF2753EF51BD2816286529C /* PieChartTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PieChartTests.swift; sourceTree = "<group>"; };
 		9C37E2FC83ED9D8D50451AD0 /* CreditEntryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreditEntryTests.swift; sourceTree = "<group>"; };
+		A13D9DA43ADDED66D220DCA5 /* Urbanist-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Urbanist-Bold.ttf"; sourceTree = "<group>"; };
 		A339779DD94248855BF65F27 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		A34687B3EBC8FC003D5DDDD6 /* StadiumPhotoServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StadiumPhotoServiceTests.swift; sourceTree = "<group>"; };
 		A38F229B8DA6985D9DC80822 /* EventSummaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventSummaryView.swift; sourceTree = "<group>"; };
+		A4786C20D9AC813B8AA01D3A /* CreditsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreditsView.swift; sourceTree = "<group>"; };
 		B0C070E62541B01B4B95425A /* VenueDirectory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VenueDirectory.swift; sourceTree = "<group>"; };
 		B1838A27397CA31346037537 /* JerseySightingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JerseySightingTests.swift; sourceTree = "<group>"; };
 		B30AA9D41D92B6B7ADE795F7 /* TestModelContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestModelContainer.swift; sourceTree = "<group>"; };
@@ -161,10 +176,12 @@
 		CFCE3D2CA6E12438C051CB35 /* Color+Luminance.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Color+Luminance.swift"; sourceTree = "<group>"; };
 		D1AA0CD196ADC8C9FB58537E /* Team.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Team.swift; sourceTree = "<group>"; };
 		D50C813E1214DA20D1EDE66A /* SchemaMigration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SchemaMigration.swift; sourceTree = "<group>"; };
+		D9C8FC861AEAC7A3563A0E20 /* Urbanist-SemiBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Urbanist-SemiBold.ttf"; sourceTree = "<group>"; };
 		DBBDEE4AA6446C25A87720A5 /* AddSightingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddSightingView.swift; sourceTree = "<group>"; };
 		E11BA07ADF84388270AF996D /* NHLTeams.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NHLTeams.swift; sourceTree = "<group>"; };
 		E31BBA7EDD221ABE3183274F /* LiveActivityManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveActivityManager.swift; sourceTree = "<group>"; };
 		E539BE3234298C596785F64A /* PhotoCreditsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoCreditsView.swift; sourceTree = "<group>"; };
+		E67CFCBD2AE817E9AF383246 /* Font+Urbanist.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Font+Urbanist.swift"; sourceTree = "<group>"; };
 		E868B332592B68CC3070E304 /* MLBAPIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MLBAPIService.swift; sourceTree = "<group>"; };
 		EA4108DA2BEE193BF82C22EC /* TeamSeedService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TeamSeedService.swift; sourceTree = "<group>"; };
 		EA9714E350C0AA34B7FD93F7 /* TeamSortingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TeamSortingTests.swift; sourceTree = "<group>"; };
@@ -260,6 +277,7 @@
 			children = (
 				DBBDEE4AA6446C25A87720A5 /* AddSightingView.swift */,
 				C1E7F9327F52CB65A04F65A8 /* CreditDetailView.swift */,
+				A4786C20D9AC813B8AA01D3A /* CreditsView.swift */,
 				6AD959FDE9712D6963DC5592 /* EventFormView.swift */,
 				A38F229B8DA6985D9DC80822 /* EventSummaryView.swift */,
 				3A76A23F5AC06EF0D59016C7 /* FavoriteTeamsView.swift */,
@@ -294,6 +312,17 @@
 				6C70D9CF1938329C979692A5 /* TeamPieChart.swift */,
 			);
 			path = Components;
+			sourceTree = "<group>";
+		};
+		7A894F664071692D12125D67 /* Fonts */ = {
+			isa = PBXGroup;
+			children = (
+				A13D9DA43ADDED66D220DCA5 /* Urbanist-Bold.ttf */,
+				550C6E4076BE51573BC13EE0 /* Urbanist-Medium.ttf */,
+				5BDD088B44D365447ACB6E48 /* Urbanist-Regular.ttf */,
+				D9C8FC861AEAC7A3563A0E20 /* Urbanist-SemiBold.ttf */,
+			);
+			path = Fonts;
 			sourceTree = "<group>";
 		};
 		7C27F0A4288426E62DF606B5 /* Helpers */ = {
@@ -331,6 +360,7 @@
 			children = (
 				F62CBFA00303EFF7D981B124 /* Color+Hex.swift */,
 				CFCE3D2CA6E12438C051CB35 /* Color+Luminance.swift */,
+				E67CFCBD2AE817E9AF383246 /* Font+Urbanist.swift */,
 			);
 			path = Extensions;
 			sourceTree = "<group>";
@@ -339,6 +369,7 @@
 			isa = PBXGroup;
 			children = (
 				08D5D92A49ADAEF9F6D7DDD8 /* Assets.xcassets */,
+				7A894F664071692D12125D67 /* Fonts */,
 				FADAF015DB66C82D5E35ADEE /* VenueImages */,
 			);
 			path = Resources;
@@ -434,6 +465,7 @@
 			buildConfigurationList = 8563855104DC9A8AD3A08862 /* Build configuration list for PBXNativeTarget "SeenAtWidget" */;
 			buildPhases = (
 				ECF150C87C9CD7873A5E46B2 /* Sources */,
+				40E9FF204D2568C7A911B83F /* Resources */,
 			);
 			buildRules = (
 			);
@@ -533,12 +565,27 @@
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		40E9FF204D2568C7A911B83F /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				31951369C72660F34562031C /* Urbanist-Bold.ttf in Resources */,
+				73BD36F50CA7C1B559496F52 /* Urbanist-Medium.ttf in Resources */,
+				8C97A3F0F56B0B1DE1EF21D7 /* Urbanist-Regular.ttf in Resources */,
+				6CBEF4BE0F9216DE66A9D638 /* Urbanist-SemiBold.ttf in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		4FB6D329161A28A9624DCA37 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 				7EA3826B4F1DACA12904F40E /* Assets.xcassets in Resources */,
 				882236A04BEC49E39988ADB9 /* PhotoCredits.md in Resources */,
+				BF9F3B29B384740A2A4693EF /* Urbanist-Bold.ttf in Resources */,
+				942202E058FAAA01B40EC574 /* Urbanist-Medium.ttf in Resources */,
+				92F9735778B1C2207DB7E704 /* Urbanist-Regular.ttf in Resources */,
+				C2BD632C74BAB449DCFE790A /* Urbanist-SemiBold.ttf in Resources */,
 				7A26E7BC21AE6457DF5D8218 /* centre-bell.jpg in Resources */,
 				DE8B2359F9E56ED61DC39D73 /* fenway-park.jpg in Resources */,
 				BFA7F26E564CC566550FADEA /* wrigley-field.jpg in Resources */,
@@ -594,6 +641,7 @@
 				B788D75447BEF4AFBB32FC0C /* Color+Luminance.swift in Sources */,
 				4D882CD3F6F7D47B43B8FD3D /* ContentView.swift in Sources */,
 				4BE5C11C257569C713C73AEB /* CreditDetailView.swift in Sources */,
+				6FCF37A9681BC264F3C36B30 /* CreditsView.swift in Sources */,
 				EC8B2A431B3EB17A6491F718 /* ESPNService.swift in Sources */,
 				6E2E0AA10714DC4BB46A53E1 /* Event.swift in Sources */,
 				604D06B1CFBC55105AD13D57 /* EventActionHandler.swift in Sources */,
@@ -601,6 +649,7 @@
 				D0E7EB02F41D8CF6B3F2DAA0 /* EventSummaryView.swift in Sources */,
 				6C8A7350565D58FC9C29F610 /* ExportService.swift in Sources */,
 				31571970CEB6D0993BFDC7E4 /* FavoriteTeamsView.swift in Sources */,
+				D14B065F15CAFB096BC4A874 /* Font+Urbanist.swift in Sources */,
 				9325B7D07D3D8C7EEB44CD04 /* GameSorting.swift in Sources */,
 				22B41B8A2C32F3C5FBB2759F /* HomeView.swift in Sources */,
 				5864E22E9735F06852200ECC /* JerseySighting.swift in Sources */,
@@ -638,6 +687,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9B445276BCDF2FE84C579983 /* Font+Urbanist.swift in Sources */,
 				13EFC1E966CC5A2F51178CFD /* SeenAtActivityAttributes.swift in Sources */,
 				B23D581368B6251C563682A0 /* SeenAtLiveActivity.swift in Sources */,
 			);
