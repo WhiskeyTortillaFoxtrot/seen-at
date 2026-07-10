@@ -161,6 +161,16 @@ struct EventRow: View {
         event.date.formatted(.dateTime.day())
     }
 
+    var awayTeamName: String {
+        let components = event.title.components(separatedBy: " @ ")
+        return components.first ?? event.title
+    }
+
+    var homeTeamName: String {
+        let components = event.title.components(separatedBy: " @ ")
+        return components.count > 1 ? components[1] : ""
+    }
+
     var body: some View {
         HStack(spacing: 0) {
             Rectangle()
@@ -181,7 +191,9 @@ struct EventRow: View {
             .frame(minWidth: 44)
 
             VStack(alignment: .leading, spacing: 4) {
-                Text(event.title)
+                Text(awayTeamName)
+                    .font(.headline)
+                Text(homeTeamName)
                     .font(.headline)
 
                 if let venue = event.venue {
@@ -221,6 +233,7 @@ struct EventRow: View {
             }
             .padding(.leading, 8)
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, 8)
+        .frame(minHeight: 72)
     }
 }
