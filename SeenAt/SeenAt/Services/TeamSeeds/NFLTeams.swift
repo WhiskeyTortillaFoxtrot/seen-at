@@ -1,7 +1,7 @@
 import Foundation
 
 enum NFLTeams {
-    @MainActor static let all: [Team] = [
+    @MainActor static var all: [Team] { [
         Team(name: "Arizona Cardinals", abbreviation: "ARI", sport: "nfl", isBuiltIn: true, primaryColorHex: "#97233F", secondaryColorHex: "#000000"),
         Team(name: "Atlanta Falcons", abbreviation: "ATL", sport: "nfl", isBuiltIn: true, primaryColorHex: "#A71930", secondaryColorHex: "#000000"),
         Team(name: "Baltimore Ravens", abbreviation: "BAL", sport: "nfl", isBuiltIn: true, primaryColorHex: "#241773", secondaryColorHex: "#000000"),
@@ -35,4 +35,5 @@ enum NFLTeams {
         Team(name: "Tennessee Titans", abbreviation: "TEN", sport: "nfl", isBuiltIn: true, primaryColorHex: "#0C2340", secondaryColorHex: "#4B92DB"),
         Team(name: "Washington Commanders", abbreviation: "WAS", sport: "nfl", isBuiltIn: true, primaryColorHex: "#5A1414", secondaryColorHex: "#FFB612"),
     ]
+    }
 }

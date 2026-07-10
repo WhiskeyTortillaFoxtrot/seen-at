@@ -62,4 +62,14 @@ final class TeamSeedServiceTests: XCTestCase {
         XCTAssertEqual(teams.first?.name, "Anaheim Ducks")
         XCTAssertEqual(teams.last?.name, "Winnipeg Jets")
     }
+
+    func testSeedsMLSTeams() async {
+        await TeamSeedService.seedIfNeeded(modelContext: context)
+
+        let predicate = #Predicate<Team> { $0.sport == "mls" }
+        let mlsTeams = try? context.fetch(FetchDescriptor<Team>(predicate: predicate))
+        XCTAssertEqual(mlsTeams?.count, 28)
+        XCTAssertTrue(mlsTeams?.contains(where: { $0.name == "LA Galaxy" }) == true)
+        XCTAssertTrue(mlsTeams?.contains(where: { $0.name == "Seattle Sounders FC" }) == true)
+    }
 }

@@ -1,7 +1,6 @@
 import XCTest
 @testable import SeenAt
 import SwiftData
-@testable import SeenAt
 
 @MainActor
 final class EventLifecycleTests: XCTestCase {

@@ -1,7 +1,6 @@
 import XCTest
 @testable import SeenAt
 import SwiftData
-@testable import SeenAt
 
 @MainActor
 final class SwiftDataCRUDTests: XCTestCase {
@@ -77,14 +76,19 @@ final class SwiftDataCRUDTests: XCTestCase {
     }
 
     func testUniqueTeamNameConstraint() {
+        let sqliteContainer = TestModelContainer.createSQLite()
+        let sqliteContext = sqliteContainer.mainContext
+
         let team1 = TestDataFactory.makeTeam(name: "Same Name")
-        context.insert(team1)
-        try? context.save()
+        sqliteContext.insert(team1)
+        try? sqliteContext.save()
 
         let team2 = TestDataFactory.makeTeam(name: "Same Name")
-        context.insert(team2)
+        sqliteContext.insert(team2)
 
-        XCTAssertThrowsError(try context.save())
+        XCTAssertThrowsError(try sqliteContext.save())
+
+        TestModelContainer.cleanupSQLite(sqliteContainer)
     }
 
     func testMultipleSightingsSameEventSameTeam() {

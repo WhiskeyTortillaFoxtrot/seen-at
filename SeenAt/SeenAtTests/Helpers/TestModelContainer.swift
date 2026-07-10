@@ -11,4 +11,21 @@ enum TestModelContainer {
             configurations: config
         )
     }
+
+    static func createSQLite() -> ModelContainer {
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("test_\(UUID().uuidString).sqlite")
+        let config = ModelConfiguration(url: url)
+        return try! ModelContainer(
+            for: Team.self, Event.self, JerseySighting.self,
+            configurations: config
+        )
+    }
+
+    static func cleanupSQLite(_ container: ModelContainer) {
+        if let url = container.configurations.first?.url,
+           url.absoluteString.contains("test_") {
+            try? FileManager.default.removeItem(at: url)
+        }
+    }
 }
