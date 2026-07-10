@@ -5,8 +5,7 @@ import Charts
 struct LiveTrackingView: View {
     @Environment(\.dismiss) private var dismiss
     @Bindable var event: Event
-
-    @Query(sort: \Team.name) private var allTeams: [Team]
+    @Environment(\.modelContext) private var context
 
     @State private var showingAddSighting = false
     @State private var showingSummary = false
@@ -14,14 +13,23 @@ struct LiveTrackingView: View {
     @State private var fullScreenSighting: JerseySighting?
     @State private var showPieChart = false
 
+    private var relevantTeams: [Team] {
+        let names = [event.homeTeam, event.awayTeam].compactMap { $0 }
+        guard !names.isEmpty else { return [] }
+        let descriptor = FetchDescriptor<Team>(
+            predicate: #Predicate<Team> { names.contains($0.name) }
+        )
+        return (try? context.fetch(descriptor)) ?? []
+    }
+
     var homeTeamColor: Color {
         guard let name = event.homeTeam else { return .white }
-        return allTeams.first { $0.name == name }?.primaryColor ?? .white
+        return relevantTeams.first { $0.name == name }?.primaryColor ?? .white
     }
 
     var homeTeamSecondaryColor: Color {
         guard let name = event.homeTeam else { return .accentColor }
-        return allTeams.first { $0.name == name }?.secondaryColor ?? .accentColor
+        return relevantTeams.first { $0.name == name }?.secondaryColor ?? .accentColor
     }
 
     var body: some View {
@@ -62,7 +70,7 @@ struct LiveTrackingView: View {
         }
         .onChange(of: event.sightings.count) { _, _ in
             Task {
-                await LiveActivityManager.startOrUpdate(for: event, teams: allTeams)
+                await LiveActivityManager.startOrUpdate(for: event, teams: relevantTeams)
             }
         }
         .fullScreenCover(item: $fullScreenSighting) { sighting in

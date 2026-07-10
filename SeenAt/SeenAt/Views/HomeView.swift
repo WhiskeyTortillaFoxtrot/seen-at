@@ -189,6 +189,9 @@ struct EventRow: View {
     }
 
     var body: some View {
+        let breakdown = event.teamBreakdown
+        let leadingColor = breakdown.first?.team.primaryColor ?? .blue
+
         HStack(spacing: 0) {
             Rectangle()
                 .fill(leadingColor)
@@ -230,17 +233,17 @@ struct EventRow: View {
                         .padding(.vertical, 2)
                         .background(leadingColor.opacity(0.1), in: Capsule())
 
-                    if !event.teamBreakdown.isEmpty {
+                    if !breakdown.isEmpty {
                         HStack(spacing: -4) {
-                            ForEach(event.teamBreakdown.prefix(5), id: \.team.id) { team, _ in
+                            ForEach(breakdown.prefix(5), id: \.team.id) { team, _ in
                                 Circle()
                                     .fill(team.primaryColor)
                                     .frame(width: 16, height: 16)
                                     .overlay(Circle().stroke(.background, lineWidth: 2))
                             }
                         }
-                        if event.teamBreakdown.count > 5 {
-                            Text("+\(event.teamBreakdown.count - 5)")
+                        if breakdown.count > 5 {
+                            Text("+\(breakdown.count - 5)")
                                 .font(.urbanist(.caption2))
                                 .foregroundStyle(.secondary)
                         }
