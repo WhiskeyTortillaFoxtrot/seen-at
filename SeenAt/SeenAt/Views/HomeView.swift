@@ -55,9 +55,7 @@ struct HomeView: View {
                     ForEach(pastEvents) { event in
                         NavigationLink(value: event) {
                             EventRow(event: event)
-                                .padding(.horizontal)
                         }
-                        .listRowInsets(EdgeInsets())
                     }
                     .onDelete(perform: deleteEvents(in: pastEvents))
                 }
@@ -67,7 +65,6 @@ struct HomeView: View {
                 Section("Upcoming") {
                     ForEach(upcomingEvents) { event in
                         EventRow(event: event)
-                            .padding(.horizontal)
                     }
                     .onDelete(perform: deleteEvents(in: upcomingEvents))
                 }
@@ -161,6 +158,17 @@ struct EventRow: View {
         event.date.formatted(.dateTime.day())
     }
 
+    var awayTeamName: String {
+        let components = event.title.components(separatedBy: " @ ")
+        return components.first ?? event.title
+    }
+
+    var homeTeamName: String {
+        let components = event.title.components(separatedBy: " @ ")
+        guard components.count > 1 else { return "" }
+        return "@ \(components[1])"
+    }
+
     var body: some View {
         HStack(spacing: 0) {
             Rectangle()
@@ -181,7 +189,9 @@ struct EventRow: View {
             .frame(minWidth: 44)
 
             VStack(alignment: .leading, spacing: 4) {
-                Text(event.title)
+                Text(awayTeamName)
+                    .font(.headline)
+                Text(homeTeamName)
                     .font(.headline)
 
                 if let venue = event.venue {
@@ -221,6 +231,8 @@ struct EventRow: View {
             }
             .padding(.leading, 8)
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, 8)
+        .padding(.horizontal)
+        .frame(minHeight: 72)
     }
 }
