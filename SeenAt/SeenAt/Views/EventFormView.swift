@@ -82,28 +82,35 @@ struct EventFormView: View {
     @ViewBuilder
     private var gamesSection: some View {
         let leagueLabel = leagues.first(where: { $0.id == selectedLeague })?.label ?? "Games"
+        let sportIcon = Team.sportIcon(for: selectedLeague)
 
         if isLoading {
-            Section("\(leagueLabel) Games") {
+            Section {
                 HStack { Spacer(); ProgressView("Loading..."); Spacer() }
                     .listRowBackground(Color.clear)
+            } header: {
+                Label("\(leagueLabel) Games", systemImage: sportIcon)
             }
         } else if let error = errorMessage {
-            Section("\(leagueLabel) Games") {
+            Section {
                 VStack(spacing: 8) {
                     Label(error, systemImage: "wifi.slash")
                         .foregroundStyle(.secondary)
                     Button("Retry") { fetchGames() }
                         .font(.subheadline)
                 }
+            } header: {
+                Label("\(leagueLabel) Games", systemImage: sportIcon)
             }
         } else if hasFetched && games.isEmpty {
-            Section("\(leagueLabel) Games") {
+            Section {
                 Text("No games scheduled for this date")
                     .foregroundStyle(.secondary)
+            } header: {
+                Label("\(leagueLabel) Games", systemImage: sportIcon)
             }
         } else if !games.isEmpty {
-            Section("\(leagueLabel) Games") {
+            Section {
                 ForEach(sortedGames(games, favoriteTeamNames: favoriteTeamNames)) { game in
                     Button {
                         createEvent(from: game)
@@ -115,6 +122,8 @@ struct EventFormView: View {
                     }
                     .buttonStyle(.plain)
                 }
+            } header: {
+                Label("\(leagueLabel) Games", systemImage: sportIcon)
             }
         }
     }
