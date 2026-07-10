@@ -90,14 +90,14 @@ SeenAtUITests/   — UI tests (screenshot capture)
 
 To add stadium/arena photos for display in event views:
 
-1. Drop a PNG into `SeenAt/Resources/VenueImages/`
+1. Drop a PNG or JPG into `SeenAt/Resources/VenueImages/`
 2. Name it after the venue's key in `VenueDirectory`, lowercased with punctuation removed and spaces replaced by hyphens
 
 Examples:
 
 | Venue Key | Filename |
 |-----------|----------|
-| `Wrigley Field` | `wrigley-field.png` |
+| `Wrigley Field` | `wrigley-field.jpg` |
 | `GEHA Field at Arrowhead Stadium` | `geha-field-at-arrowhead-stadium.png` |
 | `T-Mobile Park` | `t-mobile-park.png` |
 | `Dignity Health Sports Park` | `dignity-health-sports-park.png` |
@@ -107,7 +107,9 @@ Run `xcodegen generate` after adding new images so they're included in the Xcode
 
 **Unique naming**: `VenueDirectory` keys are unique by definition — each venue has one key. If two stadiums share a name (e.g., "Toyota Stadium" for FC Dallas and a future tenant), they have distinct directory keys, and therefore distinct image filenames.
 
-`VenueImageService.image(for:)` attempts to load from the `VenueImages/` bundle subdirectory using the normalized key.
+`VenueImageService.image(for:)` attempts to load from the `VenueImages/` bundle subdirectory (tries `.png`, then `.jpg`, then `.jpeg`).
+
+> **Migration note**: The old `StadiumPhotos/` directory and `StadiumPhotoService` have been replaced by `VenueImages/` and `VenueImageService`. `StadiumPhotoService.image(for:)` now delegates to `VenueImageService` for backward compatibility.
 
 ## API Sources
 
