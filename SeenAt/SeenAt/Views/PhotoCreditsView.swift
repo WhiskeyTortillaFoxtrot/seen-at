@@ -60,7 +60,7 @@ struct PhotoCreditsView: View {
     }
 
     private func loadCredits() {
-        guard let url = Bundle.main.url(forResource: "PhotoCredits", withExtension: "md", subdirectory: "VenueImages"),
+        guard let url = Bundle.main.url(forResource: "PhotoCredits", withExtension: "md"),
               let text = try? String(contentsOf: url)
         else { return }
 
