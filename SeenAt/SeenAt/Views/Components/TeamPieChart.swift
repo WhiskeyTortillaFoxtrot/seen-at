@@ -1,13 +1,36 @@
 import SwiftUI
+import SwiftData
 import Charts
 
 struct TeamPieChart: View {
     let breakdown: [(team: Team, count: Int)]
 
     @State private var selectedAngle: Double?
+    @State private var selectedTeamId: PersistentIdentifier?
 
     private var total: Int {
         breakdown.map(\.count).reduce(0, +)
+    }
+
+    private func team(at angle: Double) -> Team? {
+        let totalD = Double(total)
+        guard totalD > 0 else { return nil }
+
+        let tapDegrees = angle * 180 / .pi
+        let normalized = ((tapDegrees.truncatingRemainder(dividingBy: 360)) + 360)
+            .truncatingRemainder(dividingBy: 360)
+        let fromNoon = (normalized + 90).truncatingRemainder(dividingBy: 360)
+
+        var cumulative: Double = 0
+        for (team, count) in breakdown {
+            let proportion = Double(count) / totalD
+            let endAngle = cumulative + proportion * 360
+            if fromNoon >= cumulative && fromNoon < endAngle {
+                return team
+            }
+            cumulative = endAngle
+        }
+        return nil
     }
 
     private var coloredBreakdown: [(team: Team, count: Int, color: Color)] {
@@ -44,28 +67,6 @@ struct TeamPieChart: View {
         return (dr * dr + dg * dg + db * db) < 0.15
     }
 
-    private var selectedTeam: Team? {
-        guard let angle = selectedAngle else { return nil }
-        let totalD = Double(total)
-        guard totalD > 0 else { return nil }
-
-        let tapDegrees = angle * 180 / .pi
-        let normalized = ((tapDegrees.truncatingRemainder(dividingBy: 360)) + 360)
-            .truncatingRemainder(dividingBy: 360)
-        let fromNoon = (normalized + 90).truncatingRemainder(dividingBy: 360)
-
-        var cumulative: Double = 0
-        for (team, count) in breakdown {
-            let proportion = Double(count) / totalD
-            let endAngle = cumulative + proportion * 360
-            if fromNoon >= cumulative && fromNoon < endAngle {
-                return team
-            }
-            cumulative = endAngle
-        }
-        return nil
-    }
-
     var body: some View {
         VStack(spacing: 8) {
             Chart(coloredBreakdown, id: \.team.id) { item in
@@ -75,7 +76,7 @@ struct TeamPieChart: View {
                     angularInset: 2
                 )
                 .foregroundStyle(item.color)
-                .opacity(selectedTeam == nil || selectedTeam?.id == item.team.id ? 1 : 0.4)
+                .opacity(selectedTeamId == nil || selectedTeamId == item.team.id ? 1 : 0.4)
                 .annotation(position: .overlay) {
                     VStack(spacing: 0) {
                         Text(item.team.abbreviation)
@@ -83,25 +84,26 @@ struct TeamPieChart: View {
                         Text("\(item.count)")
                             .font(.caption2)
                     }
-                    .foregroundStyle(.white)
+                    .foregroundStyle(item.color.isLight ? .black : .white)
                 }
             }
             .frame(height: 220)
             .chartAngleSelection(value: $selectedAngle)
+            .onChange(of: selectedAngle) { _, newAngle in
+                guard let angle = newAngle, let tapped = team(at: angle) else { return }
+                selectedTeamId = tapped.id == selectedTeamId ? nil : tapped.id
+            }
 
-            if let team = selectedTeam {
-                let item = coloredBreakdown.first { $0.team.id == team.id }
-                let count = item?.count ?? 0
-                let color = item?.color ?? team.primaryColor
-                let pct = total > 0 ? Int(Double(count) / Double(total) * 100) : 0
+            if let teamId = selectedTeamId, let item = coloredBreakdown.first(where: { $0.team.id == teamId }) {
+                let pct = total > 0 ? Int(Double(item.count) / Double(total) * 100) : 0
                 HStack(spacing: 6) {
                     Circle()
-                        .fill(color)
+                        .fill(item.color)
                         .frame(width: 10, height: 10)
-                    Text(team.name)
+                    Text(item.team.name)
                         .font(.subheadline.weight(.medium))
                     Spacer()
-                    Text("\(count) (\(pct)%)")
+                    Text("\(item.count) (\(pct)%)")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
