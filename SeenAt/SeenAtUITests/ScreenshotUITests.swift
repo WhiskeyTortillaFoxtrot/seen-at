@@ -19,10 +19,10 @@ final class ScreenshotUITests: XCTestCase {
         // 1. HomeView — Games tab with seeded events
         capture("HomeView")
 
-        // 2. Navigate to LiveTrackingView via first event button
-        let eventBtn = app.buttons.matching(NSPredicate(format: "label CONTAINS 'Cardinals'")).firstMatch
-        if eventBtn.waitForExistence(timeout: 5) {
-            eventBtn.tap()
+        // 2. Navigate to LiveTrackingView via first Today event
+        let todayBtn = app.buttons.matching(NSPredicate(format: "label CONTAINS 'Cardinals'")).firstMatch
+        if todayBtn.waitForExistence(timeout: 5) {
+            todayBtn.tap()
             sleep(4)
             capture("LiveTrackingView")
             let back = app.navigationBars.buttons.firstMatch
@@ -30,17 +30,28 @@ final class ScreenshotUITests: XCTestCase {
             sleep(2)
         }
 
-        // 3. Stats tab
+        // 3. Navigate to EventSummaryView via a Recent event
+        let pastBtn = app.buttons.matching(NSPredicate(format: "label CONTAINS 'Packers'")).firstMatch
+        if pastBtn.waitForExistence(timeout: 3) {
+            pastBtn.tap()
+            sleep(4)
+            capture("EventSummaryView")
+            let back = app.navigationBars.buttons.firstMatch
+            if back.waitForExistence(timeout: 3) { back.tap() }
+            sleep(2)
+        }
+
+        // 5. Stats tab
         app.tabBars.buttons["Stats"].tap()
         sleep(2)
         capture("StatsView")
 
-        // 4. Settings tab
+        // 6. Settings tab
         app.tabBars.buttons["Settings"].tap()
         sleep(2)
         capture("SettingsView")
 
-        // 5. Favorite Teams
+        // 7. Favorite Teams
         let fav = app.staticTexts["Favorite Teams"]
         if fav.waitForExistence(timeout: 3) {
             fav.firstMatch.tap()
