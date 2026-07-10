@@ -1,8 +1,14 @@
 import SwiftUI
+import SwiftData
 
 struct EventFormView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var context
+    @Query(sort: \Team.name) private var allTeams: [Team]
+
+    private var teamsForSelectedLeague: [Team] {
+        allTeams.filter { $0.sport == selectedLeague }
+    }
 
     @AppStorage("favoriteTeams") private var favoriteTeamsString: String = ""
     private var favoriteTeamNames: [String] {
@@ -17,7 +23,10 @@ struct EventFormView: View {
     @State private var errorMessage: String?
 
     @State private var showManualEntry = false
-    @State private var manualTitle: String = ""
+    @State private var selectedAwayTeam: Team?
+    @State private var selectedHomeTeam: Team?
+    @State private var manualAwayTeamText: String = ""
+    @State private var manualHomeTeamText: String = ""
     @State private var manualVenue: String = ""
     @State private var watchLocation: WatchLocation = .stadium
 
@@ -30,6 +39,7 @@ struct EventFormView: View {
         ("nhl", "NHL"),
     ("lovb", "LOVB"),
     ("mls", "MLS"),
+    ("other", "Other"),
 ]
 
     var body: some View {
@@ -112,15 +122,56 @@ struct EventFormView: View {
     private var manualEntrySection: some View {
         Section {
             DisclosureGroup("Or Enter Manually", isExpanded: $showManualEntry) {
-                TextField("Title (e.g. Yankees vs Red Sox)", text: $manualTitle)
+                if selectedLeague != "other" {
+                    Picker("Away Team", selection: $selectedAwayTeam) {
+                        Text("Choose...").tag(nil as Team?)
+                        ForEach(teamsForSelectedLeague) { team in
+                            HStack {
+                                Circle()
+                                    .fill(team.primaryColor)
+                                    .frame(width: 12, height: 12)
+                                Text(team.name)
+                            }
+                            .tag(team as Team?)
+                        }
+                    }
+                    .pickerStyle(.menu)
+
+                    Picker("Home Team", selection: $selectedHomeTeam) {
+                        Text("Choose...").tag(nil as Team?)
+                        ForEach(teamsForSelectedLeague) { team in
+                            HStack {
+                                Circle()
+                                    .fill(team.primaryColor)
+                                    .frame(width: 12, height: 12)
+                                Text(team.name)
+                            }
+                            .tag(team as Team?)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                } else {
+                    TextField("Away Team", text: $manualAwayTeamText)
+                    TextField("Home Team", text: $manualHomeTeamText)
+                }
+
                 TextField("Venue (optional)", text: $manualVenue)
                 Button("Start Tracking") {
                     saveManual()
                 }
                 .font(.headline)
                 .frame(maxWidth: .infinity)
-                .disabled(manualTitle.trimmingCharacters(in: .whitespaces).isEmpty)
+                .disabled(manualTeamsDisabled)
             }
+        }
+    }
+
+    private var manualTeamsDisabled: Bool {
+        if selectedLeague != "other" {
+            selectedAwayTeam == nil || selectedHomeTeam == nil
+        } else {
+            manualAwayTeamText.trimmingCharacters(in: .whitespaces).isEmpty ||
+            manualHomeTeamText.trimmingCharacters(in: .whitespaces).isEmpty
         }
     }
 
@@ -139,7 +190,7 @@ struct EventFormView: View {
                     fetched = try await ESPNService.fetchGames(on: date, sportPath: "basketball/nba")
                 case "nfl":
                     fetched = try await ESPNService.fetchGames(on: date, sportPath: "football/nfl")
-        case "lovb", "mls":
+        case "lovb", "mls", "other":
             fetched = []
         default:
             fetched = try await MLBAPIService.fetchGames(on: date)
@@ -178,20 +229,19 @@ struct EventFormView: View {
     }
 
     private func saveManual() {
-        let trimmed = manualTitle.trimmingCharacters(in: .whitespaces)
-        let parts = trimmed.components(separatedBy: " @ ")
         let event: Event
-        if parts.count == 2 {
+        if selectedLeague != "other", let away = selectedAwayTeam, let home = selectedHomeTeam {
             event = Event(
-                awayTeam: parts[0].trimmingCharacters(in: .whitespaces),
-                homeTeam: parts[1].trimmingCharacters(in: .whitespaces),
+                awayTeam: away.name,
+                homeTeam: home.name,
                 date: date,
                 venue: manualVenue.trimmingCharacters(in: .whitespaces).isEmpty ? nil : manualVenue.trimmingCharacters(in: .whitespaces),
                 watchLocation: watchLocation
             )
         } else {
             event = Event(
-                title: trimmed,
+                awayTeam: manualAwayTeamText.trimmingCharacters(in: .whitespaces),
+                homeTeam: manualHomeTeamText.trimmingCharacters(in: .whitespaces),
                 date: date,
                 venue: manualVenue.trimmingCharacters(in: .whitespaces).isEmpty ? nil : manualVenue.trimmingCharacters(in: .whitespaces),
                 watchLocation: watchLocation
