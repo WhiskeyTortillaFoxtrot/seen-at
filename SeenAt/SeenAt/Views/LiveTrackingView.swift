@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import Charts
 
 struct LiveTrackingView: View {
     @Environment(\.dismiss) private var dismiss
@@ -11,6 +12,7 @@ struct LiveTrackingView: View {
     @State private var showingSummary = false
     @State private var expandedSighting: JerseySighting?
     @State private var fullScreenSighting: JerseySighting?
+    @State private var showPieChart = false
 
     var homeTeamColor: Color {
         guard let name = event.homeTeam else { return .white }
@@ -146,8 +148,29 @@ struct LiveTrackingView: View {
         let total = event.totalCount
         if !breakdown.isEmpty {
             Section {
-                ForEach(breakdown, id: \.team.id) { team, count in
-                    TeamBarRow(team: team, count: count, total: total)
+                ChartToggle(usePieChart: $showPieChart)
+                    .padding(.vertical, 4)
+
+                if showPieChart {
+                    Chart(breakdown, id: \.team.id) { team, count in
+                        SectorMark(
+                            angle: .value("Count", count),
+                            innerRadius: .ratio(0.5),
+                            angularInset: 2
+                        )
+                        .foregroundStyle(team.primaryColor)
+                        .annotation(position: .overlay) {
+                            Text("\(count)")
+                                .font(.caption2)
+                                .fontWeight(.semibold)
+                                .foregroundStyle(.white)
+                        }
+                    }
+                    .frame(height: 220)
+                } else {
+                    ForEach(breakdown, id: \.team.id) { team, count in
+                        TeamBarRow(team: team, count: count, total: total)
+                    }
                 }
             } header: {
                 Text("By Team")

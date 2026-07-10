@@ -11,7 +11,7 @@ SeenAt lets you log jerseys you spot at live sporting events, track which teams 
 - Live Activities (Dynamic Island + Lock Screen) for in-game tracking
 - Choose between **At Stadium** or **On TV** watch location
 - Upcoming events list for future games
-- Stats dashboard by team, league, and top players
+- Stats dashboard by team, league, and top players with toggleable bar/pie charts
 - Photo gallery with player captions
 - **Search** games by team or player name
 - Deep linking via `seenat://` URL scheme

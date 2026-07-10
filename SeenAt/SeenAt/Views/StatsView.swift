@@ -1,8 +1,10 @@
 import SwiftUI
 import SwiftData
+import Charts
 
 struct StatsView: View {
     @Query(sort: \Event.date, order: .reverse) private var events: [Event]
+    @State private var showPieChart = false
 
     var totalGames: Int { events.count }
 
@@ -107,11 +109,31 @@ struct StatsView: View {
             Text("By Team")
                 .font(.headline)
 
-            ForEach(teamTotals, id: \.team.id) { team, count in
-                TeamBarRow(team: team, count: count, total: totalSightings)
+            ChartToggle(usePieChart: $showPieChart)
 
-                if team != teamTotals.last?.team {
-                    Divider()
+            if showPieChart {
+                Chart(teamTotals, id: \.team.id) { team, count in
+                    SectorMark(
+                        angle: .value("Count", count),
+                        innerRadius: .ratio(0.5),
+                        angularInset: 2
+                    )
+                    .foregroundStyle(team.primaryColor)
+                    .annotation(position: .overlay) {
+                        Text("\(count)")
+                            .font(.caption2)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.white)
+                    }
+                }
+                .frame(height: 220)
+            } else {
+                ForEach(teamTotals, id: \.team.id) { team, count in
+                    TeamBarRow(team: team, count: count, total: totalSightings)
+
+                    if team != teamTotals.last?.team {
+                        Divider()
+                    }
                 }
             }
         }
