@@ -9,6 +9,7 @@ struct HomeView: View {
 
     @State private var showingNewEvent = false
     @State private var selectedLiveEvent: Event?
+    @State private var selectedUpcomingEvent: Event?
 
     private var startOfToday: Date {
         Calendar.current.startOfDay(for: .now)
@@ -64,7 +65,12 @@ struct HomeView: View {
             if !upcomingEvents.isEmpty {
                 Section("Upcoming") {
                     ForEach(upcomingEvents) { event in
-                        EventRow(event: event)
+                        Button {
+                            selectedUpcomingEvent = event
+                        } label: {
+                            EventRow(event: event)
+                        }
+                        .buttonStyle(.plain)
                     }
                     .onDelete(perform: deleteEvents(in: upcomingEvents))
                 }
@@ -100,6 +106,19 @@ struct HomeView: View {
             if let event {
                 selectedLiveEvent = event
                 eventToTrack = nil
+            }
+        }
+        .alert(
+            selectedUpcomingEvent?.title ?? "",
+            isPresented: .init(
+                get: { selectedUpcomingEvent != nil },
+                set: { if !$0 { selectedUpcomingEvent = nil } }
+            )
+        ) {
+            Button("OK") { selectedUpcomingEvent = nil }
+        } message: {
+            if let date = selectedUpcomingEvent?.date {
+                Text("This game on \(date.formatted(date: .long, time: .omitted)) is in the future. Be sure to check back on gameday to add your sightings!")
             }
         }
     }
