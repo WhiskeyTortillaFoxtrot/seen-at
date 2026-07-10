@@ -1,6 +1,5 @@
 import Foundation
 @testable import SeenAt
-@testable import SeenAt
 
 enum TestDataFactory {
     static func makeTeam(
@@ -27,6 +26,20 @@ enum TestDataFactory {
     ) -> Event {
         Event(
             title: title,
+            date: date,
+            venue: venue
+        )
+    }
+
+    static func makeEvent(
+        awayTeam: String,
+        homeTeam: String,
+        date: Date = Date(),
+        venue: String? = "Test Stadium"
+    ) -> Event {
+        Event(
+            awayTeam: awayTeam,
+            homeTeam: homeTeam,
             date: date,
             venue: venue
         )

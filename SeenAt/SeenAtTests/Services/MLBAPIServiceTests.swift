@@ -1,6 +1,5 @@
 import XCTest
 @testable import SeenAt
-@testable import SeenAt
 
 final class MLBAPIServiceTests: XCTestCase {
     override func setUp() {
@@ -57,6 +56,8 @@ final class MLBAPIServiceTests: XCTestCase {
         XCTAssertEqual(games.count, 1)
         XCTAssertEqual(games[0].id, "mlb-12345")
         XCTAssertEqual(games[0].title, "Team A @ Team B")
+        XCTAssertEqual(games[0].awayTeam, "Team A")
+        XCTAssertEqual(games[0].homeTeam, "Team B")
         XCTAssertEqual(games[0].venueName, "Test Park")
         XCTAssertEqual(games[0].dayNight, "night")
     }

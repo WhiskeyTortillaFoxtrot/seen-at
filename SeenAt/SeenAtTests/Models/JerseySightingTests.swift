@@ -1,6 +1,5 @@
 import XCTest
 @testable import SeenAt
-@testable import SeenAt
 
 final class JerseySightingTests: XCTestCase {
     func testDisplayNameFirstAndLast() {

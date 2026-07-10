@@ -1,7 +1,6 @@
 import XCTest
 @testable import SeenAt
 import SwiftUI
-@testable import SeenAt
 
 final class ColorExtensionTests: XCTestCase {
     func testHex6WithHash() {

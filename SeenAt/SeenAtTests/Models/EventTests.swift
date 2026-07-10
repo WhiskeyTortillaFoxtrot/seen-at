@@ -1,7 +1,6 @@
 import XCTest
 @testable import SeenAt
 import SwiftData
-@testable import SeenAt
 
 @MainActor
 final class EventTests: XCTestCase {
@@ -18,6 +17,14 @@ final class EventTests: XCTestCase {
         container = nil
         context = nil
         super.tearDown()
+    }
+
+    func testStructuredInitSetsAwayHomeTeam() {
+        let event = TestDataFactory.makeEvent(awayTeam: "Cubs", homeTeam: "Cardinals")
+        context.insert(event)
+        XCTAssertEqual(event.awayTeam, "Cubs")
+        XCTAssertEqual(event.homeTeam, "Cardinals")
+        XCTAssertEqual(event.title, "Cubs @ Cardinals")
     }
 
     func testTotalCountReturnsSightingsCount() {

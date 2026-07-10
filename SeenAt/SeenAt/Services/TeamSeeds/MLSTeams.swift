@@ -1,7 +1,7 @@
 import Foundation
 
 enum MLSTeams {
-    @MainActor static let all: [Team] = [
+    @MainActor static var all: [Team] { [
         Team(name: "Atlanta United FC", abbreviation: "ATL", sport: "mls", isBuiltIn: true, primaryColorHex: "#9D2235", secondaryColorHex: "#231F20"),
         Team(name: "Austin FC", abbreviation: "ATX", sport: "mls", isBuiltIn: true, primaryColorHex: "#00B140", secondaryColorHex: "#000000"),
         Team(name: "CF Montréal", abbreviation: "MTL", sport: "mls", isBuiltIn: true, primaryColorHex: "#003DA5", secondaryColorHex: "#292522"),
@@ -31,4 +31,5 @@ enum MLSTeams {
         Team(name: "Toronto FC", abbreviation: "TOR", sport: "mls", isBuiltIn: true, primaryColorHex: "#B71234", secondaryColorHex: "#231F20"),
         Team(name: "Vancouver Whitecaps FC", abbreviation: "VAN", sport: "mls", isBuiltIn: true, primaryColorHex: "#00285C", secondaryColorHex: "#FFFFFF"),
     ]
+    }
 }
