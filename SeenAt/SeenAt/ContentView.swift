@@ -5,6 +5,7 @@ struct ContentView: View {
     @Binding var deepLinkEventID: UUID?
 
     @Environment(\.modelContext) private var context
+    @AppStorage("defaultSport") private var defaultSport: String = "mlb"
     @State private var selectedTab = 0
     @State private var eventToTrack: Event?
 
@@ -14,7 +15,7 @@ struct ContentView: View {
                 HomeView(eventToTrack: $eventToTrack)
             }
             .tabItem {
-                Label("Games", systemImage: "baseball")
+                Label("Games", systemImage: Team.sportIcon(for: defaultSport))
             }
             .tag(0)
 
@@ -27,12 +28,20 @@ struct ContentView: View {
             .tag(1)
 
             NavigationStack {
+                SearchView()
+            }
+            .tabItem {
+                Label("Search", systemImage: "magnifyingglass")
+            }
+            .tag(2)
+
+            NavigationStack {
                 SettingsView()
             }
             .tabItem {
                 Label("Settings", systemImage: "gearshape")
             }
-            .tag(2)
+            .tag(3)
         }
         .task(id: deepLinkEventID) {
             guard let id = deepLinkEventID else { return }
