@@ -137,7 +137,7 @@ struct EventSummaryView: View {
                         .aspectRatio(contentMode: .fill)
                 }
                 LinearGradient(
-                    colors: topTeamColors.map { $0.opacity(0.85) },
+                    colors: topTeamColors.map { $0.opacity(0.5) },
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
                 )
