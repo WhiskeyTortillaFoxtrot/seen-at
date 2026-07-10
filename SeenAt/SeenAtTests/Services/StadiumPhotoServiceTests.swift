@@ -25,8 +25,8 @@ final class StadiumPhotoServiceTests: XCTestCase {
         XCTAssertNotNil(image)
     }
 
-    func testVenueNameConversionFindsCentreBell() {
-        let image = StadiumPhotoService.image(for: "Centre Bell")
+    func testVenueNameConversionFindsBellCentre() {
+        let image = StadiumPhotoService.image(for: "Bell Centre")
         XCTAssertNotNil(image)
     }
 
