@@ -247,8 +247,9 @@ struct TeamBarRow: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            Circle()
-                .fill(team.primaryColor)
+            Image(systemName: team.sportIcon)
+                .foregroundStyle(team.primaryColor)
+                .font(.system(size: 20))
                 .frame(width: 24, height: 24)
 
             VStack(alignment: .leading, spacing: 4) {
