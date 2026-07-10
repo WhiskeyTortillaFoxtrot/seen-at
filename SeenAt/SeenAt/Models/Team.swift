@@ -23,6 +23,21 @@ final class Team {
         Color(hex: secondaryColorHex) ?? .gray
     }
 
+    var sportIcon: String {
+        Team.sportIcon(for: sport)
+    }
+
+    static func sportIcon(for sport: String) -> String {
+        switch sport.lowercased() {
+        case "mlb": "baseball.fill"
+        case "nba": "basketball.fill"
+        case "nfl": "football.fill"
+        case "nhl": "hockey.puck.fill"
+        case "lovb": "volleyball.fill"
+        default: "questionmark.circle.fill"
+        }
+    }
+
     init(
         name: String,
         abbreviation: String,
