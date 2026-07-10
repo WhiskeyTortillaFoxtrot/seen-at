@@ -103,7 +103,7 @@ Examples:
 | `Dignity Health Sports Park` | `dignity-health-sports-park.png` |
 | `CITYPARK` | `citypark.png` |
 
-Run `xcodegen generate` after adding new images so they're included in the Xcode project.
+Run `scripts/resize-venue-images.sh` after adding new images to keep bundle size manageable, then run `xcodegen generate` to include them in the Xcode project.
 
 **Unique naming**: `VenueDirectory` keys are unique by definition — each venue has one key. If two stadiums share a name (e.g., "Toyota Stadium" for FC Dallas and a future tenant), they have distinct directory keys, and therefore distinct image filenames.
 

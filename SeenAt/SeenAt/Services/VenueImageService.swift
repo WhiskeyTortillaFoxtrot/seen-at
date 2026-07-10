@@ -3,8 +3,9 @@ import SwiftUI
 enum VenueImageService {
     static func image(for venueKey: String) -> Image? {
         let normalized = normalize(venueKey)
+        guard !normalized.isEmpty else { return nil }
         for ext in ["png", "jpg", "jpeg"] {
-            guard let url = Bundle.main.url(forResource: normalized, withExtension: ext, subdirectory: "VenueImages"),
+            guard let url = Bundle.main.url(forResource: normalized, withExtension: ext),
                   let data = try? Data(contentsOf: url),
                   let uiImage = UIImage(data: data)
             else { continue }
