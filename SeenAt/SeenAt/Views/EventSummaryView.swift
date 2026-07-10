@@ -89,10 +89,11 @@ struct EventSummaryView: View {
 
     private var totalCountCard: some View {
         VStack(spacing: 8) {
+            let countOutline = topTeamColors.first?.opacity(0.5) ?? .black.opacity(0.15)
             Text("\(event.totalCount)")
                 .font(.system(size: 64, weight: .bold, design: .rounded))
                 .foregroundStyle(.white)
-                .shadow(color: .black.opacity(0.15), radius: 4, y: 2)
+                .shadow(color: countOutline, radius: 2, x: 1, y: 1)
 
             Text("Total Jerseys Seen")
                 .font(.title3)
@@ -135,12 +136,14 @@ struct EventSummaryView: View {
                     photo
                         .resizable()
                         .aspectRatio(contentMode: .fill)
+                    Color.black.opacity(0.5)
+                } else {
+                    LinearGradient(
+                        colors: topTeamColors.map { $0.opacity(0.5) },
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
                 }
-                LinearGradient(
-                    colors: topTeamColors.map { $0.opacity(0.5) },
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
             }
         }
         .clipShape(RoundedRectangle(cornerRadius: 12))
