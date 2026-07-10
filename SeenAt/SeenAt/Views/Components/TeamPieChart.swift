@@ -21,11 +21,12 @@ struct TeamPieChart: View {
             .truncatingRemainder(dividingBy: 360)
         let fromNoon = (normalized + 90).truncatingRemainder(dividingBy: 360)
 
+        let epsilon = 1e-6
         var cumulative: Double = 0
         for (team, count) in breakdown {
             let proportion = Double(count) / totalD
             let endAngle = cumulative + proportion * 360
-            if fromNoon >= cumulative && fromNoon < endAngle {
+            if fromNoon >= cumulative - epsilon && fromNoon < endAngle {
                 return team
             }
             cumulative = endAngle
