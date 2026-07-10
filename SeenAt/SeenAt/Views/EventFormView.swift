@@ -159,6 +159,11 @@ struct EventFormView: View {
                         }
                     }
                     .pickerStyle(.menu)
+                    .onChange(of: selectedHomeTeam) { _, newTeam in
+                        if let team = newTeam, let venue = VenueDirectory.homeVenue(for: team.name) {
+                            manualVenue = venue
+                        }
+                    }
                 } else {
                     TextField("Away Team", text: $manualAwayTeamText)
                     TextField("Home Team", text: $manualHomeTeamText)
