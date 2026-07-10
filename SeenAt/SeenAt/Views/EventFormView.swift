@@ -28,8 +28,9 @@ struct EventFormView: View {
         ("nba", "NBA"),
         ("nfl", "NFL"),
         ("nhl", "NHL"),
-        ("lovb", "LOVB"),
-    ]
+    ("lovb", "LOVB"),
+    ("mls", "MLS"),
+]
 
     var body: some View {
         Form {
@@ -138,8 +139,10 @@ struct EventFormView: View {
                     fetched = try await ESPNService.fetchGames(on: date, sportPath: "basketball/nba")
                 case "nfl":
                     fetched = try await ESPNService.fetchGames(on: date, sportPath: "football/nfl")
-                default:
-                    fetched = try await MLBAPIService.fetchGames(on: date)
+        case "lovb", "mls":
+            fetched = []
+        default:
+            fetched = try await MLBAPIService.fetchGames(on: date)
                 }
                 await MainActor.run {
                     games = fetched
