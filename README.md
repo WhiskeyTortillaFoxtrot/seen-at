@@ -75,14 +75,39 @@ Build and run from Xcode on a simulator or device.
 ```
 SeenAt/
   Models/        — Event, Team, JerseySighting, LeagueGame, SchemaMigration, SeenAtActivityAttributes
-  Services/      — API services, LiveActivityManager, TeamSeedService, ExportService, ...
+  Services/      — API services, LiveActivityManager, TeamSeedService, ExportService, VenueImageService, ...
     TeamSeeds/   — Team seed data per league (MLB, NBA, NFL, NHL, LOVB, MLS)
+  Resources/
+    VenueImages/ — Venue photos (see Venue Images section below)
   Views/         — HomeView, LiveTrackingView, EventSummaryView, StatsView, SettingsView, SearchView, ...
   Extensions/    — Color+Hex, Color+Luminance
 SeenAtWidget/    — Live Activity widget (Dynamic Island + Lock Screen)
 SeenAtTests/     — Unit tests
 SeenAtUITests/   — UI tests (screenshot capture)
 ```
+
+## Venue Images
+
+To add stadium/arena photos for display in event views:
+
+1. Drop a PNG into `SeenAt/Resources/VenueImages/`
+2. Name it after the venue's key in `VenueDirectory`, lowercased with punctuation removed and spaces replaced by hyphens
+
+Examples:
+
+| Venue Key | Filename |
+|-----------|----------|
+| `Wrigley Field` | `wrigley-field.png` |
+| `GEHA Field at Arrowhead Stadium` | `geha-field-at-arrowhead-stadium.png` |
+| `T-Mobile Park` | `t-mobile-park.png` |
+| `Dignity Health Sports Park` | `dignity-health-sports-park.png` |
+| `CITYPARK` | `citypark.png` |
+
+Run `xcodegen generate` after adding new images so they're included in the Xcode project.
+
+**Unique naming**: `VenueDirectory` keys are unique by definition — each venue has one key. If two stadiums share a name (e.g., "Toyota Stadium" for FC Dallas and a future tenant), they have distinct directory keys, and therefore distinct image filenames.
+
+`VenueImageService.image(for:)` attempts to load from the `VenueImages/` bundle subdirectory using the normalized key.
 
 ## API Sources
 
