@@ -44,6 +44,7 @@
 		706E3F96206C4B44E02731E2 /* NHLTeams.swift in Sources */ = {isa = PBXBuildFile; fileRef = E11BA07ADF84388270AF996D /* NHLTeams.swift */; };
 		7469497059B686D33AEE4210 /* EventActionHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD9B348129F7CB69CAB3767D /* EventActionHandlerTests.swift */; };
 		7EA3826B4F1DACA12904F40E /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 08D5D92A49ADAEF9F6D7DDD8 /* Assets.xcassets */; };
+		802E268AD7CA443FA2F8EE88 /* VenueImageService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 047F6E1DD86AD6271A2F3A72 /* VenueImageService.swift */; };
 		870B4EA4C1C74D07CB7A2F56 /* JerseySightingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1838A27397CA31346037537 /* JerseySightingTests.swift */; };
 		9325B7D07D3D8C7EEB44CD04 /* GameSorting.swift in Sources */ = {isa = PBXBuildFile; fileRef = B438899A3329974B7045EBB5 /* GameSorting.swift */; };
 		9849F7AA880B8ADDC667E220 /* EventFormView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AD959FDE9712D6963DC5592 /* EventFormView.swift */; };
@@ -90,6 +91,7 @@
 
 /* Begin PBXFileReference section */
 		0208E4243848E572AD21FAE7 /* LOVBTeams.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LOVBTeams.swift; sourceTree = "<group>"; };
+		047F6E1DD86AD6271A2F3A72 /* VenueImageService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VenueImageService.swift; sourceTree = "<group>"; };
 		08D5D92A49ADAEF9F6D7DDD8 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		0AC4D2DDA30809D7C0B15006 /* SeenAtActivityAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SeenAtActivityAttributes.swift; sourceTree = "<group>"; };
 		0EBA1AD0D713887FB1C7DED6 /* PhotoCredits.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = PhotoCredits.md; sourceTree = "<group>"; };
@@ -105,6 +107,7 @@
 		343AB3AF124CC5301F19FAE7 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		36CDE7F21980DFD6D1066D9E /* NHLAPIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NHLAPIService.swift; sourceTree = "<group>"; };
 		3A76A23F5AC06EF0D59016C7 /* FavoriteTeamsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavoriteTeamsView.swift; sourceTree = "<group>"; };
+		445AE3C39AAD1F9B761D13AB /* .gitkeep */ = {isa = PBXFileReference; path = .gitkeep; sourceTree = "<group>"; };
 		4BF02A7055A6EE0498F819D4 /* StadiumPhotoService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StadiumPhotoService.swift; sourceTree = "<group>"; };
 		4E8729992D35C423D22FE74B /* ESPNService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ESPNService.swift; sourceTree = "<group>"; };
 		58662D680E0ABD5FB3898567 /* SeenAt.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = SeenAt.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -209,6 +212,7 @@
 				EA4108DA2BEE193BF82C22EC /* TeamSeedService.swift */,
 				2246A0F110A0AF9663397C59 /* TeamSorting.swift */,
 				B0C070E62541B01B4B95425A /* VenueDirectory.swift */,
+				047F6E1DD86AD6271A2F3A72 /* VenueImageService.swift */,
 				276911A7769FE43065CDEB91 /* TeamSeeds */,
 			);
 			path = Services;
@@ -304,6 +308,7 @@
 			children = (
 				08D5D92A49ADAEF9F6D7DDD8 /* Assets.xcassets */,
 				EC11A4AD03B5DEAFB54E3BEA /* StadiumPhotos */,
+				FADAF015DB66C82D5E35ADEE /* VenueImages */,
 			);
 			path = Resources;
 			sourceTree = "<group>";
@@ -368,6 +373,14 @@
 				65C7962F07D6A8E86F717445 /* Views */,
 			);
 			path = SeenAt;
+			sourceTree = "<group>";
+		};
+		FADAF015DB66C82D5E35ADEE /* VenueImages */ = {
+			isa = PBXGroup;
+			children = (
+				445AE3C39AAD1F9B761D13AB /* .gitkeep */,
+			);
+			path = VenueImages;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -583,6 +596,7 @@
 				AFEECC9C480DAD544556CBDE /* TeamSeedService.swift in Sources */,
 				A1CCB3B2C4E1C9699C17E107 /* TeamSorting.swift in Sources */,
 				4B931C82A535C3D838F2D4D6 /* VenueDirectory.swift in Sources */,
+				802E268AD7CA443FA2F8EE88 /* VenueImageService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
