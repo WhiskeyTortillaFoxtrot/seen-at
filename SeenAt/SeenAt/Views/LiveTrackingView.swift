@@ -111,7 +111,7 @@ struct LiveTrackingView: View {
             }
             .buttonStyle(.borderedProminent)
             .tint(.white)
-            .foregroundStyle(homeTeamColor)
+            .foregroundStyle(homeTeamColor.isLight ? .black : homeTeamColor)
             .padding(.top, 4)
         }
         .padding()
