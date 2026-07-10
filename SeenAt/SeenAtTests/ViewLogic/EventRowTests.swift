@@ -6,7 +6,7 @@ final class EventRowTests: XCTestCase {
         let event = TestDataFactory.makeEvent(title: "NYY @ BOS")
         let row = EventRow(event: event)
         XCTAssertEqual(row.awayTeamName, "NYY")
-        XCTAssertEqual(row.homeTeamName, "BOS")
+        XCTAssertEqual(row.homeTeamName, "@ BOS")
     }
 
     func testParsesSingleTeamTitle() {
@@ -27,7 +27,7 @@ final class EventRowTests: XCTestCase {
         let event = TestDataFactory.makeEvent(title: "ATL @ NYM")
         let row = EventRow(event: event)
         XCTAssertEqual(row.awayTeamName, "ATL")
-        XCTAssertEqual(row.homeTeamName, "NYM")
+        XCTAssertEqual(row.homeTeamName, "@ NYM")
     }
 
     func testLeadingColorFromFirstTeam() {
