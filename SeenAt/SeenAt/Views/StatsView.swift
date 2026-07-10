@@ -26,13 +26,13 @@ struct StatsView: View {
             .sorted { $0.count > $1.count }
     }
 
-    var topPlayers: [(name: String, team: Team, count: Int)] {
+    var topPlayers: [(name: String, team: Team, playerNumber: String?, count: Int)] {
         let withPlayer = events.flatMap { $0.sightings }.filter { !$0.displayName.isEmpty }
         let grouped = Dictionary(grouping: withPlayer) { "\($0.team?.name ?? ""):\($0.displayName)" }
         return grouped
-            .compactMap { (key, values) -> (name: String, team: Team, count: Int)? in
+            .compactMap { (key, values) -> (name: String, team: Team, playerNumber: String?, count: Int)? in
                 guard let first = values.first, let team = first.team else { return nil }
-                return (first.displayName, team, values.count)
+                return (first.displayName, team, first.playerNumber, values.count)
             }
             .sorted { a, b in a.count > b.count || (a.count == b.count && a.name < b.name) }
             .prefix(5)
@@ -127,9 +127,10 @@ struct StatsView: View {
 
             ForEach(leagueTotals, id: \.sport) { sport, count in
                 HStack {
-                    Circle()
-                        .fill(sportColor(sport))
-                        .frame(width: 12, height: 12)
+                    Image(systemName: Team.sportIcon(for: sport))
+                        .foregroundStyle(sportColor(sport))
+                        .font(.system(size: 14))
+                        .frame(width: 16, height: 16)
 
                     Text(sport)
                         .font(.subheadline)
@@ -175,13 +176,25 @@ struct StatsView: View {
                             .foregroundStyle(.secondary)
                             .frame(width: 24, alignment: .leading)
 
-                        Text(player.name)
+                        Text(player.team.abbreviation)
                             .font(.subheadline)
                             .fontWeight(.medium)
 
-                        Text(player.team.abbreviation)
+                        Text("(\(player.team.sport.uppercased()))")
                             .font(.caption)
                             .foregroundStyle(.secondary)
+
+                        if let number = player.playerNumber, !number.isEmpty {
+                            Text("#\(number)")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+
+                        if !player.name.hasPrefix("#") {
+                            Text(player.name)
+                                .font(.subheadline)
+                                .fontWeight(.medium)
+                        }
 
                         Spacer()
 
