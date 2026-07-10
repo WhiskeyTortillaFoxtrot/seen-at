@@ -10,9 +10,9 @@ final class JerseySighting {
     var photoLocalIdentifier: String?
     var timestamp: Date
 
-    var event: Event?
+    @Relationship(inverse: \Event.sightings) var event: Event?
 
-    var team: Team?
+    @Relationship(inverse: \Team.sightings) var team: Team?
 
     var displayName: String {
         let name = [firstName, lastName].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " ")
