@@ -33,12 +33,22 @@ struct SearchView: View {
                         NavigationLink {
                             EventSummaryView(event: result.event)
                         } label: {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(result.event.title)
-                                    .font(.headline)
-                                Text(result.matchedBy)
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
+                            HStack {
+                                VStack(spacing: 2) {
+                                    Text(result.event.date, format: .dateTime.month(.abbreviated))
+                                        .font(.caption)
+                                    Text(result.event.date, format: .dateTime.day())
+                                        .font(.title3.weight(.semibold))
+                                }
+                                .frame(minWidth: 44)
+
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(result.event.title)
+                                        .font(.headline)
+                                    Text(result.matchedBy)
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
                             }
                         }
                     }
