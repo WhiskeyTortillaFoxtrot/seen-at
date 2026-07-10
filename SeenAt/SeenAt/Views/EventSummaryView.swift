@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import Charts
 
 struct EventSummaryView: View {
     @Bindable var event: Event
@@ -9,6 +10,7 @@ struct EventSummaryView: View {
     @State private var showLiveTracking = false
     @State private var expandedTeams: Set<PersistentIdentifier> = []
     @State private var lastIncrementTimes: [String: Date] = [:]
+    @State private var showPieChart = false
 
     var topTeamColors: [Color] {
         let teams = event.teamBreakdown.prefix(2).map { $0.team.primaryColor }
@@ -154,81 +156,101 @@ struct EventSummaryView: View {
             Text("By Team")
                 .font(.headline)
 
-            ForEach(event.teamBreakdown, id: \.team.id) { team, count in
-                let isExpanded = expandedTeams.contains(team.id)
+            ChartToggle(usePieChart: $showPieChart)
 
-                VStack(spacing: 8) {
-                    Button {
-                        withAnimation(.snappy) {
-                            if isExpanded {
-                                expandedTeams.remove(team.id)
-                            } else {
-                                expandedTeams.insert(team.id)
+            if showPieChart {
+                Chart(event.teamBreakdown, id: \.team.id) { team, count in
+                    SectorMark(
+                        angle: .value("Count", count),
+                        innerRadius: .ratio(0.5),
+                        angularInset: 2
+                    )
+                    .foregroundStyle(team.primaryColor)
+                    .annotation(position: .overlay) {
+                        Text("\(count)")
+                            .font(.caption2)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.white)
+                    }
+                }
+                .frame(height: 220)
+            } else {
+                ForEach(event.teamBreakdown, id: \.team.id) { team, count in
+                    let isExpanded = expandedTeams.contains(team.id)
+
+                    VStack(spacing: 8) {
+                        Button {
+                            withAnimation(.snappy) {
+                                if isExpanded {
+                                    expandedTeams.remove(team.id)
+                                } else {
+                                    expandedTeams.insert(team.id)
+                                }
+                            }
+                        } label: {
+                            HStack(spacing: 4) {
+                                TeamBarRow(team: team, count: count, total: event.totalCount)
+                                Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
+                                    .font(.caption)
+                                    .foregroundStyle(.tertiary)
                             }
                         }
-                    } label: {
-                        HStack(spacing: 4) {
-                            TeamBarRow(team: team, count: count, total: event.totalCount)
-                            Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
-                                .font(.caption)
-                                .foregroundStyle(.tertiary)
-                        }
-                    }
-                    .buttonStyle(.plain)
+                        .buttonStyle(.plain)
 
-                    if isExpanded {
-                        let players = event.players(for: team)
-                        if players.isEmpty {
-                            Text("No names recorded")
-                                .font(.caption)
-                                .foregroundStyle(.tertiary)
-                                .frame(maxWidth: .infinity, alignment: .center)
-                                .padding(.vertical, 4)
-                        } else {
-                            VStack(spacing: 6) {
-                                ForEach(players, id: \.playerName) { name, count in
-                                    HStack(spacing: 8) {
-                                        Circle()
-                                            .fill(team.primaryColor)
-                                            .frame(width: 8, height: 8)
+                        if isExpanded {
+                            let players = event.players(for: team)
+                            if players.isEmpty {
+                                Text("No names recorded")
+                                    .font(.caption)
+                                    .foregroundStyle(.tertiary)
+                                    .frame(maxWidth: .infinity, alignment: .center)
+                                    .padding(.vertical, 4)
+                            } else {
+                                VStack(spacing: 6) {
+                                    ForEach(players, id: \.playerName) { name, count in
+                                        HStack(spacing: 8) {
+                                            Circle()
+                                                .fill(team.primaryColor)
+                                                .frame(width: 8, height: 8)
 
-                                        Text(name)
-                                            .font(.subheadline)
+                                            Text(name)
+                                                .font(.subheadline)
 
-                                        if count > 1 {
-                                            Text("\(count)x")
-                                                .font(.caption)
-                                                .foregroundStyle(.secondary)
+                                            if count > 1 {
+                                                Text("\(count)x")
+                                                    .font(.caption)
+                                                    .foregroundStyle(.secondary)
+                                            }
+
+                                            Spacer()
+
+                                            Button {
+                                                EventActionHandler.incrementPlayer(team: team, name: name, event: event, context: context, lastIncrementTimes: &lastIncrementTimes)
+                                            } label: {
+                                                Image(systemName: "plus.circle")
+                                                    .font(.title3)
+                                                    .foregroundStyle(team.primaryColor)
+                                            }
+                                            .buttonStyle(.plain)
+                                            .disabled(EventActionHandler.disabledForDebounce(team: team, name: name, lastIncrementTimes: lastIncrementTimes))
                                         }
-
-                                        Spacer()
-
-                                        Button {
-                                            EventActionHandler.incrementPlayer(team: team, name: name, event: event, context: context, lastIncrementTimes: &lastIncrementTimes)
-                                        } label: {
-                                            Image(systemName: "plus.circle")
-                                                .font(.title3)
-                                                .foregroundStyle(team.primaryColor)
-                                        }
-                                        .buttonStyle(.plain)
-                                        .disabled(EventActionHandler.disabledForDebounce(team: team, name: name, lastIncrementTimes: lastIncrementTimes))
-                                    }
-                                    .padding(.leading, 20)
-                                    .swipeActions(edge: .trailing) {
-                                        Button(role: .destructive) {
-                                            EventActionHandler.deletePlayer(team: team, name: name, event: event, context: context)
-                                        } label: {
-                                            Label("Delete", systemImage: "trash")
+                                        .padding(.leading, 20)
+                                        .swipeActions(edge: .trailing) {
+                                            Button(role: .destructive) {
+                                                EventActionHandler.deletePlayer(team: team, name: name, event: event, context: context)
+                                            } label: {
+                                                Label("Delete", systemImage: "trash")
+                                            }
                                         }
                                     }
                                 }
                             }
                         }
                     }
-                }
 
-                if team != event.teamBreakdown.last?.team {
-                    Divider()
+                    if team != event.teamBreakdown.last?.team {
+                        Divider()
+                    }
                 }
             }
         }
