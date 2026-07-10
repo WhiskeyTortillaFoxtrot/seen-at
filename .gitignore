@@ -1,0 +1,7 @@
+*.xcuserdata/
+*.xcuserstate
+build/
+*.hmap
+*.o
+.DS_Store
+DerivedData/

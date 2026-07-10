@@ -1,0 +1,36 @@
+import Foundation
+
+enum MLBTeams {
+    @MainActor static let all: [Team] = [
+        Team(name: "Arizona Diamondbacks", abbreviation: "ARI", sport: "mlb", isBuiltIn: true, primaryColorHex: "#A71930", secondaryColorHex: "#E3D4AD"),
+        Team(name: "Atlanta Braves", abbreviation: "ATL", sport: "mlb", isBuiltIn: true, primaryColorHex: "#13274F", secondaryColorHex: "#CE1141"),
+        Team(name: "Baltimore Orioles", abbreviation: "BAL", sport: "mlb", isBuiltIn: true, primaryColorHex: "#DF4601", secondaryColorHex: "#27251F"),
+        Team(name: "Boston Red Sox", abbreviation: "BOS", sport: "mlb", isBuiltIn: true, primaryColorHex: "#BD3039", secondaryColorHex: "#0C2340"),
+        Team(name: "Chicago Cubs", abbreviation: "CHC", sport: "mlb", isBuiltIn: true, primaryColorHex: "#0E3386", secondaryColorHex: "#CC3433"),
+        Team(name: "Chicago White Sox", abbreviation: "CWS", sport: "mlb", isBuiltIn: true, primaryColorHex: "#27251F", secondaryColorHex: "#C4CED4"),
+        Team(name: "Cincinnati Reds", abbreviation: "CIN", sport: "mlb", isBuiltIn: true, primaryColorHex: "#C6011F", secondaryColorHex: "#000000"),
+        Team(name: "Cleveland Guardians", abbreviation: "CLE", sport: "mlb", isBuiltIn: true, primaryColorHex: "#00385D", secondaryColorHex: "#E31937"),
+        Team(name: "Colorado Rockies", abbreviation: "COL", sport: "mlb", isBuiltIn: true, primaryColorHex: "#333366", secondaryColorHex: "#C4CED4"),
+        Team(name: "Detroit Tigers", abbreviation: "DET", sport: "mlb", isBuiltIn: true, primaryColorHex: "#0C2340", secondaryColorHex: "#FA4616"),
+        Team(name: "Houston Astros", abbreviation: "HOU", sport: "mlb", isBuiltIn: true, primaryColorHex: "#002D62", secondaryColorHex: "#EB6E1F"),
+        Team(name: "Kansas City Royals", abbreviation: "KC", sport: "mlb", isBuiltIn: true, primaryColorHex: "#004687", secondaryColorHex: "#BD9B60"),
+        Team(name: "Los Angeles Angels", abbreviation: "LAA", sport: "mlb", isBuiltIn: true, primaryColorHex: "#BA0021", secondaryColorHex: "#003263"),
+        Team(name: "Los Angeles Dodgers", abbreviation: "LAD", sport: "mlb", isBuiltIn: true, primaryColorHex: "#005A9C", secondaryColorHex: "#EF3E42"),
+        Team(name: "Miami Marlins", abbreviation: "MIA", sport: "mlb", isBuiltIn: true, primaryColorHex: "#00A3E0", secondaryColorHex: "#EF3340"),
+        Team(name: "Milwaukee Brewers", abbreviation: "MIL", sport: "mlb", isBuiltIn: true, primaryColorHex: "#FFC52F", secondaryColorHex: "#12284B"),
+        Team(name: "Minnesota Twins", abbreviation: "MIN", sport: "mlb", isBuiltIn: true, primaryColorHex: "#002B5C", secondaryColorHex: "#D31145"),
+        Team(name: "New York Mets", abbreviation: "NYM", sport: "mlb", isBuiltIn: true, primaryColorHex: "#002D72", secondaryColorHex: "#FF5910"),
+        Team(name: "New York Yankees", abbreviation: "NYY", sport: "mlb", isBuiltIn: true, primaryColorHex: "#003087", secondaryColorHex: "#E4002C"),
+        Team(name: "Oakland Athletics", abbreviation: "OAK", sport: "mlb", isBuiltIn: true, primaryColorHex: "#003831", secondaryColorHex: "#EFB21E"),
+        Team(name: "Philadelphia Phillies", abbreviation: "PHI", sport: "mlb", isBuiltIn: true, primaryColorHex: "#E81828", secondaryColorHex: "#002D72"),
+        Team(name: "Pittsburgh Pirates", abbreviation: "PIT", sport: "mlb", isBuiltIn: true, primaryColorHex: "#27251F", secondaryColorHex: "#FDB827"),
+        Team(name: "San Diego Padres", abbreviation: "SD", sport: "mlb", isBuiltIn: true, primaryColorHex: "#2F241D", secondaryColorHex: "#FFC425"),
+        Team(name: "San Francisco Giants", abbreviation: "SF", sport: "mlb", isBuiltIn: true, primaryColorHex: "#FD5A1E", secondaryColorHex: "#27251F"),
+        Team(name: "Seattle Mariners", abbreviation: "SEA", sport: "mlb", isBuiltIn: true, primaryColorHex: "#0C2C56", secondaryColorHex: "#005C5C"),
+        Team(name: "St. Louis Cardinals", abbreviation: "STL", sport: "mlb", isBuiltIn: true, primaryColorHex: "#C41E3A", secondaryColorHex: "#0C2340"),
+        Team(name: "Tampa Bay Rays", abbreviation: "TB", sport: "mlb", isBuiltIn: true, primaryColorHex: "#092C5C", secondaryColorHex: "#8FBCE6"),
+        Team(name: "Texas Rangers", abbreviation: "TEX", sport: "mlb", isBuiltIn: true, primaryColorHex: "#003278", secondaryColorHex: "#C0111F"),
+        Team(name: "Toronto Blue Jays", abbreviation: "TOR", sport: "mlb", isBuiltIn: true, primaryColorHex: "#134A8E", secondaryColorHex: "#1D2D5C"),
+        Team(name: "Washington Nationals", abbreviation: "WSH", sport: "mlb", isBuiltIn: true, primaryColorHex: "#AB0003", secondaryColorHex: "#14225A"),
+    ]
+}
