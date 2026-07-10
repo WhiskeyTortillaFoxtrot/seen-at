@@ -26,8 +26,8 @@ enum SeedData {
             cal.date(bySettingHour: hour, minute: minute, second: 0, of: day)!
         }
 
-        // Event 1 — Today, Cubs @ Cardinals at Wrigley Field (stadium)
-        let e1 = Event(title: "Cubs @ Cardinals", date: date(today, hour: 13), venue: "Wrigley Field", watchLocation: .stadium)
+        // Event 1 — Today, Cardinals @ Cubs at Wrigley Field (stadium)
+        let e1 = Event(awayTeam: "St. Louis Cardinals", homeTeam: "Chicago Cubs", date: date(today, hour: 13), venue: "Wrigley Field", watchLocation: .stadium)
         e1.id = UUID(uuidString: "11111111-1111-1111-1111-111111111111")!
         context.insert(e1)
 
@@ -38,7 +38,7 @@ enum SeedData {
         addSighting(context: context, team: team("St. Louis Cardinals"), firstName: "Pujols", number: "5", event: e1)
 
         // Event 2 — Today, Lakers @ Bulls at United Center (tv)
-        let e2 = Event(title: "Lakers @ Bulls", date: date(today, hour: 19), venue: "United Center", watchLocation: .tv)
+        let e2 = Event(awayTeam: "Los Angeles Lakers", homeTeam: "Chicago Bulls", date: date(today, hour: 19), venue: "United Center", watchLocation: .tv)
         e2.id = UUID(uuidString: "22222222-2222-2222-2222-222222222222")!
         context.insert(e2)
 
@@ -48,7 +48,7 @@ enum SeedData {
         addSighting(context: context, team: team("Los Angeles Lakers"), firstName: "Bryant", number: "24", event: e2)
 
         // Event 3 — Yesterday, Packers @ Bears at Soldier Field (stadium)
-        let e3 = Event(title: "Packers @ Bears", date: date(yesterday, hour: 12), venue: "Soldier Field", watchLocation: .stadium)
+        let e3 = Event(awayTeam: "Green Bay Packers", homeTeam: "Chicago Bears", date: date(yesterday, hour: 12), venue: "Soldier Field", watchLocation: .stadium)
         e3.id = UUID(uuidString: "33333333-3333-3333-3333-333333333333")!
         context.insert(e3)
 
@@ -58,13 +58,13 @@ enum SeedData {
         addSighting(context: context, team: team("Green Bay Packers"), number: "88", event: e3)
         addSighting(context: context, team: team("Chicago Bears"), firstName: "Payton", number: "34", event: e3)
 
-        // Event 4 — Tomorrow, Red Sox @ Yankees at Fenway Park (stadium) — no sightings
-        let e4 = Event(title: "Red Sox @ Yankees", date: date(tomorrow, hour: 18), venue: "Fenway Park", watchLocation: .stadium)
+        // Event 4 — Tomorrow, Yankees @ Red Sox at Fenway Park (stadium) — no sightings
+        let e4 = Event(awayTeam: "New York Yankees", homeTeam: "Boston Red Sox", date: date(tomorrow, hour: 18), venue: "Fenway Park", watchLocation: .stadium)
         e4.id = UUID(uuidString: "44444444-4444-4444-4444-444444444444")!
         context.insert(e4)
 
         // Event 5 — 2 days ago, Blackhawks @ Red Wings at Little Caesars Arena (tv)
-        let e5 = Event(title: "Blackhawks @ Red Wings", date: date(twoDaysAgo, hour: 19), venue: "Little Caesars Arena", watchLocation: .tv)
+        let e5 = Event(awayTeam: "Chicago Blackhawks", homeTeam: "Detroit Red Wings", date: date(twoDaysAgo, hour: 19), venue: "Little Caesars Arena", watchLocation: .tv)
         e5.id = UUID(uuidString: "55555555-5555-5555-5555-555555555555")!
         context.insert(e5)
 

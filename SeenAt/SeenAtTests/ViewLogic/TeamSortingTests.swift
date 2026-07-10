@@ -29,14 +29,14 @@ final class TeamSortingTests: XCTestCase {
     }
 
     func testGameTeamsFirst() {
-        let sorted = sortedTeams(allTeams, searchText: "", eventTitle: "Team C @ Team A", favoriteTeamNames: [])
+        let sorted = sortedTeams(allTeams, searchText: "", awayTeam: "Team C", homeTeam: "Team A", favoriteTeamNames: [])
         XCTAssertEqual(sorted.count, 3)
         XCTAssertEqual(sorted[0].name, "Team C")
         XCTAssertEqual(sorted[1].name, "Team A")
     }
 
     func testFavoriteAtTopIfNotGameTeam() {
-        let sorted = sortedTeams(allTeams, searchText: "", eventTitle: "Team A @ Team B", favoriteTeamNames: ["Team C"])
+        let sorted = sortedTeams(allTeams, searchText: "", awayTeam: "Team A", homeTeam: "Team B", favoriteTeamNames: ["Team C"])
         XCTAssertEqual(sorted.count, 3)
         XCTAssertEqual(sorted[0].name, "Team A") // game team first
         XCTAssertEqual(sorted[1].name, "Team B") // game team second
@@ -44,25 +44,25 @@ final class TeamSortingTests: XCTestCase {
     }
 
     func testFavoriteInGameTeams() {
-        let sorted = sortedTeams(allTeams, searchText: "", eventTitle: "Team C @ Team A", favoriteTeamNames: ["Team C"])
+        let sorted = sortedTeams(allTeams, searchText: "", awayTeam: "Team C", homeTeam: "Team A", favoriteTeamNames: ["Team C"])
         XCTAssertEqual(sorted.count, 3)
         XCTAssertEqual(sorted[0].name, "Team C") // favorite is also a game team
         XCTAssertEqual(sorted[1].name, "Team A") // other game team
     }
 
     func testSearchFilter() {
-        let sorted = sortedTeams(allTeams, searchText: "Team A", eventTitle: "Team X @ Team Y", favoriteTeamNames: [])
+        let sorted = sortedTeams(allTeams, searchText: "Team A", awayTeam: "Team X", homeTeam: "Team Y", favoriteTeamNames: [])
         XCTAssertEqual(sorted.count, 1)
         XCTAssertEqual(sorted[0].name, "Team A")
     }
 
     func testEmptySearchReturnsAll() {
-        let sorted = sortedTeams(allTeams, searchText: "", eventTitle: "X @ Y", favoriteTeamNames: [])
+        let sorted = sortedTeams(allTeams, searchText: "", awayTeam: "X", homeTeam: "Y", favoriteTeamNames: [])
         XCTAssertEqual(sorted.count, 3)
     }
 
     func testMultipleFavorites() {
-        let sorted = sortedTeams(allTeams, searchText: "", eventTitle: "Team A @ Team B", favoriteTeamNames: ["Team C", "Team B"])
+        let sorted = sortedTeams(allTeams, searchText: "", awayTeam: "Team A", homeTeam: "Team B", favoriteTeamNames: ["Team C", "Team B"])
         XCTAssertEqual(sorted.count, 3)
         XCTAssertEqual(sorted[0].name, "Team B") // favorite in game first
         XCTAssertEqual(sorted[1].name, "Team A") // other game team

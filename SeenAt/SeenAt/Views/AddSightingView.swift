@@ -27,7 +27,7 @@ struct AddSightingView: View {
             Section("Team") {
                 Picker("Select Team", selection: $selectedTeam) {
                     Text("Choose...").tag(nil as Team?)
-                    ForEach(sortedTeams(allTeams, searchText: "", eventTitle: event.title, favoriteTeamNames: favoriteTeamNames)) { team in
+                    ForEach(sortedTeams(allTeams, searchText: "", awayTeam: event.awayTeam, homeTeam: event.homeTeam, favoriteTeamNames: favoriteTeamNames)) { team in
                         HStack {
                             Circle()
                                 .fill(team.primaryColor)

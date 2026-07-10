@@ -13,16 +13,12 @@ struct LiveTrackingView: View {
     @State private var fullScreenSighting: JerseySighting?
 
     var homeTeamColor: Color {
-        let parts = event.title.components(separatedBy: " @ ")
-        guard parts.count == 2 else { return .white }
-        let name = parts[1].trimmingCharacters(in: .whitespaces)
+        guard let name = event.homeTeam else { return .white }
         return allTeams.first { $0.name == name }?.primaryColor ?? .white
     }
 
     var homeTeamSecondaryColor: Color {
-        let parts = event.title.components(separatedBy: " @ ")
-        guard parts.count == 2 else { return .accentColor }
-        let name = parts[1].trimmingCharacters(in: .whitespaces)
+        guard let name = event.homeTeam else { return .accentColor }
         return allTeams.first { $0.name == name }?.secondaryColor ?? .accentColor
     }
 

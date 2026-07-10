@@ -4,8 +4,8 @@ import XCTest
 final class GameSortingTests: XCTestCase {
     func testFavoriteFirst() {
         let games = [
-            LeagueGame(id: "1", title: "Team A @ Team B", venueName: "Park", dateString: "", league: "mlb", url: nil, dayNight: nil),
-            LeagueGame(id: "2", title: "Favorite Team @ Team D", venueName: "Field", dateString: "", league: "mlb", url: nil, dayNight: nil),
+            LeagueGame(id: "1", awayTeam: "Team A", homeTeam: "Team B", venueName: "Park", dateString: "", league: "mlb", url: nil, dayNight: nil),
+            LeagueGame(id: "2", awayTeam: "Favorite Team", homeTeam: "Team D", venueName: "Field", dateString: "", league: "mlb", url: nil, dayNight: nil),
         ]
 
         let sorted = sortedGames(games, favoriteTeamNames: ["Favorite Team"])
@@ -15,8 +15,8 @@ final class GameSortingTests: XCTestCase {
 
     func testNoFavoriteReturnsOriginalOrder() {
         let games = [
-            LeagueGame(id: "1", title: "Team A @ Team B", venueName: "Park", dateString: "", league: "mlb", url: nil, dayNight: nil),
-            LeagueGame(id: "2", title: "Team C @ Team D", venueName: "Field", dateString: "", league: "mlb", url: nil, dayNight: nil),
+            LeagueGame(id: "1", awayTeam: "Team A", homeTeam: "Team B", venueName: "Park", dateString: "", league: "mlb", url: nil, dayNight: nil),
+            LeagueGame(id: "2", awayTeam: "Team C", homeTeam: "Team D", venueName: "Field", dateString: "", league: "mlb", url: nil, dayNight: nil),
         ]
 
         let sorted = sortedGames(games, favoriteTeamNames: [])
@@ -26,7 +26,7 @@ final class GameSortingTests: XCTestCase {
 
     func testFavoriteNotPresent() {
         let games = [
-            LeagueGame(id: "1", title: "Team A @ Team B", venueName: "Park", dateString: "", league: "mlb", url: nil, dayNight: nil),
+            LeagueGame(id: "1", awayTeam: "Team A", homeTeam: "Team B", venueName: "Park", dateString: "", league: "mlb", url: nil, dayNight: nil),
         ]
 
         let sorted = sortedGames(games, favoriteTeamNames: ["Nonexistent Team"])
@@ -36,9 +36,9 @@ final class GameSortingTests: XCTestCase {
 
     func testMultipleFavorites() {
         let games = [
-            LeagueGame(id: "1", title: "Team A @ Team B", venueName: "Park", dateString: "", league: "mlb", url: nil, dayNight: nil),
-            LeagueGame(id: "2", title: "Favorite Team @ Team D", venueName: "Field", dateString: "", league: "mlb", url: nil, dayNight: nil),
-            LeagueGame(id: "3", title: "Team E @ Other Fav", venueName: "Stadium", dateString: "", league: "mlb", url: nil, dayNight: nil),
+            LeagueGame(id: "1", awayTeam: "Team A", homeTeam: "Team B", venueName: "Park", dateString: "", league: "mlb", url: nil, dayNight: nil),
+            LeagueGame(id: "2", awayTeam: "Favorite Team", homeTeam: "Team D", venueName: "Field", dateString: "", league: "mlb", url: nil, dayNight: nil),
+            LeagueGame(id: "3", awayTeam: "Team E", homeTeam: "Other Fav", venueName: "Stadium", dateString: "", league: "mlb", url: nil, dayNight: nil),
         ]
 
         let sorted = sortedGames(games, favoriteTeamNames: ["Favorite Team", "Other Fav"])

@@ -15,9 +15,8 @@ enum LiveActivityManager {
     }
 
     static func startOrUpdate(for event: Event, teams: [Team]) async {
-        let parts = event.title.components(separatedBy: " @ ")
-        let awayTeamName = parts.count == 2 ? parts[0].trimmingCharacters(in: .whitespaces) : ""
-        let homeTeamName = parts.count == 2 ? parts[1].trimmingCharacters(in: .whitespaces) : ""
+        let awayTeamName = event.awayTeam ?? ""
+        let homeTeamName = event.homeTeam ?? ""
 
         let homeTeam = teams.first { $0.name == homeTeamName }
         let awayTeam = teams.first { $0.name == awayTeamName }

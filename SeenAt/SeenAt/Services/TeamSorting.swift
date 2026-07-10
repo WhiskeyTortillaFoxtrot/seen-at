@@ -1,12 +1,12 @@
 import Foundation
 
-func sortedTeams(_ allTeams: [Team], searchText: String, eventTitle: String, favoriteTeamNames: [String]) -> [Team] {
+func sortedTeams(_ allTeams: [Team], searchText: String, awayTeam: String?, homeTeam: String?, favoriteTeamNames: [String]) -> [Team] {
     let teams = searchText.isEmpty ? allTeams : allTeams.filter {
         $0.name.localizedCaseInsensitiveContains(searchText) ||
         $0.abbreviation.localizedCaseInsensitiveContains(searchText)
     }
 
-    let gameTeamNames = eventTitle.components(separatedBy: " @ ").map { $0.trimmingCharacters(in: .whitespaces) }
+    let gameTeamNames = [awayTeam, homeTeam].compactMap { $0 }
     let gameTeams = teams.filter { gameTeamNames.contains($0.name) }
     let gameTeamOrder = gameTeams.sorted { a, b in
         let aIdx = gameTeamNames.firstIndex(of: a.name) ?? 0

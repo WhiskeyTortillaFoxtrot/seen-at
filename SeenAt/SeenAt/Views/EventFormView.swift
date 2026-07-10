@@ -99,7 +99,7 @@ struct EventFormView: View {
                     } label: {
                         LeagueGameRow(
                             game: game,
-                            isFavorite: favoriteTeamNames.contains { game.title.localizedCaseInsensitiveContains($0) }
+                            isFavorite: favoriteTeamNames.contains { game.awayTeam.localizedCaseInsensitiveContains($0) || game.homeTeam.localizedCaseInsensitiveContains($0) }
                         )
                     }
                     .buttonStyle(.plain)
@@ -162,7 +162,8 @@ struct EventFormView: View {
         let gameDate = dateFormatter.date(from: game.dateString) ?? date
 
         let event = Event(
-            title: game.title,
+            awayTeam: game.awayTeam,
+            homeTeam: game.homeTeam,
             date: gameDate,
             venue: game.venueName,
             gameUrl: game.url?.absoluteString,
@@ -174,12 +175,25 @@ struct EventFormView: View {
     }
 
     private func saveManual() {
-        let event = Event(
-            title: manualTitle.trimmingCharacters(in: .whitespaces),
-            date: date,
-            venue: manualVenue.trimmingCharacters(in: .whitespaces).isEmpty ? nil : manualVenue.trimmingCharacters(in: .whitespaces),
-            watchLocation: watchLocation
-        )
+        let trimmed = manualTitle.trimmingCharacters(in: .whitespaces)
+        let parts = trimmed.components(separatedBy: " @ ")
+        let event: Event
+        if parts.count == 2 {
+            event = Event(
+                awayTeam: parts[0].trimmingCharacters(in: .whitespaces),
+                homeTeam: parts[1].trimmingCharacters(in: .whitespaces),
+                date: date,
+                venue: manualVenue.trimmingCharacters(in: .whitespaces).isEmpty ? nil : manualVenue.trimmingCharacters(in: .whitespaces),
+                watchLocation: watchLocation
+            )
+        } else {
+            event = Event(
+                title: trimmed,
+                date: date,
+                venue: manualVenue.trimmingCharacters(in: .whitespaces).isEmpty ? nil : manualVenue.trimmingCharacters(in: .whitespaces),
+                watchLocation: watchLocation
+            )
+        }
         context.insert(event)
         try? context.save()
         onSave?(event)

@@ -38,11 +38,10 @@ struct ESPNEvent: Codable, Identifiable {
         let venueName = competitions.first?.venue?.fullName ?? ""
         let awayName = competitions.first?.competitors.first(where: { $0.homeAway == "away" })?.team.name ?? ""
         let homeName = competitions.first?.competitors.first(where: { $0.homeAway == "home" })?.team.name ?? ""
-        let title = "\(awayName) @ \(homeName)"
-
         return LeagueGame(
             id: "\(league)-\(id)",
-            title: title,
+            awayTeam: awayName,
+            homeTeam: homeName,
             venueName: venueName,
             dateString: date,
             league: league,

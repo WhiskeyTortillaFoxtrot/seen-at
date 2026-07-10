@@ -46,7 +46,8 @@ struct MLBGame: Codable, Identifiable {
     var toLeagueGame: LeagueGame {
         LeagueGame(
             id: "mlb-\(gamePk)",
-            title: title,
+            awayTeam: teams.away.team.name,
+            homeTeam: teams.home.team.name,
             venueName: venueName,
             dateString: gameDate,
             league: "mlb",

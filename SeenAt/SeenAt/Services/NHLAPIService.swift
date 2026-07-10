@@ -39,7 +39,8 @@ struct NHLGame: Codable {
     func toLeagueGame(dateString: String) -> LeagueGame {
         LeagueGame(
             id: "nhl-\(id)",
-            title: title,
+            awayTeam: awayTeam.name.default,
+            homeTeam: homeTeam.name.default,
             venueName: venue.default,
             dateString: dateString,
             league: "nhl",
