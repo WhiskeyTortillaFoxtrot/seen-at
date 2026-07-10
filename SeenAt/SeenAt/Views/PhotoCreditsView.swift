@@ -4,6 +4,20 @@ struct CreditEntry: Identifiable {
     let id = UUID()
     let identifier: String
     let creditText: String
+
+    var title: String {
+        guard let start = creditText.firstRange(of: "**"),
+              let end = creditText[start.upperBound...].firstRange(of: "**")
+        else { return "" }
+        return String(creditText[start.upperBound..<end.lowerBound])
+    }
+
+    var body: String {
+        guard let start = creditText.firstRange(of: "**"),
+              let end = creditText[start.upperBound...].firstRange(of: "**")
+        else { return creditText }
+        return String(creditText[end.upperBound...]).trimmingCharacters(in: .whitespaces)
+    }
 }
 
 struct CreditSection: Identifiable {
@@ -28,10 +42,18 @@ struct PhotoCreditsView: View {
                                 .frame(width: 60, height: 60)
                                 .clipShape(RoundedRectangle(cornerRadius: 6))
 
-                            if let attributed = try? AttributedString(markdown: entry.creditText) {
-                                Text(attributed)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(entry.title)
+                                    .font(.headline)
+                                    .fontWeight(.bold)
+                                if !entry.body.isEmpty {
+                                    if let attributed = try? AttributedString(markdown: entry.body) {
+                                        Text(attributed)
+                                            .font(.caption)
+                                    }
+                                }
                             }
+                            .frame(maxWidth: .infinity, alignment: .leading)
                         }
                     }
                 }
