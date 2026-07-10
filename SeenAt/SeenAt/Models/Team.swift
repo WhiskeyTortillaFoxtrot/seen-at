@@ -34,6 +34,7 @@ final class Team {
         case "nfl": "football.fill"
         case "nhl": "hockey.puck.fill"
         case "lovb": "volleyball.fill"
+        case "mls": "soccerball.inverse"
         default: "questionmark.circle.fill"
         }
     }
