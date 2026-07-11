@@ -27,6 +27,7 @@
 		40A944CF0609EAE68A2D9066 /* MLBAPIServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFA6095943402D6EDF074136 /* MLBAPIServiceTests.swift */; };
 		42F367B3A5DAA57EBAA5B2CA /* StadiumPhotoServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A34687B3EBC8FC003D5DDDD6 /* StadiumPhotoServiceTests.swift */; };
 		440D2216AC5C31341BA754B3 /* SearchViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56A35634C808C5E3E75EDFA3 /* SearchViewTests.swift */; };
+		448A872818AC66568C99A4C2 /* SplashView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85E998370A060BF0FA91F604 /* SplashView.swift */; };
 		46F593DA65712CAE2288FD0A /* MLSTeams.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5ED9C27A38D86BAEB08BAE5F /* MLSTeams.swift */; };
 		4ABD4E99031F00DFA3C6D187 /* bell-centre.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 06BE869E99FE885A45CE59A2 /* bell-centre.jpg */; };
 		4B931C82A535C3D838F2D4D6 /* VenueDirectory.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0C070E62541B01B4B95425A /* VenueDirectory.swift */; };
@@ -65,6 +66,7 @@
 		9CD17260EA2DA291908DADED /* EventLifecycleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74C78639AB94907F42E68A18 /* EventLifecycleTests.swift */; };
 		9D2039B42FF0B80F0789C202 /* SchemaMigration.swift in Sources */ = {isa = PBXBuildFile; fileRef = D50C813E1214DA20D1EDE66A /* SchemaMigration.swift */; };
 		9F97656A3A662776E5C6246A /* NHLAPIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36CDE7F21980DFD6D1066D9E /* NHLAPIService.swift */; };
+		A12CD5BB2BA76B4E4AEEE04B /* splash-screen-field.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 1679E0E0C8489CE82C1BBABF /* splash-screen-field.jpg */; };
 		A1CCB3B2C4E1C9699C17E107 /* TeamSorting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2246A0F110A0AF9663397C59 /* TeamSorting.swift */; };
 		A6D0724BE175B10ADD81CA57 /* TeamTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EEC232C01FF9F356A1C14B7 /* TeamTests.swift */; };
 		AEAA7334C1D62A5B3810188D /* LeagueGame.swift in Sources */ = {isa = PBXBuildFile; fileRef = 77CDDD4785B688E4567820FC /* LeagueGame.swift */; };
@@ -118,6 +120,7 @@
 		10053D4D3221D5F96A2DA028 /* SwiftDataCRUDTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftDataCRUDTests.swift; sourceTree = "<group>"; };
 		107E081D98D1593521BD6ECF /* StatsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatsView.swift; sourceTree = "<group>"; };
 		110C85C854FCDA7F3DB48A1A /* ScreenshotUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotUITests.swift; sourceTree = "<group>"; };
+		1679E0E0C8489CE82C1BBABF /* splash-screen-field.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = "splash-screen-field.jpg"; sourceTree = "<group>"; };
 		1CBCF67891D59F640A9F0468 /* SeenAtLiveActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SeenAtLiveActivity.swift; sourceTree = "<group>"; };
 		1D22B73705E6E80248418EB2 /* NFLTeams.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NFLTeams.swift; sourceTree = "<group>"; };
 		2246A0F110A0AF9663397C59 /* TeamSorting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TeamSorting.swift; sourceTree = "<group>"; };
@@ -155,6 +158,7 @@
 		82AABEEA51963D624F5E1ECF /* EventTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventTests.swift; sourceTree = "<group>"; };
 		82D47D502FC040B51F68748F /* SeedData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SeedData.swift; sourceTree = "<group>"; };
 		83F7C8C53BC0872492B82738 /* MockURLProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockURLProtocol.swift; sourceTree = "<group>"; };
+		85E998370A060BF0FA91F604 /* SplashView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplashView.swift; sourceTree = "<group>"; };
 		8677173C21E6E26B97D5DF9F /* TestDataFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestDataFactory.swift; sourceTree = "<group>"; };
 		8CE3025DB9AD892205B2AE3D /* Event.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Event.swift; sourceTree = "<group>"; };
 		8D59C0DB294235C0ADF99949 /* wrigley-field.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = "wrigley-field.jpg"; sourceTree = "<group>"; };
@@ -286,6 +290,7 @@
 				E539BE3234298C596785F64A /* PhotoCreditsView.swift */,
 				6877C6DFBECAD563382283B2 /* SearchView.swift */,
 				343AB3AF124CC5301F19FAE7 /* SettingsView.swift */,
+				85E998370A060BF0FA91F604 /* SplashView.swift */,
 				107E081D98D1593521BD6ECF /* StatsView.swift */,
 				6D4B0731EAC534AC4D9441E8 /* Components */,
 			);
@@ -369,6 +374,7 @@
 			isa = PBXGroup;
 			children = (
 				08D5D92A49ADAEF9F6D7DDD8 /* Assets.xcassets */,
+				1679E0E0C8489CE82C1BBABF /* splash-screen-field.jpg */,
 				7A894F664071692D12125D67 /* Fonts */,
 				FADAF015DB66C82D5E35ADEE /* VenueImages */,
 			);
@@ -588,6 +594,7 @@
 				C2BD632C74BAB449DCFE790A /* Urbanist-SemiBold.ttf in Resources */,
 				4ABD4E99031F00DFA3C6D187 /* bell-centre.jpg in Resources */,
 				DE8B2359F9E56ED61DC39D73 /* fenway-park.jpg in Resources */,
+				A12CD5BB2BA76B4E4AEEE04B /* splash-screen-field.jpg in Resources */,
 				BFA7F26E564CC566550FADEA /* wrigley-field.jpg in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -672,6 +679,7 @@
 				B1B347FD3F3A8B8337AF3AC1 /* SeenAtActivityAttributes.swift in Sources */,
 				CC73E3DABD4E63A8D0CA7764 /* SeenAtApp.swift in Sources */,
 				E99E9FAE935C6F40D5CBA521 /* SettingsView.swift in Sources */,
+				448A872818AC66568C99A4C2 /* SplashView.swift in Sources */,
 				E4ED3A5B007F0991AB683EDE /* StadiumPhotoService.swift in Sources */,
 				39FECB4B690F49A4B1509854 /* StatsView.swift in Sources */,
 				5BF8BFCA8D1BFA4E656E2B29 /* Team.swift in Sources */,
