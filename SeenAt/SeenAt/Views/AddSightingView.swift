@@ -21,24 +21,54 @@ struct AddSightingView: View {
     @State private var playerNumber: String = ""
     @State private var selectedPhotoItem: PhotosPickerItem?
     @State private var photoData: Data?
+    @State private var selectedOtherLeague: OtherLeague?
+
+    private let allLeagues: [(id: String, label: String)] = [
+        ("mlb", "MLB"), ("nba", "NBA"), ("nfl", "NFL"),
+        ("nhl", "NHL"), ("lovb", "LOVB"), ("mls", "MLS"),
+    ]
+
+    private var eventGameTeams: [Team] {
+        let names = [event.homeTeam, event.awayTeam].compactMap { $0 }
+        let gameTeamOrder = names
+        return allTeams
+            .filter { names.contains($0.name) }
+            .sorted { a, b in
+                let aIdx = gameTeamOrder.firstIndex(of: a.name) ?? 0
+                let bIdx = gameTeamOrder.firstIndex(of: b.name) ?? 0
+                return aIdx < bIdx
+            }
+    }
+
+    private var eventLeague: String? {
+        eventGameTeams.first?.sport ?? eventGameTeams.last?.sport
+    }
+
+    private var eventLeagueNonGameTeams: [Team] {
+        guard let league = eventLeague else { return [] }
+        let gameTeamNames = Set(eventGameTeams.map { $0.name })
+        let favoriteSet = Set(favoriteTeamNames)
+        return allTeams
+            .filter { $0.sport == league && !gameTeamNames.contains($0.name) }
+            .sorted { a, b in
+                let aFav = favoriteSet.contains(a.name)
+                let bFav = favoriteSet.contains(b.name)
+                if aFav && !bFav { return true }
+                if !aFav && bFav { return false }
+                return a.name < b.name
+            }
+    }
+
+    private var otherLeagues: [OtherLeague] {
+        allLeagues
+            .filter { $0.id != eventLeague }
+            .map { OtherLeague(id: $0.id, label: $0.label) }
+    }
 
     var body: some View {
         Form {
             Section("Team") {
-                Picker("Select Team", selection: $selectedTeam) {
-                    Text("Choose...").tag(nil as Team?)
-                    ForEach(sortedTeams(allTeams, searchText: "", awayTeam: event.awayTeam, homeTeam: event.homeTeam, favoriteTeamNames: favoriteTeamNames)) { team in
-                        HStack {
-                            Circle()
-                                .fill(team.primaryColor)
-                                .frame(width: 12, height: 12)
-                            Text(team.name)
-                                .font(favoriteTeamNames.contains(team.name) ? .urbanist(.body, weight: .bold) : .urbanist(.body))
-                        }
-                        .tag(team as Team?)
-                    }
-                }
-                .pickerStyle(.menu)
+                teamMenu
             }
 
             Section("Player (Optional)") {
@@ -86,6 +116,78 @@ struct AddSightingView: View {
                 photoData = data
             }
         }
+        .sheet(item: $selectedOtherLeague) { league in
+            OtherLeaguePicker(league: league, allTeams: allTeams, favoriteTeamNames: favoriteTeamNames) { team in
+                selectedTeam = team
+                selectedOtherLeague = nil
+            }
+        }
+    }
+
+    private var teamMenu: some View {
+        Menu {
+            Button("Choose...") { selectedTeam = nil }
+
+            if !eventGameTeams.isEmpty {
+                ForEach(eventGameTeams) { team in
+                    teamButton(team)
+                }
+                Divider()
+            }
+
+            if let _ = eventLeague {
+                ForEach(eventLeagueNonGameTeams) { team in
+                    teamButton(team)
+                }
+                Divider()
+
+                ForEach(otherLeagues) { league in
+                    Button(league.label) {
+                        selectedOtherLeague = league
+                    }
+                }
+            } else {
+                ForEach(sortedTeams(allTeams, searchText: "", awayTeam: event.awayTeam, homeTeam: event.homeTeam, favoriteTeamNames: favoriteTeamNames)) { team in
+                    teamButton(team)
+                }
+            }
+        } label: {
+            HStack {
+                Text("Select Team")
+                Spacer()
+                if let team = selectedTeam {
+                    HStack(spacing: 8) {
+                        Circle()
+                            .fill(team.primaryColor)
+                            .frame(width: 12, height: 12)
+                        Text(team.name)
+                            .foregroundStyle(.secondary)
+                    }
+                } else {
+                    Text("Choose...")
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
+    }
+
+    private func teamButton(_ team: Team) -> some View {
+        Button {
+            selectedTeam = team
+        } label: {
+            HStack {
+                Circle()
+                    .fill(team.primaryColor)
+                    .frame(width: 12, height: 12)
+                Text(team.name)
+                if favoriteTeamNames.contains(team.name) {
+                    Spacer()
+                    Image(systemName: "star.fill")
+                        .foregroundStyle(.yellow)
+                        .font(.caption)
+                }
+            }
+        }
     }
 
     private func addSighting() {
@@ -105,5 +207,65 @@ struct AddSightingView: View {
             await LiveActivityManager.startOrUpdate(for: event, teams: allTeams)
         }
         dismiss()
+    }
+}
+
+private struct OtherLeague: Identifiable {
+    let id: String
+    let label: String
+}
+
+private struct OtherLeaguePicker: View {
+    let league: OtherLeague
+    let allTeams: [Team]
+    let favoriteTeamNames: [String]
+    let onSelect: (Team) -> Void
+
+    @Environment(\.dismiss) private var dismiss
+
+    private var leagueTeams: [Team] {
+        let favoriteSet = Set(favoriteTeamNames)
+        return allTeams
+            .filter { $0.sport == league.id }
+            .sorted { a, b in
+                let aFav = favoriteSet.contains(a.name)
+                let bFav = favoriteSet.contains(b.name)
+                if aFav && !bFav { return true }
+                if !aFav && bFav { return false }
+                return a.name < b.name
+            }
+    }
+
+    var body: some View {
+        NavigationStack {
+            List(leagueTeams) { team in
+                Button {
+                    onSelect(team)
+                    dismiss()
+                } label: {
+                    HStack {
+                        Circle()
+                            .fill(team.primaryColor)
+                            .frame(width: 12, height: 12)
+                        Text(team.name)
+                            .font(favoriteTeamNames.contains(team.name) ? .urbanist(.body, weight: .bold) : .urbanist(.body))
+                        if favoriteTeamNames.contains(team.name) {
+                            Spacer()
+                            Image(systemName: "star.fill")
+                                .foregroundStyle(.yellow)
+                                .font(.caption)
+                        }
+                    }
+                }
+                .foregroundStyle(.primary)
+            }
+            .navigationTitle(league.label)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Cancel") { dismiss() }
+                }
+            }
+        }
     }
 }
