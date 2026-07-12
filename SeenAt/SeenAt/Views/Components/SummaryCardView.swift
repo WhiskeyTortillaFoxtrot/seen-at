@@ -48,18 +48,23 @@ struct SummaryCardView: View {
             }
         } else if let away = awayTeamColor, let home = homeTeamColor {
             GeometryReader { geo in
+                let topX = geo.size.width * 0.4
+                let bottomX = geo.size.width * 0.6
+
                 Path { path in
-                    path.move(to: .zero)
+                    path.move(to: CGPoint(x: topX, y: 0))
                     path.addLine(to: CGPoint(x: geo.size.width, y: 0))
                     path.addLine(to: CGPoint(x: geo.size.width, y: geo.size.height))
+                    path.addLine(to: CGPoint(x: bottomX, y: geo.size.height))
                     path.closeSubpath()
                 }
                 .fill(away)
 
                 Path { path in
                     path.move(to: .zero)
+                    path.addLine(to: CGPoint(x: topX, y: 0))
+                    path.addLine(to: CGPoint(x: bottomX, y: geo.size.height))
                     path.addLine(to: CGPoint(x: 0, y: geo.size.height))
-                    path.addLine(to: CGPoint(x: geo.size.width, y: geo.size.height))
                     path.closeSubpath()
                 }
                 .fill(home)
