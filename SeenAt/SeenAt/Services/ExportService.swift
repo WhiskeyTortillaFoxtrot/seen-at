@@ -8,38 +8,40 @@ struct ExportService {
         var lines: [String] = []
         lines.append("📍 SeenAt — Game Summary")
         lines.append("")
-        lines.append("\(event.title)")
+        lines.append(event.title)
         if let venue = event.venue {
             lines.append("📍 \(venue)")
         }
         lines.append("📅 \(event.date.formatted(date: .abbreviated, time: .omitted))")
         lines.append("")
-        lines.append("Total jerseys seen: \(event.totalCount)")
+
+        if event.totalCount == 0 {
+            lines.append("No Jerseys Sighted Yet")
+        } else {
+            lines.append("Total jerseys seen: \(event.totalCount)")
+
+            if let popular = event.teamBreakdown.first {
+                lines.append("Most popular team: \(popular.team.name) (\(popular.count))")
+            }
+
+            if let popular = event.playerBreakdown.first {
+                lines.append("Most popular jersey: \(popular.team.abbreviation) \(popular.playerName) (\(popular.count))")
+            }
+        }
+
         lines.append("")
-
-        let teams = event.teamBreakdown
-        if !teams.isEmpty {
-            lines.append("━━━ By Team ━━━")
-            for (team, count) in teams {
-                let pct = Double(count) / Double(event.totalCount) * 100
-                lines.append("  \(team.name): \(count) (\(String(format: "%.1f", pct))%)")
-            }
-            lines.append("")
-        }
-
-        let players = event.playerBreakdown
-        if !players.isEmpty {
-            lines.append("━━━ By Player ━━━")
-            for (team, player, count) in players {
-                lines.append("  \(team.abbreviation) \(player): \(count)")
-            }
-            lines.append("")
-        }
-
         lines.append("——")
         lines.append("via SeenAt")
 
         return lines.joined(separator: "\n")
+    }
+
+    @MainActor
+    static func generateSummaryImage(for event: Event, size: CGSize) -> UIImage? {
+        let view = SummaryCardView(event: event, size: size)
+        let renderer = ImageRenderer(content: view)
+        renderer.scale = 1.0
+        return renderer.uiImage
     }
 
     static func generateAllDataCSV(context: ModelContext) -> String {
