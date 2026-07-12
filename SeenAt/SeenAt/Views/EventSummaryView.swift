@@ -19,6 +19,25 @@ struct EventSummaryView: View {
         return teams.isEmpty ? [Color.accentColor] : teams
     }
 
+    private var relevantTeams: [Team] {
+        let names = [event.homeTeam, event.awayTeam].compactMap { $0 }
+        guard !names.isEmpty else { return [] }
+        let descriptor = FetchDescriptor<Team>(
+            predicate: #Predicate<Team> { names.contains($0.name) }
+        )
+        return (try? context.fetch(descriptor)) ?? []
+    }
+
+    private var awayTeamColor: Color? {
+        guard let name = event.awayTeam else { return nil }
+        return relevantTeams.first { $0.name == name }?.primaryColor
+    }
+
+    private var homeTeamColor: Color? {
+        guard let name = event.homeTeam else { return nil }
+        return relevantTeams.first { $0.name == name }?.primaryColor
+    }
+
     var body: some View {
         let teamBreakdown = event.teamBreakdown
         let playerBreakdown = event.playerBreakdown
@@ -346,15 +365,15 @@ struct EventSummaryView: View {
                 shareContent = .text(ExportService.generateSummary(for: event))
             }
             Button("Square Image (1080×1080)") {
-                guard let image = ExportService.generateSummaryImage(for: event, size: CGSize(width: 1080, height: 1080)) else { return }
+                guard let image = ExportService.generateSummaryImage(for: event, awayTeamColor: awayTeamColor, homeTeamColor: homeTeamColor, size: CGSize(width: 1080, height: 1080)) else { return }
                 shareContent = .image(image)
             }
             Button("Landscape Image (1200×630)") {
-                guard let image = ExportService.generateSummaryImage(for: event, size: CGSize(width: 1200, height: 630)) else { return }
+                guard let image = ExportService.generateSummaryImage(for: event, awayTeamColor: awayTeamColor, homeTeamColor: homeTeamColor, size: CGSize(width: 1200, height: 630)) else { return }
                 shareContent = .image(image)
             }
             Button("Portrait Image (1080×1920)") {
-                guard let image = ExportService.generateSummaryImage(for: event, size: CGSize(width: 1080, height: 1920)) else { return }
+                guard let image = ExportService.generateSummaryImage(for: event, awayTeamColor: awayTeamColor, homeTeamColor: homeTeamColor, size: CGSize(width: 1080, height: 1920)) else { return }
                 shareContent = .image(image)
             }
             Button("Cancel", role: .cancel) {}

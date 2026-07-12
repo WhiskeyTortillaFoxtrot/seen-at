@@ -37,8 +37,8 @@ struct ExportService {
     }
 
     @MainActor
-    static func generateSummaryImage(for event: Event, size: CGSize) -> UIImage? {
-        let view = SummaryCardView(event: event, size: size)
+    static func generateSummaryImage(for event: Event, awayTeamColor: Color?, homeTeamColor: Color?, size: CGSize) -> UIImage? {
+        let view = SummaryCardView(event: event, size: size, awayTeamColor: awayTeamColor, homeTeamColor: homeTeamColor)
         let renderer = ImageRenderer(content: view)
         renderer.scale = 1.0
         return renderer.uiImage
