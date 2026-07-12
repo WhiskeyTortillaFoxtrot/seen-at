@@ -56,20 +56,19 @@ struct LiveTrackingView: View {
         .navigationTitle("Live Tracking")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                Button {
+                    showShareOptions = true
+                } label: {
+                    Image(systemName: "square.and.arrow.up")
+                }
+            }
             ToolbarItem(placement: .topBarTrailing) {
                 if !event.sightings.isEmpty {
-                    HStack(spacing: 12) {
-                        Button {
-                            showShareOptions = true
-                        } label: {
-                            Image(systemName: "square.and.arrow.up")
-                        }
-
-                        Button("Finish") {
-                            Task {
-                                await LiveActivityManager.end(for: event)
-                                showingSummary = true
-                            }
+                    Button("Finish") {
+                        Task {
+                            await LiveActivityManager.end(for: event)
+                            showingSummary = true
                         }
                     }
                 }
