@@ -3,11 +3,8 @@ import SwiftUI
 struct SummaryCardView: View {
     let event: Event
     let size: CGSize
-
-    private var topTeamColors: [Color] {
-        let teams = event.teamBreakdown.prefix(2).map { $0.team.primaryColor }
-        return teams.isEmpty ? [Color.accentColor] : teams
-    }
+    let awayTeamColor: Color?
+    let homeTeamColor: Color?
 
     private var mostPopularTeam: (team: Team, count: Int)? {
         event.teamBreakdown.first
@@ -49,9 +46,33 @@ struct SummaryCardView: View {
                     .aspectRatio(contentMode: .fill)
                 Color.black.opacity(0.5)
             }
+        } else if let away = awayTeamColor, let home = homeTeamColor {
+            GeometryReader { geo in
+                Path { path in
+                    path.move(to: .zero)
+                    path.addLine(to: CGPoint(x: geo.size.width, y: 0))
+                    path.addLine(to: CGPoint(x: geo.size.width, y: geo.size.height))
+                    path.closeSubpath()
+                }
+                .fill(away)
+
+                Path { path in
+                    path.move(to: .zero)
+                    path.addLine(to: CGPoint(x: 0, y: geo.size.height))
+                    path.addLine(to: CGPoint(x: geo.size.width, y: geo.size.height))
+                    path.closeSubpath()
+                }
+                .fill(home)
+            }
+        } else if let single = awayTeamColor ?? homeTeamColor {
+            LinearGradient(
+                colors: [single, single.opacity(0.3)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
         } else {
             LinearGradient(
-                colors: topTeamColors.map { $0.opacity(0.5) },
+                colors: [Color.accentColor.opacity(0.5), Color.accentColor.opacity(0.2)],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )

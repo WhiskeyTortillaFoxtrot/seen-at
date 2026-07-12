@@ -12,6 +12,8 @@ struct LiveTrackingView: View {
     @State private var expandedSighting: JerseySighting?
     @State private var fullScreenSighting: JerseySighting?
     @State private var showPieChart = false
+    @State private var showShareOptions = false
+    @State private var shareContent: ShareContent?
 
     private var relevantTeams: [Team] {
         let names = [event.homeTeam, event.awayTeam].compactMap { $0 }
@@ -30,6 +32,11 @@ struct LiveTrackingView: View {
     var homeTeamSecondaryColor: Color {
         guard let name = event.homeTeam else { return .accentColor }
         return relevantTeams.first { $0.name == name }?.secondaryColor ?? .accentColor
+    }
+
+    var awayTeamColor: Color? {
+        guard let name = event.awayTeam else { return nil }
+        return relevantTeams.first { $0.name == name }?.primaryColor
     }
 
     var body: some View {
@@ -51,10 +58,18 @@ struct LiveTrackingView: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 if !event.sightings.isEmpty {
-                    Button("Finish") {
-                        Task {
-                            await LiveActivityManager.end(for: event)
-                            showingSummary = true
+                    HStack(spacing: 12) {
+                        Button {
+                            showShareOptions = true
+                        } label: {
+                            Image(systemName: "square.and.arrow.up")
+                        }
+
+                        Button("Finish") {
+                            Task {
+                                await LiveActivityManager.end(for: event)
+                                showingSummary = true
+                            }
                         }
                     }
                 }
@@ -67,6 +82,27 @@ struct LiveTrackingView: View {
         }
         .navigationDestination(isPresented: $showingSummary) {
             EventSummaryView(event: event)
+        }
+        .confirmationDialog("Share Summary", isPresented: $showShareOptions) {
+            Button("Share as Text") {
+                shareContent = .text(ExportService.generateSummary(for: event))
+            }
+            Button("Square Image (1080×1080)") {
+                guard let image = ExportService.generateSummaryImage(for: event, awayTeamColor: awayTeamColor, homeTeamColor: homeTeamColor, size: CGSize(width: 1080, height: 1080)) else { return }
+                shareContent = .image(image)
+            }
+            Button("Landscape Image (1200×630)") {
+                guard let image = ExportService.generateSummaryImage(for: event, awayTeamColor: awayTeamColor, homeTeamColor: homeTeamColor, size: CGSize(width: 1200, height: 630)) else { return }
+                shareContent = .image(image)
+            }
+            Button("Portrait Image (1080×1920)") {
+                guard let image = ExportService.generateSummaryImage(for: event, awayTeamColor: awayTeamColor, homeTeamColor: homeTeamColor, size: CGSize(width: 1080, height: 1920)) else { return }
+                shareContent = .image(image)
+            }
+            Button("Cancel", role: .cancel) {}
+        }
+        .sheet(item: $shareContent) { content in
+            ActivityViewController(items: content.activityItems)
         }
         .onChange(of: event.sightings.count) { _, _ in
             Task {
