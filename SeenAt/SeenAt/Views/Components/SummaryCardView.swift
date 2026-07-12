@@ -13,12 +13,12 @@ struct SummaryCardView: View {
         event.teamBreakdown.first
     }
 
-    private var titleFont: CGFloat { size.height * 0.035 }
-    private var metaFont: CGFloat { size.height * 0.022 }
-    private var labelFont: CGFloat { size.height * 0.025 }
-    private var countFont: CGFloat { size.height * 0.10 }
-    private var teamFont: CGFloat { size.height * 0.07 }
-    private var emptyFont: CGFloat { size.height * 0.04 }
+    private var titleFont: CGFloat { size.height * 0.055 }
+    private var metaFont: CGFloat { size.height * 0.035 }
+    private var labelFont: CGFloat { size.height * 0.04 }
+    private var countFont: CGFloat { size.height * 0.16 }
+    private var teamFont: CGFloat { size.height * 0.12 }
+    private var emptyFont: CGFloat { size.height * 0.06 }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -59,8 +59,7 @@ struct SummaryCardView: View {
     }
 
     private var titleRow: some View {
-        VStack(spacing: 4) {
-            Spacer()
+        VStack(spacing: 6) {
             Text(event.title)
                 .font(.urbanist(size: titleFont, weight: .bold))
                 .foregroundStyle(.white)
@@ -84,8 +83,8 @@ struct SummaryCardView: View {
             .lineLimit(1)
             .minimumScaleFactor(0.5)
             .padding(.horizontal)
-            Spacer()
         }
+        .frame(maxHeight: .infinity)
     }
 
     private var labelsRow: some View {
@@ -106,26 +105,20 @@ struct SummaryCardView: View {
     }
 
     private var valuesRow: some View {
-        HStack(alignment: .top) {
-            VStack(spacing: 2) {
-                Spacer()
-                Text("\(event.totalCount)")
-                    .font(.urbanist(size: countFont, weight: .bold))
-                    .foregroundStyle(.white)
-                Spacer()
-            }
-            .frame(maxWidth: .infinity)
+        HStack(alignment: .center) {
+            Text("\(event.totalCount)")
+                .font(.urbanist(size: countFont, weight: .bold))
+                .foregroundStyle(.white)
+                .frame(maxWidth: .infinity)
 
             if let popular = mostPopularTeam {
-                VStack(spacing: 2) {
-                    Spacer()
+                VStack(spacing: 4) {
                     Text(popular.team.abbreviation)
                         .font(.urbanist(size: teamFont, weight: .bold))
                         .foregroundStyle(.white)
                     Text(popular.team.sport.uppercased())
                         .font(.urbanist(size: metaFont, weight: .medium))
                         .foregroundStyle(.white.opacity(0.7))
-                    Spacer()
                 }
                 .frame(maxWidth: .infinity)
             }
