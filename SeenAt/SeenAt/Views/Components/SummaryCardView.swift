@@ -13,23 +13,23 @@ struct SummaryCardView: View {
     private var titleFont: CGFloat { size.height * 0.055 }
     private var metaFont: CGFloat { size.height * 0.035 }
     private var labelFont: CGFloat { size.height * 0.04 }
-    private var countFont: CGFloat { size.height * 0.16 }
-    private var teamFont: CGFloat { size.height * 0.12 }
+    private var countFont: CGFloat { size.height * 0.22 }
+    private var teamFont: CGFloat { size.height * 0.22 }
     private var emptyFont: CGFloat { size.height * 0.06 }
 
     var body: some View {
         VStack(spacing: 0) {
             titleRow
-                .frame(height: size.height * 0.25)
+                .frame(height: size.height * 0.30)
 
             if event.totalCount == 0 {
                 emptyState
-                    .frame(height: size.height * 0.75)
+                    .frame(height: size.height * 0.70)
             } else {
                 labelsRow
-                    .frame(height: size.height * 0.25)
+                    .frame(height: size.height * 0.15)
                 valuesRow
-                    .frame(height: size.height * 0.5)
+                    .frame(height: size.height * 0.55)
             }
         }
         .frame(width: size.width, height: size.height)
@@ -85,13 +85,21 @@ struct SummaryCardView: View {
     }
 
     private var titleRow: some View {
-        VStack(spacing: 6) {
-            Text(event.title)
-                .font(.urbanist(size: titleFont, weight: .bold))
-                .foregroundStyle(.white)
-                .multilineTextAlignment(.center)
-                .lineLimit(2)
-                .minimumScaleFactor(0.5)
+        VStack(spacing: 4) {
+            VStack(spacing: 2) {
+                if let away = event.awayTeam {
+                    Text(away)
+                        .font(.urbanist(size: titleFont, weight: .bold))
+                        .foregroundStyle(.white)
+                }
+                if let home = event.homeTeam {
+                    Text("@ \(home)")
+                        .font(.urbanist(size: titleFont, weight: .bold))
+                        .foregroundStyle(.white)
+                }
+            }
+            .multilineTextAlignment(.center)
+            .minimumScaleFactor(0.5)
 
             HStack(spacing: 0) {
                 if let venue = event.venue {
@@ -128,6 +136,7 @@ struct SummaryCardView: View {
             }
         }
         .padding(.horizontal)
+        .frame(maxHeight: .infinity, alignment: .bottom)
     }
 
     private var valuesRow: some View {
@@ -150,6 +159,7 @@ struct SummaryCardView: View {
             }
         }
         .padding(.horizontal)
+        .frame(maxHeight: .infinity, alignment: .top)
     }
 
     private var emptyState: some View {
