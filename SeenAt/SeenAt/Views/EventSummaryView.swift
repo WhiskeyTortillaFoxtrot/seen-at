@@ -11,6 +11,8 @@ struct EventSummaryView: View {
     @State private var expandedTeams: Set<PersistentIdentifier> = []
     @State private var lastIncrementTimes: [String: Date] = [:]
     @State private var showPieChart = false
+    @State private var showShareOptions = false
+    @State private var shareContent: ShareContent?
 
     var topTeamColors: [Color] {
         let teams = event.teamBreakdown.prefix(2).map { $0.team.primaryColor }
@@ -67,6 +69,9 @@ struct EventSummaryView: View {
             NavigationStack {
                 AddSightingView(event: event)
             }
+        }
+        .sheet(item: $shareContent) { content in
+            ActivityViewController(items: content.activityItems)
         }
     }
 
@@ -328,12 +333,50 @@ struct EventSummaryView: View {
     }
 
     private var shareButton: some View {
-        let summary = ExportService.generateSummary(for: event)
-        return ShareLink(item: summary) {
+        Button {
+            showShareOptions = true
+        } label: {
             Label("Share Summary", systemImage: "square.and.arrow.up")
                 .font(.urbanist(.headline))
                 .frame(maxWidth: .infinity, minHeight: 44)
         }
         .buttonStyle(.borderedProminent)
+        .confirmationDialog("Share Summary", isPresented: $showShareOptions) {
+            Button("Share as Text") {
+                shareContent = .text(ExportService.generateSummary(for: event))
+            }
+            Button("Square Image (1080×1080)") {
+                guard let image = ExportService.generateSummaryImage(for: event, size: CGSize(width: 1080, height: 1080)) else { return }
+                shareContent = .image(image)
+            }
+            Button("Landscape Image (1200×630)") {
+                guard let image = ExportService.generateSummaryImage(for: event, size: CGSize(width: 1200, height: 630)) else { return }
+                shareContent = .image(image)
+            }
+            Button("Portrait Image (1080×1920)") {
+                guard let image = ExportService.generateSummaryImage(for: event, size: CGSize(width: 1080, height: 1920)) else { return }
+                shareContent = .image(image)
+            }
+            Button("Cancel", role: .cancel) {}
+        }
+    }
+}
+
+enum ShareContent: Identifiable {
+    case text(String)
+    case image(UIImage)
+
+    var id: String {
+        switch self {
+        case .text: "text"
+        case .image: "image"
+        }
+    }
+
+    var activityItems: [Any] {
+        switch self {
+        case .text(let text): return [text]
+        case .image(let image): return [image]
+        }
     }
 }
