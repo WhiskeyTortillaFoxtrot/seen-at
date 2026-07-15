@@ -83,10 +83,9 @@ final class Event {
         self.notes = notes
         self.watchLocation = watchLocation
         self.createdAt = .now
-        let parts = title.components(separatedBy: " @ ")
-        if parts.count == 2 {
-            awayTeam = parts[0].trimmingCharacters(in: .whitespaces)
-            homeTeam = parts[1].trimmingCharacters(in: .whitespaces)
+        if let teams = title.parsedTeams() {
+            awayTeam = teams.away
+            homeTeam = teams.home
         }
     }
 }
