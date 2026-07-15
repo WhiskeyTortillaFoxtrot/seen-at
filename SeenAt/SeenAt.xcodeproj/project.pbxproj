@@ -117,6 +117,7 @@
 		DE8B2359F9E56ED61DC39D73 /* fenway-park.jpg in Resources */ = {isa = PBXBuildFile; fileRef = B3371445DF780EBF1B3A3ABB /* fenway-park.jpg */; };
 		E0266EF801E02DDFDED0262C /* comerica-park.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 5C1B1650293A1C03F601B6BC /* comerica-park.jpg */; };
 		E4ED3A5B007F0991AB683EDE /* StadiumPhotoService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BF02A7055A6EE0498F819D4 /* StadiumPhotoService.swift */; };
+		E56B94557E79836D856A1FF1 /* StoreErrorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1615A397CAAD9B3E2A4D330 /* StoreErrorView.swift */; };
 		E99E9FAE935C6F40D5CBA521 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 343AB3AF124CC5301F19FAE7 /* SettingsView.swift */; };
 		EC8B2A431B3EB17A6491F718 /* ESPNService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E8729992D35C423D22FE74B /* ESPNService.swift */; };
 		EF45E73C00535F312F1515FA /* progressive-field.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 624E01974DC22767C274A10D /* progressive-field.jpg */; };
@@ -246,6 +247,7 @@
 		DED9A12BF97332CE7FF27AB0 /* citizens-bank-park.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = "citizens-bank-park.jpg"; sourceTree = "<group>"; };
 		E03715605150AFA658919690 /* pnc-park.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = "pnc-park.jpg"; sourceTree = "<group>"; };
 		E11BA07ADF84388270AF996D /* NHLTeams.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NHLTeams.swift; sourceTree = "<group>"; };
+		E1615A397CAAD9B3E2A4D330 /* StoreErrorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreErrorView.swift; sourceTree = "<group>"; };
 		E31BBA7EDD221ABE3183274F /* LiveActivityManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveActivityManager.swift; sourceTree = "<group>"; };
 		E539BE3234298C596785F64A /* PhotoCreditsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoCreditsView.swift; sourceTree = "<group>"; };
 		E67CFCBD2AE817E9AF383246 /* Font+Urbanist.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Font+Urbanist.swift"; sourceTree = "<group>"; };
@@ -356,6 +358,7 @@
 				343AB3AF124CC5301F19FAE7 /* SettingsView.swift */,
 				85E998370A060BF0FA91F604 /* SplashView.swift */,
 				107E081D98D1593521BD6ECF /* StatsView.swift */,
+				E1615A397CAAD9B3E2A4D330 /* StoreErrorView.swift */,
 				6D4B0731EAC534AC4D9441E8 /* Components */,
 			);
 			path = Views;
@@ -809,6 +812,7 @@
 				448A872818AC66568C99A4C2 /* SplashView.swift in Sources */,
 				E4ED3A5B007F0991AB683EDE /* StadiumPhotoService.swift in Sources */,
 				39FECB4B690F49A4B1509854 /* StatsView.swift in Sources */,
+				E56B94557E79836D856A1FF1 /* StoreErrorView.swift in Sources */,
 				9E5DFFD528751099893D6065 /* SummaryCardView.swift in Sources */,
 				5BF8BFCA8D1BFA4E656E2B29 /* Team.swift in Sources */,
 				F3EC6F11701696EC440CA63C /* TeamPieChart.swift in Sources */,

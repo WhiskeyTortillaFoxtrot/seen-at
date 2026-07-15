@@ -1,38 +1,47 @@
 import SwiftUI
 import SwiftData
 import Observation
+import OSLog
+
+private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "com.seenat", category: "Store")
 
 @MainActor
 @main
 struct SeenAtApp: App {
-    let container: ModelContainer
+    let container: ModelContainer?
 
     @State private var deepLinkEventID: UUID?
     @State private var splashState = SplashState()
+    @State private var storeState = StoreState()
 
     init() {
+        let storeState = StoreState()
+        _storeState = State(wrappedValue: storeState)
         let config = ModelConfiguration()
-        let c: ModelContainer
+
         do {
-            c = try ModelContainer(
+            container = try ModelContainer(
                 for: Team.self, Event.self, JerseySighting.self,
                 migrationPlan: SeenAtMigrationPlan.self,
                 configurations: config
             )
         } catch {
-            let storeURL = config.url
-            try? FileManager.default.removeItem(at: storeURL)
+            logger.error("ModelContainer creation with migration failed: \(error, privacy: .public)")
             do {
-                c = try ModelContainer(
+                container = try ModelContainer(
                     for: Team.self, Event.self, JerseySighting.self,
-                    migrationPlan: SeenAtMigrationPlan.self,
-                    configurations: ModelConfiguration(url: storeURL)
+                    configurations: config
                 )
             } catch {
-                fatalError("Failed to create ModelContainer after store deletion: \(error)")
+                logger.error("ModelContainer creation without migration failed: \(error, privacy: .public)")
+                storeState.error = error
+                storeState.storeURL = config.url
+                container = nil
+                return
             }
         }
-        container = c
+
+        guard let c = container else { return }
         let state = splashState
         Task {
             await TeamSeedService.seedIfNeeded(modelContext: c.mainContext)
@@ -63,24 +72,28 @@ struct SeenAtApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ZStack {
-                ContentView(deepLinkEventID: $deepLinkEventID)
+            if let container {
+                ZStack {
+                    ContentView(deepLinkEventID: $deepLinkEventID)
 
-                if splashState.isVisible {
-                    SplashView()
-                        .transition(.opacity)
+                    if splashState.isVisible {
+                        SplashView()
+                            .transition(.opacity)
+                    }
                 }
-            }
-            .animation(.easeOut(duration: 0.5), value: splashState.isVisible)
-            .onOpenURL { url in
-                guard url.scheme == "seenat",
-                      url.host == "live-tracking",
-                      let eventID = UUID(uuidString: url.lastPathComponent)
-                else { return }
-                deepLinkEventID = eventID
+                .animation(.easeOut(duration: 0.5), value: splashState.isVisible)
+                .onOpenURL { url in
+                    guard url.scheme == "seenat",
+                          url.host == "live-tracking",
+                          let eventID = UUID(uuidString: url.lastPathComponent)
+                    else { return }
+                    deepLinkEventID = eventID
+                }
+                .modelContainer(container)
+            } else {
+                StoreErrorView(state: storeState)
             }
         }
-        .modelContainer(container)
     }
 }
 
@@ -88,4 +101,11 @@ struct SeenAtApp: App {
 @Observable
 final class SplashState {
     var isVisible = true
+}
+
+@MainActor
+@Observable
+final class StoreState {
+    var error: Error?
+    var storeURL: URL?
 }
