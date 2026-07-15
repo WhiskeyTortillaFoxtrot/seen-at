@@ -2,7 +2,12 @@ import XCTest
 
 final class ScreenshotUITests: XCTestCase {
 
-    let screenshotsDir = "/Users/tonycardone/Documents/seen-at/screenshots"
+    let screenshotsDir: String = {
+        if let dir = ProcessInfo.processInfo.environment["PROJECT_DIR"] {
+            return (dir as NSString).appendingPathComponent("../screenshots")
+        }
+        return NSHomeDirectory() + "/screenshots"
+    }()
 
     override func setUpWithError() throws {
         continueAfterFailure = true
