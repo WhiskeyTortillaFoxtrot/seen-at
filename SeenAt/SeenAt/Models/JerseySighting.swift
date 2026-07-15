@@ -6,7 +6,7 @@ final class JerseySighting {
     var firstName: String?
     var lastName: String?
     var playerNumber: String?
-    var photoData: Data?
+    @Attribute(.externalStorage) var photoData: Data?
     var photoLocalIdentifier: String?
     var timestamp: Date
 

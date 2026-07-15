@@ -114,10 +114,11 @@ struct AddSightingView: View {
         .onChange(of: selectedPhotoItem) { _, item in
             Task {
                 guard let data = try? await item?.loadTransferable(type: Data.self) else { return }
-                photoData = data
+                guard let image = UIImage(data: data) else { return }
+                photoData = image.downsampled(maxDimension: 1200)
             }
         }
-                .alert("Save Failed", isPresented: $showingSaveError) {
+        .alert("Save Failed", isPresented: $showingSaveError) {
             Button("OK") { }
         } message: {
             Text("Could not save the sighting. Please try again.")
