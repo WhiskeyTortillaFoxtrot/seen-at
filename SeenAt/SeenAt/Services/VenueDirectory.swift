@@ -25,6 +25,7 @@ enum VenueDirectory {
         "loanDepot park": VenueInfo(name: "loanDepot park", address: "501 Marlins Way, Miami, FL 33125", latitude: 25.7781, longitude: -80.2197),
         "American Family Field": VenueInfo(name: "American Family Field", address: "1 Brewers Way, Milwaukee, WI 53214", latitude: 43.0283, longitude: -87.9713),
         "Minute Maid Park": VenueInfo(name: "Minute Maid Park", address: "501 Crawford St, Houston, TX 77002", latitude: 29.7572, longitude: -95.3556),
+        "Daikin Park": VenueInfo(name: "Daikin Park", address: "501 Crawford St, Houston, TX 77002", latitude: 29.7572, longitude: -95.3556),
         "Nationals Park": VenueInfo(name: "Nationals Park", address: "1500 S Capitol St SE, Washington, DC 20003", latitude: 38.8729, longitude: -77.0074),
         "Oakland Coliseum": VenueInfo(name: "Oakland Coliseum", address: "7000 Coliseum Way, Oakland, CA 94621", latitude: 37.7516, longitude: -122.2005),
         "Oracle Park": VenueInfo(name: "Oracle Park", address: "24 Willie Mays Plaza, San Francisco, CA 94107", latitude: 37.7786, longitude: -122.3893),
@@ -181,7 +182,7 @@ enum VenueDirectory {
         case "Cleveland Guardians": "Progressive Field"
         case "Colorado Rockies": "Coors Field"
         case "Detroit Tigers": "Comerica Park"
-        case "Houston Astros": "Minute Maid Park"
+        case "Houston Astros": "Daikin Park"
         case "Kansas City Royals": "Kauffman Stadium"
         case "Los Angeles Angels": "Angel Stadium"
         case "Los Angeles Dodgers": "Dodger Stadium"
