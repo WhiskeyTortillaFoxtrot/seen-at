@@ -23,12 +23,12 @@ struct EventActionHandler {
         lastIncrementTimes[key] = now
     }
 
-    static func deletePlayer(team: Team, name: String, event: Event, context: ModelContext) {
+    static func deletePlayer(team: Team, name: String, event: Event, context: ModelContext) -> Bool {
         let toDelete = event.sightings.filter { $0.team?.id == team.id && $0.displayName == name }
         for sighting in toDelete {
             context.delete(sighting)
         }
-        context.saveAndLog("Failed to save deletePlayer deletion")
+        return context.saveAndLog("Failed to save deletePlayer deletion")
     }
 
     static func disabledForDebounce(team: Team, name: String, lastIncrementTimes: [String: Date]) -> Bool {
