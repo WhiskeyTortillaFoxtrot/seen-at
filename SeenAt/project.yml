@@ -21,7 +21,6 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.seenat.app
         PRODUCT_NAME: SeenAt
         CODE_SIGN_STYLE: Automatic
-        DEVELOPMENT_TEAM: DR9TT398PM
         TARGETED_DEVICE_FAMILY: "1"
         ALWAYS_SEARCH_USER_PATHS: "NO"
 
@@ -36,7 +35,6 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.seenat.app.tests
         CODE_SIGN_STYLE: Automatic
-        DEVELOPMENT_TEAM: DR9TT398PM
         TARGETED_DEVICE_FAMILY: "1"
         GENERATE_INFOPLIST_FILE: YES
 
@@ -51,7 +49,6 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.seenat.app.uitests
         CODE_SIGN_STYLE: Automatic
-        DEVELOPMENT_TEAM: DR9TT398PM
         TARGETED_DEVICE_FAMILY: "1"
         GENERATE_INFOPLIST_FILE: YES
 
@@ -69,6 +66,5 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.seenat.app.widget
         INFOPLIST_FILE: SeenAtWidget/Info.plist
         CODE_SIGN_STYLE: Automatic
-        DEVELOPMENT_TEAM: DR9TT398PM
         PRODUCT_NAME: SeenAtWidget
         GENERATE_INFOPLIST_FILE: NO

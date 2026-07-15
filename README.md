@@ -60,6 +60,8 @@ xcodegen generate
 open SeenAt.xcodeproj
 ```
 
+> **Team signing**: `DEVELOPMENT_TEAM` is intentionally omitted from `project.yml` so contributors don't need to share a team ID. The first time you build for a device, set your own team ID in Xcode: **Signing & Capabilities → Team**, or add `DEVELOPMENT_TEAM: YOUR_TEAM_ID` locally to `project.yml` under each target's `base` settings. Simulator builds work without a team ID.
+
 Build and run from Xcode on a simulator or device.
 
 ## Architecture
