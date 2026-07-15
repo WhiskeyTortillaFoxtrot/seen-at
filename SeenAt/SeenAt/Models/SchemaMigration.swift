@@ -1,14 +1,14 @@
 import Foundation
 import SwiftData
 
-// MARK: - V1 (Original — Event without id)
+// MARK: - V1 (Original — Event without awayTeam/homeTeam)
 
 enum SeenAtSchemaV1: VersionedSchema {
     static var versionIdentifier: Schema.Version { .init(1, 0, 0) }
-    static var models: [any PersistentModel.Type] { [TeamV1.self, EventV1.self, JerseySightingV1.self] }
+    static var models: [any PersistentModel.Type] { [Team.self, Event.self, JerseySighting.self] }
 
     @Model
-    final class TeamV1 {
+    final class Team {
         @Attribute(.unique) var name: String
         var abbreviation: String
         var sport: String
@@ -18,7 +18,7 @@ enum SeenAtSchemaV1: VersionedSchema {
         var logoData: Data?
 
         @Relationship(deleteRule: .cascade)
-        var sightings: [JerseySightingV1] = []
+        var sightings: [JerseySighting] = []
 
         init(name: String, abbreviation: String, sport: String = "mlb", isBuiltIn: Bool = false, primaryColorHex: String, secondaryColorHex: String, logoData: Data? = nil) {
             self.name = name
@@ -32,29 +32,32 @@ enum SeenAtSchemaV1: VersionedSchema {
     }
 
     @Model
-    final class EventV1 {
+    final class Event {
+        @Attribute(.unique) var id: UUID = UUID()
         var title: String
         var date: Date
         var venue: String?
         var gameUrl: String?
         var notes: String?
+        var watchLocation: WatchLocation?
         var createdAt: Date
 
         @Relationship(deleteRule: .cascade)
-        var sightings: [JerseySightingV1] = []
+        var sightings: [JerseySighting] = []
 
-        init(title: String, date: Date, venue: String? = nil, gameUrl: String? = nil, notes: String? = nil) {
+        init(title: String, date: Date, venue: String? = nil, gameUrl: String? = nil, notes: String? = nil, watchLocation: WatchLocation? = .stadium) {
             self.title = title
             self.date = date
             self.venue = venue
             self.gameUrl = gameUrl
             self.notes = notes
+            self.watchLocation = watchLocation
             self.createdAt = .now
         }
     }
 
     @Model
-    final class JerseySightingV1 {
+    final class JerseySighting {
         var firstName: String?
         var lastName: String?
         var playerNumber: String?
@@ -62,10 +65,10 @@ enum SeenAtSchemaV1: VersionedSchema {
         var photoLocalIdentifier: String?
         var timestamp: Date
 
-        var event: EventV1?
-        var team: TeamV1?
+        var event: Event?
+        var team: Team?
 
-        init(team: TeamV1? = nil, firstName: String? = nil, lastName: String? = nil, playerNumber: String? = nil, photoData: Data? = nil, photoLocalIdentifier: String? = nil, event: EventV1? = nil) {
+        init(team: Team? = nil, firstName: String? = nil, lastName: String? = nil, playerNumber: String? = nil, photoData: Data? = nil, photoLocalIdentifier: String? = nil, event: Event? = nil) {
             self.team = team
             self.firstName = firstName
             self.lastName = lastName
@@ -95,6 +98,16 @@ enum SeenAtMigrationPlan: SchemaMigrationPlan {
         fromVersion: SeenAtSchemaV1.self,
         toVersion: SeenAtSchemaV2.self,
         willMigrate: nil,
-        didMigrate: nil
+        didMigrate: { context in
+            let events = try context.fetch(FetchDescriptor<Event>())
+            for event in events where event.awayTeam == nil || event.homeTeam == nil {
+                let parts = event.title.components(separatedBy: " @ ")
+                if parts.count == 2 {
+                    event.awayTeam = parts[0].trimmingCharacters(in: .whitespaces)
+                    event.homeTeam = parts[1].trimmingCharacters(in: .whitespaces)
+                }
+            }
+            try context.save()
+        }
     )
 }
