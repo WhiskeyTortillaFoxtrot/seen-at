@@ -39,15 +39,25 @@ struct SeenAtApp: App {
             if ProcessInfo.processInfo.arguments.contains("--seedData") {
                 await SeedData.seedIfNeeded(in: c.mainContext)
             }
-            let context = c.mainContext
-            let teams = try? context.fetch(FetchDescriptor<Team>())
-            guard let teams, !teams.isEmpty else { return }
-            let events = try? context.fetch(FetchDescriptor<Event>())
-            await LiveActivityManager.endStaleActivities(for: events ?? [])
-            if let event = LiveActivityManager.findBestTodayEvent(in: events ?? []) {
-                await LiveActivityManager.startOrUpdate(for: event, teams: teams)
-            }
             state.isVisible = false
+
+            Task {
+                let cal = Calendar.current
+                let startOfToday = cal.startOfDay(for: .now)
+                let startOfTomorrow = cal.date(byAdding: .day, value: 1, to: startOfToday)!
+                let todayPredicate = #Predicate<Event> {
+                    $0.date >= startOfToday && $0.date < startOfTomorrow
+                }
+                let context = c.mainContext
+                let todayEvents = try? context.fetch(FetchDescriptor(predicate: todayPredicate))
+                await LiveActivityManager.endStaleActivities(for: todayEvents ?? [])
+                if let event = LiveActivityManager.findBestTodayEvent(in: todayEvents ?? []) {
+                    let names = [event.homeTeam, event.awayTeam].compactMap { $0 }
+                    let teamPredicate = #Predicate<Team> { names.contains($0.name) }
+                    let teams = try? context.fetch(FetchDescriptor(predicate: teamPredicate))
+                    await LiveActivityManager.startOrUpdate(for: event, teams: teams ?? [])
+                }
+            }
         }
     }
 
