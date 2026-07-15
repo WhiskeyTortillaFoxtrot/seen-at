@@ -3,6 +3,7 @@ import SwiftData
 
 struct ContentView: View {
     @Binding var deepLinkEventID: UUID?
+    var onDeepLinkError: (() -> Void)?
 
     @Environment(\.modelContext) private var context
     @AppStorage("defaultSport") private var defaultSport: String = "mlb"
@@ -50,6 +51,8 @@ struct ContentView: View {
             if let event = try? context.fetch(descriptor).first {
                 eventToTrack = event
                 selectedTab = 0
+            } else {
+                onDeepLinkError?()
             }
             deepLinkEventID = nil
         }
