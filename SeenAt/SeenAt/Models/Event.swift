@@ -22,11 +22,26 @@ final class Event {
     @Relationship(deleteRule: .cascade)
     var sightings: [JerseySighting] = []
 
-    var totalCount: Int { sightings.count }
+    @Transient private var lastCacheSightingCount: Int = -1
+    @Transient private var totalCountCache: Int = 0
+    @Transient private var teamBreakdownCache: [(team: Team, count: Int)] = []
+
+    var totalCount: Int {
+        refreshCachesIfNeeded()
+        return totalCountCache
+    }
 
     var teamBreakdown: [(team: Team, count: Int)] {
+        refreshCachesIfNeeded()
+        return teamBreakdownCache
+    }
+
+    private func refreshCachesIfNeeded() {
+        guard sightings.count != lastCacheSightingCount else { return }
+        lastCacheSightingCount = sightings.count
+        totalCountCache = sightings.count
         let grouped = Dictionary(grouping: sightings.compactMap { $0.team == nil ? nil : $0 }) { $0.team! }
-        return grouped
+        teamBreakdownCache = grouped
             .map { ($0.key, $0.value.count) }
             .sorted { a, b in a.count > b.count || (a.count == b.count && a.team.name < b.team.name) }
     }

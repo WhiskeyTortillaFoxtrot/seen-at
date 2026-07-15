@@ -9,6 +9,7 @@ final class TeamSeedServiceTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
+        UserDefaults.standard.removeObject(forKey: "hasSeededTeams")
         container = TestModelContainer.create()
         context = container.mainContext
     }
@@ -16,6 +17,7 @@ final class TeamSeedServiceTests: XCTestCase {
     override func tearDown() {
         container = nil
         context = nil
+        UserDefaults.standard.removeObject(forKey: "hasSeededTeams")
         super.tearDown()
     }
 
