@@ -114,6 +114,7 @@
 		D781EA88D3B254F9012079FA /* ColorExtensionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2969EB6E3B98ED17E1909BC9 /* ColorExtensionTests.swift */; };
 		DC4AB3444C8BEE5548CA29D9 /* dodger-stadium.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 8040CAB38C25837603E12BAB /* dodger-stadium.jpg */; };
 		DE8B2359F9E56ED61DC39D73 /* fenway-park.jpg in Resources */ = {isa = PBXBuildFile; fileRef = B3371445DF780EBF1B3A3ABB /* fenway-park.jpg */; };
+		E0266EF801E02DDFDED0262C /* comerica-park.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 5C1B1650293A1C03F601B6BC /* comerica-park.jpg */; };
 		E4ED3A5B007F0991AB683EDE /* StadiumPhotoService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BF02A7055A6EE0498F819D4 /* StadiumPhotoService.swift */; };
 		E99E9FAE935C6F40D5CBA521 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 343AB3AF124CC5301F19FAE7 /* SettingsView.swift */; };
 		EC8B2A431B3EB17A6491F718 /* ESPNService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E8729992D35C423D22FE74B /* ESPNService.swift */; };
@@ -181,6 +182,7 @@
 		56A35634C808C5E3E75EDFA3 /* SearchViewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchViewTests.swift; sourceTree = "<group>"; };
 		58662D680E0ABD5FB3898567 /* SeenAt.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = SeenAt.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		5BDD088B44D365447ACB6E48 /* Urbanist-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Urbanist-Regular.ttf"; sourceTree = "<group>"; };
+		5C1B1650293A1C03F601B6BC /* comerica-park.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = "comerica-park.jpg"; sourceTree = "<group>"; };
 		5ED9C27A38D86BAEB08BAE5F /* MLSTeams.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MLSTeams.swift; sourceTree = "<group>"; };
 		624E01974DC22767C274A10D /* progressive-field.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = "progressive-field.jpg"; sourceTree = "<group>"; };
 		66C98BF0197F7599ED24DDE8 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
@@ -506,6 +508,7 @@
 				3C0D2F6951206EC2CED5969E /* chase-field.jpg */,
 				34ED6A54E5DC34E7D2996DC0 /* citi-field.jpg */,
 				DED9A12BF97332CE7FF27AB0 /* citizens-bank-park.jpg */,
+				5C1B1650293A1C03F601B6BC /* comerica-park.jpg */,
 				03BD947B5BCA853640A09687 /* coors-field.jpg */,
 				458C83F026063170925FA42A /* daikin-park.jpg */,
 				8040CAB38C25837603E12BAB /* dodger-stadium.jpg */,
@@ -689,6 +692,7 @@
 				67704718B9DDF3A05D19A720 /* chase-field.jpg in Resources */,
 				1CE77FD2A217FA490BB4F188 /* citi-field.jpg in Resources */,
 				2BB399BD07598649749542DD /* citizens-bank-park.jpg in Resources */,
+				E0266EF801E02DDFDED0262C /* comerica-park.jpg in Resources */,
 				5F281D2F8A5CA7A8844131C4 /* coors-field.jpg in Resources */,
 				2EE123FFF2EF7EEEC6DF4DB0 /* daikin-park.jpg in Resources */,
 				DC4AB3444C8BEE5548CA29D9 /* dodger-stadium.jpg in Resources */,
