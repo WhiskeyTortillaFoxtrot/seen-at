@@ -1,6 +1,7 @@
 import SwiftUI
 import SwiftData
 import PhotosUI
+import OSLog
 
 struct AddSightingView: View {
     @Environment(\.dismiss) private var dismiss
@@ -112,12 +113,22 @@ struct AddSightingView: View {
             }
         }
         .onChange(of: selectedPhotoItem) { _, item in
-            Task {
-                guard let data = try? await item?.loadTransferable(type: Data.self) else { return }
-                photoData = data
+            Task(priority: .userInitiated) {
+                do {
+                    guard let data = try await item?.loadTransferable(type: Data.self) else { return }
+                    let compressed = await Task.detached(priority: .userInitiated) {
+                        data.downsampledImage(maxDimension: 1200)
+                    }.value
+                    await MainActor.run {
+                        photoData = compressed
+                    }
+                } catch {
+                    Logger(subsystem: Bundle.main.bundleIdentifier ?? "com.seenat", category: "Photo")
+                        .error("Failed to load/resize photo: \(error, privacy: .auto)")
+                }
             }
         }
-                .alert("Save Failed", isPresented: $showingSaveError) {
+        .alert("Save Failed", isPresented: $showingSaveError) {
             Button("OK") { }
         } message: {
             Text("Could not save the sighting. Please try again.")
