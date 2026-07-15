@@ -16,7 +16,10 @@ struct EventActionHandler {
             event: event
         )
         context.insert(sighting)
-        guard context.saveAndLog("Failed to save incrementPlayer sighting") else { return }
+        guard context.saveAndLog("Failed to save incrementPlayer sighting") else {
+            context.delete(sighting)
+            return
+        }
         lastIncrementTimes[key] = now
     }
 

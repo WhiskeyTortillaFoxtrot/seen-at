@@ -245,6 +245,7 @@ struct EventFormView: View {
         )
         context.insert(event)
         guard context.saveAndLog("Failed to create event") else {
+            context.delete(event)
             showingSaveError = true
             return
         }
@@ -272,6 +273,7 @@ struct EventFormView: View {
         }
         context.insert(event)
         guard context.saveAndLog("Failed to save manual event") else {
+            context.delete(event)
             showingSaveError = true
             return
         }

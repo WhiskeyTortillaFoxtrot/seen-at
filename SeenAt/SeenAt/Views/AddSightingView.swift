@@ -209,6 +209,7 @@ struct AddSightingView: View {
         )
         context.insert(sighting)
         guard context.saveAndLog("Failed to save sighting") else {
+            context.delete(sighting)
             showingSaveError = true
             return
         }
