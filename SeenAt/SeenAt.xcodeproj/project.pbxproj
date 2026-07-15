@@ -105,6 +105,7 @@
 		C2BD632C74BAB449DCFE790A /* Urbanist-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = D9C8FC861AEAC7A3563A0E20 /* Urbanist-SemiBold.ttf */; };
 		C70CA551EDEF7C8869DD1521 /* nationals-park.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 10628DDCDA5755A34B55627A /* nationals-park.jpg */; };
 		CC73E3DABD4E63A8D0CA7764 /* SeenAtApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DF0DAC39EA5375ADBF126CB /* SeenAtApp.swift */; };
+		CEDFF1CD64B0E80DF6F1F072 /* PieChartSelection.swift in Sources */ = {isa = PBXBuildFile; fileRef = B755FEED637250F07F3026C0 /* PieChartSelection.swift */; };
 		CF676D4BEC61B12DC8D75D44 /* EventRowTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24B47A2831BBAB45A5472EC1 /* EventRowTests.swift */; };
 		D0E7EB02F41D8CF6B3F2DAA0 /* EventSummaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A38F229B8DA6985D9DC80822 /* EventSummaryView.swift */; };
 		D14B065F15CAFB096BC4A874 /* Font+Urbanist.swift in Sources */ = {isa = PBXBuildFile; fileRef = E67CFCBD2AE817E9AF383246 /* Font+Urbanist.swift */; };
@@ -231,6 +232,7 @@
 		B30AA9D41D92B6B7ADE795F7 /* TestModelContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestModelContainer.swift; sourceTree = "<group>"; };
 		B3371445DF780EBF1B3A3ABB /* fenway-park.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = "fenway-park.jpg"; sourceTree = "<group>"; };
 		B438899A3329974B7045EBB5 /* GameSorting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameSorting.swift; sourceTree = "<group>"; };
+		B755FEED637250F07F3026C0 /* PieChartSelection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PieChartSelection.swift; sourceTree = "<group>"; };
 		BFA6095943402D6EDF074136 /* MLBAPIServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MLBAPIServiceTests.swift; sourceTree = "<group>"; };
 		C1E1E297E30DBA6FCDD20270 /* SeenAtWidget.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = SeenAtWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		C1E7F9327F52CB65A04F65A8 /* CreditDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreditDetailView.swift; sourceTree = "<group>"; };
@@ -377,6 +379,7 @@
 			children = (
 				7F8376A05AA0DF8B9D92F40B /* ActivityViewController.swift */,
 				764F2314F18C43B08F2D761A /* ChartToggle.swift */,
+				B755FEED637250F07F3026C0 /* PieChartSelection.swift */,
 				6F74507CF9ECAD1A90125DB8 /* SummaryCardView.swift */,
 				6C70D9CF1938329C979692A5 /* TeamPieChart.swift */,
 			);
@@ -796,6 +799,7 @@
 				9F97656A3A662776E5C6246A /* NHLAPIService.swift in Sources */,
 				706E3F96206C4B44E02731E2 /* NHLTeams.swift in Sources */,
 				0831C675F872FBF66FE2A7EC /* PhotoCreditsView.swift in Sources */,
+				CEDFF1CD64B0E80DF6F1F072 /* PieChartSelection.swift in Sources */,
 				9D2039B42FF0B80F0789C202 /* SchemaMigration.swift in Sources */,
 				2FE2E59B93EBF38EC3ADFD2E /* SearchView.swift in Sources */,
 				35FEA209574B5095AD4BC384 /* SeedData.swift in Sources */,

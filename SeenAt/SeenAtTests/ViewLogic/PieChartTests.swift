@@ -108,4 +108,89 @@ final class PieChartTests: XCTestCase {
         XCTAssertEqual(breakdown.count, 1)
         XCTAssertEqual(breakdown[0].count, 1)
     }
+
+    // MARK: - PieChartSelection.team(at:in:)
+
+    private func angle(fromNoon degrees: Double) -> Double {
+        (degrees - 90) * .pi / 180
+    }
+
+    private func makeTeam(_ name: String, abbreviation: String, primaryHex: String = "#000000") -> Team {
+        Team(name: name, abbreviation: abbreviation, primaryColorHex: primaryHex, secondaryColorHex: "#FFFFFF")
+    }
+
+    func testEqualCountSlicesSelectCorrectly() {
+        let teamA = makeTeam("Alpha", abbreviation: "ALP", primaryHex: "#FF0000")
+        let teamB = makeTeam("Bravo", abbreviation: "BRA", primaryHex: "#0000FF")
+        let breakdown: [(team: Team, count: Int)] = [(teamA, 2), (teamB, 2)]
+
+        let tapA = PieChartSelection.team(at: angle(fromNoon: 90), in: breakdown)
+        XCTAssertEqual(tapA?.name, "Alpha")
+
+        let tapB = PieChartSelection.team(at: angle(fromNoon: 270), in: breakdown)
+        XCTAssertEqual(tapB?.name, "Bravo")
+    }
+
+    func testEqualCountBoundaryIsConsistent() {
+        let teamA = makeTeam("Alpha", abbreviation: "ALP", primaryHex: "#FF0000")
+        let teamB = makeTeam("Bravo", abbreviation: "BRA", primaryHex: "#0000FF")
+        let breakdown: [(team: Team, count: Int)] = [(teamA, 2), (teamB, 2)]
+
+        let tapAtBoundary = PieChartSelection.team(at: angle(fromNoon: 180), in: breakdown)
+        XCTAssertEqual(tapAtBoundary?.name, "Alpha")
+    }
+
+    func testThreeTeamsTwoEqualCounts() {
+        let teamA = makeTeam("Alpha", abbreviation: "ALP", primaryHex: "#FF0000")
+        let teamB = makeTeam("Bravo", abbreviation: "BRA", primaryHex: "#0000FF")
+        let teamC = makeTeam("Charlie", abbreviation: "CHA", primaryHex: "#00FF00")
+        let breakdown: [(team: Team, count: Int)] = [(teamA, 2), (teamB, 2), (teamC, 1)]
+
+        let tapA = PieChartSelection.team(at: angle(fromNoon: 72), in: breakdown)
+        XCTAssertEqual(tapA?.name, "Alpha")
+
+        let tapB = PieChartSelection.team(at: angle(fromNoon: 216), in: breakdown)
+        XCTAssertEqual(tapB?.name, "Bravo")
+
+        let tapC = PieChartSelection.team(at: angle(fromNoon: 324), in: breakdown)
+        XCTAssertEqual(tapC?.name, "Charlie")
+    }
+
+    func testSingleTeamAlwaysSelected() {
+        let team = makeTeam("Solo", abbreviation: "SOL")
+        let breakdown: [(team: Team, count: Int)] = [(team, 5)]
+
+        let tap0 = PieChartSelection.team(at: angle(fromNoon: 0), in: breakdown)
+        XCTAssertEqual(tap0?.name, "Solo")
+
+        let tap90 = PieChartSelection.team(at: angle(fromNoon: 90), in: breakdown)
+        XCTAssertEqual(tap90?.name, "Solo")
+
+        let tap180 = PieChartSelection.team(at: angle(fromNoon: 180), in: breakdown)
+        XCTAssertEqual(tap180?.name, "Solo")
+
+        let tap270 = PieChartSelection.team(at: angle(fromNoon: 270), in: breakdown)
+        XCTAssertEqual(tap270?.name, "Solo")
+
+        let tap359 = PieChartSelection.team(at: angle(fromNoon: 359), in: breakdown)
+        XCTAssertEqual(tap359?.name, "Solo")
+    }
+
+    func testEmptyBreakdownReturnsNil() {
+        let breakdown: [(team: Team, count: Int)] = []
+        let result = PieChartSelection.team(at: .pi / 2, in: breakdown)
+        XCTAssertNil(result)
+    }
+
+    func testUnequalCounts() {
+        let teamA = makeTeam("Big", abbreviation: "BIG", primaryHex: "#FF0000")
+        let teamB = makeTeam("Small", abbreviation: "SML", primaryHex: "#0000FF")
+        let breakdown: [(team: Team, count: Int)] = [(teamA, 3), (teamB, 1)]
+
+        let tapInBig = PieChartSelection.team(at: angle(fromNoon: 90), in: breakdown)
+        XCTAssertEqual(tapInBig?.name, "Big")
+
+        let tapInSmall = PieChartSelection.team(at: angle(fromNoon: 315), in: breakdown)
+        XCTAssertEqual(tapInSmall?.name, "Small")
+    }
 }
