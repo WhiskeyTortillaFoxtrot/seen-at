@@ -98,8 +98,8 @@ struct SeenAtApp: App {
                 }
                 .animation(.easeOut(duration: 0.5), value: splashState.isVisible)
                 .onOpenURL { url in
-                    guard url.scheme == "seenat",
-                          url.host == "live-tracking",
+                    guard url.scheme?.lowercased() == "seenat",
+                          url.host?.lowercased() == "live-tracking",
                           let eventID = UUID(uuidString: url.lastPathComponent)
                     else {
                         deepLinkError = .malformedURL
@@ -107,13 +107,15 @@ struct SeenAtApp: App {
                     }
                     deepLinkEventID = eventID
                 }
-                .alert("Deep Link Error", isPresented: Binding(
-                    get: { deepLinkError != nil },
-                    set: { if !$0 { deepLinkError = nil } }
-                )) {
-                    Button("OK") { deepLinkError = nil }
-                } message: {
-                    Text(deepLinkError?.message ?? "")
+                .alert(item: Binding(
+                    get: { splashState.isVisible ? nil : deepLinkError },
+                    set: { deepLinkError = $0 }
+                )) { error in
+                    Alert(
+                        title: Text("Couldn’t Open Link"),
+                        message: Text(error.message),
+                        dismissButton: .default(Text("OK"))
+                    )
                 }
                 .modelContainer(container)
             } else {
