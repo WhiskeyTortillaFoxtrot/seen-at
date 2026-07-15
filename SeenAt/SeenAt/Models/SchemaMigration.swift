@@ -101,10 +101,9 @@ enum SeenAtMigrationPlan: SchemaMigrationPlan {
         didMigrate: { context in
             let events = try context.fetch(FetchDescriptor<Event>())
             for event in events where event.awayTeam == nil || event.homeTeam == nil {
-                let parts = event.title.components(separatedBy: " @ ")
-                if parts.count == 2 {
-                    event.awayTeam = parts[0].trimmingCharacters(in: .whitespaces)
-                    event.homeTeam = parts[1].trimmingCharacters(in: .whitespaces)
+                if let teams = event.title.parsedTeams() {
+                    event.awayTeam = teams.away
+                    event.homeTeam = teams.home
                 }
             }
             try context.save()
