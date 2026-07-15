@@ -1,8 +1,12 @@
 import SwiftUI
 import SwiftData
+import OSLog
+
+private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "com.seenat", category: "DeepLink")
 
 struct ContentView: View {
     @Binding var deepLinkEventID: UUID?
+    let onDeepLinkError: (() -> Void)?
 
     @Environment(\.modelContext) private var context
     @AppStorage("defaultSport") private var defaultSport: String = "mlb"
@@ -47,9 +51,16 @@ struct ContentView: View {
             guard let id = deepLinkEventID else { return }
             let predicate = #Predicate<Event> { $0.id == id }
             let descriptor = FetchDescriptor(predicate: predicate)
-            if let event = try? context.fetch(descriptor).first {
-                eventToTrack = event
-                selectedTab = 0
+            do {
+                if let event = try context.fetch(descriptor).first {
+                    eventToTrack = event
+                    selectedTab = 0
+                } else {
+                    onDeepLinkError?()
+                }
+            } catch {
+                logger.error("Failed to fetch deep-linked event: \(error, privacy: .auto)")
+                onDeepLinkError?()
             }
             deepLinkEventID = nil
         }

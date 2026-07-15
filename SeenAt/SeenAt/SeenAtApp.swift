@@ -5,12 +5,27 @@ import OSLog
 
 private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "com.seenat", category: "Store")
 
+private enum DeepLinkError: Identifiable {
+    case malformedURL
+    case eventNotFound
+
+    var id: Self { self }
+
+    var message: String {
+        switch self {
+        case .malformedURL: return "The link could not be opened. It may be malformed."
+        case .eventNotFound: return "The game for this link could not be found."
+        }
+    }
+}
+
 @MainActor
 @main
 struct SeenAtApp: App {
     let container: ModelContainer?
 
     @State private var deepLinkEventID: UUID?
+    @State private var deepLinkError: DeepLinkError?
     @State private var splashState = SplashState()
     @State private var storeState = StoreState()
 
@@ -74,7 +89,7 @@ struct SeenAtApp: App {
         WindowGroup {
             if let container {
                 ZStack {
-                    ContentView(deepLinkEventID: $deepLinkEventID)
+                    ContentView(deepLinkEventID: $deepLinkEventID, onDeepLinkError: { deepLinkError = .eventNotFound })
 
                     if splashState.isVisible {
                         SplashView()
@@ -83,11 +98,24 @@ struct SeenAtApp: App {
                 }
                 .animation(.easeOut(duration: 0.5), value: splashState.isVisible)
                 .onOpenURL { url in
-                    guard url.scheme == "seenat",
-                          url.host == "live-tracking",
+                    guard url.scheme?.lowercased() == "seenat",
+                          url.host?.lowercased() == "live-tracking",
                           let eventID = UUID(uuidString: url.lastPathComponent)
-                    else { return }
+                    else {
+                        deepLinkError = .malformedURL
+                        return
+                    }
                     deepLinkEventID = eventID
+                }
+                .alert(item: Binding(
+                    get: { splashState.isVisible ? nil : deepLinkError },
+                    set: { deepLinkError = $0 }
+                )) { error in
+                    Alert(
+                        title: Text("Couldn’t Open Link"),
+                        message: Text(error.message),
+                        dismissButton: .default(Text("OK"))
+                    )
                 }
                 .modelContainer(container)
             } else {
