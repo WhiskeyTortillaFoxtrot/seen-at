@@ -14,6 +14,8 @@ struct SettingsView: View {
     @State private var exportCSV: String = ""
     @State private var showingDeleteSightingsAlert = false
     @State private var showingResetAlert = false
+    @State private var showingDeleteError = false
+    @State private var showingResetError = false
 
     var body: some View {
         Form {
@@ -64,6 +66,16 @@ struct SettingsView: View {
             } message: {
                 Text("This will delete all events and sightings. This action cannot be undone.")
             }
+            .alert("Delete Failed", isPresented: $showingDeleteError) {
+                Button("OK") { }
+            } message: {
+                Text("Could not delete all sightings. Please try again.")
+            }
+            .alert("Reset Failed", isPresented: $showingResetError) {
+                Button("OK") { }
+            } message: {
+                Text("Could not reset data. Please try again.")
+            }
 
             Section("About") {
                 NavigationLink("Photo Credits") {
@@ -89,7 +101,9 @@ struct SettingsView: View {
         let descriptor = FetchDescriptor<JerseySighting>()
         let sightings = (try? context.fetch(descriptor)) ?? []
         for s in sightings { context.delete(s) }
-        try? context.save()
+        if !context.saveAndLog("Failed to delete all sightings") {
+            showingDeleteError = true
+        }
     }
 
     private func resetAllData() {
@@ -97,7 +111,9 @@ struct SettingsView: View {
         let sightings = (try? context.fetch(FetchDescriptor<JerseySighting>())) ?? []
         for e in events { context.delete(e) }
         for s in sightings { context.delete(s) }
-        try? context.save()
+        if !context.saveAndLog("Failed to reset all data") {
+            showingResetError = true
+        }
     }
 }
 

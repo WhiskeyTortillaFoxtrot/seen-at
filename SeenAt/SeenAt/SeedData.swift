@@ -73,7 +73,7 @@ enum SeedData {
         addSighting(context: context, team: team("Chicago Blackhawks"), firstName: "Toews", number: "19", event: e5)
         addSighting(context: context, team: team("Chicago Blackhawks"), number: "50", event: e5)
 
-        try? context.save()
+        context.saveAndLog("Failed to save seed data")
     }
 
     @MainActor

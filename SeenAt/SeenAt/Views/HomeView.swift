@@ -158,6 +158,7 @@ struct HomeView: View {
                     context.delete(list[index])
                 }
             }
+            try? context.save()
         }
     }
 }

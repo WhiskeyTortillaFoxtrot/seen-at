@@ -23,6 +23,7 @@ struct EventFormView: View {
     @State private var errorMessage: String?
 
     @State private var showManualEntry = false
+    @State private var showingSaveError = false
     @State private var selectedAwayTeam: Team?
     @State private var selectedHomeTeam: Team?
     @State private var manualAwayTeamText: String = ""
@@ -77,6 +78,11 @@ struct EventFormView: View {
             }
         }
         .onAppear { fetchGames() }
+        .alert("Save Failed", isPresented: $showingSaveError) {
+            Button("OK") { }
+        } message: {
+            Text("Could not save the game. Please try again.")
+        }
     }
 
     @ViewBuilder
@@ -238,7 +244,10 @@ struct EventFormView: View {
             watchLocation: watchLocation
         )
         context.insert(event)
-        try? context.save()
+        guard context.saveAndLog("Failed to create event") else {
+            showingSaveError = true
+            return
+        }
         onSave?(event)
     }
 
@@ -262,7 +271,10 @@ struct EventFormView: View {
             )
         }
         context.insert(event)
-        try? context.save()
+        guard context.saveAndLog("Failed to save manual event") else {
+            showingSaveError = true
+            return
+        }
         onSave?(event)
     }
 }

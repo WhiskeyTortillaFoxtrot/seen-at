@@ -6,7 +6,6 @@ struct EventActionHandler {
         let key = "\(team.id):\(name)"
         let now = Date()
         guard now.timeIntervalSince(lastIncrementTimes[key, default: .distantPast]) > 0.3 else { return }
-        lastIncrementTimes[key] = now
 
         let reference = event.sightings.first { $0.team?.id == team.id && $0.displayName == name }
         let sighting = JerseySighting(
@@ -17,7 +16,8 @@ struct EventActionHandler {
             event: event
         )
         context.insert(sighting)
-        try? context.save()
+        guard context.saveAndLog("Failed to save incrementPlayer sighting") else { return }
+        lastIncrementTimes[key] = now
     }
 
     static func deletePlayer(team: Team, name: String, event: Event, context: ModelContext) {
@@ -25,7 +25,7 @@ struct EventActionHandler {
         for sighting in toDelete {
             context.delete(sighting)
         }
-        try? context.save()
+        context.saveAndLog("Failed to save deletePlayer deletion")
     }
 
     static func disabledForDebounce(team: Team, name: String, lastIncrementTimes: [String: Date]) -> Bool {
