@@ -13,24 +13,7 @@ struct TeamPieChart: View {
     }
 
     private func team(at angle: Double) -> Team? {
-        let totalD = Double(total)
-        guard totalD > 0 else { return nil }
-
-        let tapDegrees = angle * 180 / .pi
-        let normalized = ((tapDegrees.truncatingRemainder(dividingBy: 360)) + 360)
-            .truncatingRemainder(dividingBy: 360)
-        let fromNoon = (normalized + 90).truncatingRemainder(dividingBy: 360)
-
-        var cumulative: Double = 0
-        for (team, count) in breakdown {
-            let proportion = Double(count) / totalD
-            let endAngle = cumulative + proportion * 360
-            if fromNoon >= cumulative && fromNoon < endAngle {
-                return team
-            }
-            cumulative = endAngle
-        }
-        return nil
+        PieChartSelection.team(at: angle, in: breakdown)
     }
 
     private var coloredBreakdown: [(team: Team, count: Int, color: Color)] {
