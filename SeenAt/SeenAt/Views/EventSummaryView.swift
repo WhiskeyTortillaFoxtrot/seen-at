@@ -13,6 +13,7 @@ struct EventSummaryView: View {
     @State private var showPieChart = false
     @State private var showShareOptions = false
     @State private var shareContent: ShareContent?
+    @State private var showingDeleteError = false
 
     var topTeamColors: [Color] {
         let teams = event.teamBreakdown.prefix(2).map { $0.team.primaryColor }
@@ -91,6 +92,11 @@ struct EventSummaryView: View {
         }
         .sheet(item: $shareContent) { content in
             ActivityViewController(items: content.activityItems)
+        }
+        .alert("Delete Failed", isPresented: $showingDeleteError) {
+            Button("OK") { }
+        } message: {
+            Text("Could not delete the sighting. Please try again.")
         }
     }
 
@@ -250,7 +256,9 @@ struct EventSummaryView: View {
                                         .padding(.leading, 20)
                                         .swipeActions(edge: .trailing) {
                                             Button(role: .destructive) {
-                                                EventActionHandler.deletePlayer(team: team, name: name, event: event, context: context)
+                                                if !EventActionHandler.deletePlayer(team: team, name: name, event: event, context: context) {
+                                                    showingDeleteError = true
+                                                }
                                             } label: {
                                                 Label("Delete", systemImage: "trash")
                                             }

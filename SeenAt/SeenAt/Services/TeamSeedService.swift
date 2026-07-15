@@ -30,7 +30,7 @@ enum TeamSeedService {
         }
 
         if seededSports.count < leagueTeams.count {
-            try? modelContext.save()
+            guard modelContext.saveAndLog("Failed to seed teams") else { return }
         }
 
         UserDefaults.standard.set(true, forKey: hasSeededKey)

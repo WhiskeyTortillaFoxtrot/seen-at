@@ -10,6 +10,7 @@ struct HomeView: View {
     @State private var showingNewEvent = false
     @State private var selectedLiveEvent: Event?
     @State private var selectedUpcomingEvent: Event?
+    @State private var showingDeleteError = false
 
     private var startOfToday: Date {
         Calendar.current.startOfDay(for: .now)
@@ -102,6 +103,11 @@ struct HomeView: View {
                 }
             }
         }
+        .alert("Delete Failed", isPresented: $showingDeleteError) {
+            Button("OK") { }
+        } message: {
+            Text("Could not delete the game. Please try again.")
+        }
         .onChange(of: eventToTrack) { _, event in
             if let event {
                 selectedLiveEvent = event
@@ -157,6 +163,9 @@ struct HomeView: View {
                 if index < list.count {
                     context.delete(list[index])
                 }
+            }
+            if !context.saveAndLog("Failed to delete events") {
+                showingDeleteError = true
             }
         }
     }
