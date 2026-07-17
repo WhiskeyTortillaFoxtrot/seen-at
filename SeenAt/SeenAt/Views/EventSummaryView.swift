@@ -353,9 +353,13 @@ struct EventSummaryView: View {
         let lat = info?.latitude ?? 0
         let lon = info?.longitude ?? 0
         let name = info?.name ?? venue
-        let query = "\(lat),\(lon)"
-        let label = name.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? name
-        guard let url = URL(string: "maps://?ll=\(query)&q=\(label)") else { return }
+        var components = URLComponents()
+        components.scheme = "maps"
+        components.queryItems = [
+            URLQueryItem(name: "ll", value: "\(lat),\(lon)"),
+            URLQueryItem(name: "q", value: name),
+        ]
+        guard let url = components.url else { return }
         UIApplication.shared.open(url)
     }
 

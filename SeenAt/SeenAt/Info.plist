@@ -20,9 +20,13 @@
     <string>$(MARKETING_VERSION)</string>
     <key>CFBundleVersion</key>
     <string>$(CURRENT_PROJECT_VERSION)</string>
-    <key>LSRequiresIPhoneOS</key>
-    <true/>
-    <key>NSPhotoLibraryUsageDescription</key>
+	<key>LSRequiresIPhoneOS</key>
+	<true/>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>maps</string>
+	</array>
+	<key>NSPhotoLibraryUsageDescription</key>
     <string>SeenAt uses your photo library to attach photos to jersey sightings.</string>
     <key>NSCameraUsageDescription</key>
     <string>SeenAt uses the camera to take photos of jerseys you spot.</string>
