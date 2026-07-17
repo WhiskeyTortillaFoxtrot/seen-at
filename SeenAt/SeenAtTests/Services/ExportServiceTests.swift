@@ -77,4 +77,44 @@ final class ExportServiceTests: XCTestCase {
         let csv = ExportService.generateAllDataCSV(context: context)
         XCTAssertTrue(csv.contains("\"Team A, Team B @ Team C\""))
     }
+
+    func testEscapeCSVPrefixesLeadingEquals() {
+        let event = TestDataFactory.makeEvent(title: "=SUM(A1:A10)")
+        context.insert(event)
+
+        let csv = ExportService.generateAllDataCSV(context: context)
+        XCTAssertTrue(csv.contains("'=SUM(A1:A10)"))
+    }
+
+    func testEscapeCSVPrefixesLeadingPlus() {
+        let event = TestDataFactory.makeEvent(title: "+1+2")
+        context.insert(event)
+
+        let csv = ExportService.generateAllDataCSV(context: context)
+        XCTAssertTrue(csv.contains("'+1+2"))
+    }
+
+    func testEscapeCSVPrefixesLeadingMinus() {
+        let event = TestDataFactory.makeEvent(title: "-1+2")
+        context.insert(event)
+
+        let csv = ExportService.generateAllDataCSV(context: context)
+        XCTAssertTrue(csv.contains("'-1+2"))
+    }
+
+    func testEscapeCSVPrefixesLeadingAt() {
+        let event = TestDataFactory.makeEvent(title: "@SUM(1,2)")
+        context.insert(event)
+
+        let csv = ExportService.generateAllDataCSV(context: context)
+        XCTAssertTrue(csv.contains("'@SUM(1,2)"))
+    }
+
+    func testEscapeCSVHandlesFormulaWithCommas() {
+        let event = TestDataFactory.makeEvent(title: "=SUM(1, 2)")
+        context.insert(event)
+
+        let csv = ExportService.generateAllDataCSV(context: context)
+        XCTAssertTrue(csv.contains("'\"=SUM(1, 2)\""))
+    }
 }

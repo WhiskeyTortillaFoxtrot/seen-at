@@ -75,9 +75,13 @@ struct ExportService {
     }
 
     private static func escapeCSV(_ value: String) -> String {
+        var escaped = value
         if value.contains(",") || value.contains("\"") || value.contains("\n") {
-            return "\"\(value.replacingOccurrences(of: "\"", with: "\"\""))\""
+            escaped = "\"\(value.replacingOccurrences(of: "\"", with: "\"\""))\""
         }
-        return value
+        if let first = escaped.first, first == "=" || first == "+" || first == "-" || first == "@" {
+            escaped = "'" + escaped
+        }
+        return escaped
     }
 }
