@@ -172,10 +172,19 @@ struct EventFormView: View {
                     }
                 } else {
                     TextField("Away Team", text: $manualAwayTeamText)
+                        .onChange(of: manualAwayTeamText) { _, new in
+                            if new.count > 100 { manualAwayTeamText = String(new.prefix(100)) }
+                        }
                     TextField("Home Team", text: $manualHomeTeamText)
+                        .onChange(of: manualHomeTeamText) { _, new in
+                            if new.count > 100 { manualHomeTeamText = String(new.prefix(100)) }
+                        }
                 }
 
                 TextField("Venue (optional)", text: $manualVenue)
+                    .onChange(of: manualVenue) { _, new in
+                        if new.count > 100 { manualVenue = String(new.prefix(100)) }
+                    }
                 Button("Start Tracking") {
                     saveManual()
                 }

@@ -76,10 +76,19 @@ struct AddSightingView: View {
             Section("Player (Optional)") {
                 HStack {
                     TextField("First", text: $playerFirstName)
+                        .onChange(of: playerFirstName) { _, new in
+                            if new.count > 50 { playerFirstName = String(new.prefix(50)) }
+                        }
                     TextField("Last", text: $playerLastName)
+                        .onChange(of: playerLastName) { _, new in
+                            if new.count > 50 { playerLastName = String(new.prefix(50)) }
+                        }
                 }
                 TextField("Number", text: $playerNumber)
                     .keyboardType(.numberPad)
+                    .onChange(of: playerNumber) { _, new in
+                        if new.count > 10 { playerNumber = String(new.prefix(10)) }
+                    }
             }
 
             if event.watchLocation != .tv {
