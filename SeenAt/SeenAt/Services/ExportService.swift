@@ -79,7 +79,7 @@ struct ExportService {
         if value.contains(",") || value.contains("\"") || value.contains("\n") {
             escaped = "\"\(value.replacingOccurrences(of: "\"", with: "\"\""))\""
         }
-        if let first = escaped.first, first == "=" || first == "+" || first == "-" || first == "@" {
+        if let first = value.first, first == "=" || first == "+" || first == "-" || first == "@" {
             escaped = "'" + escaped
         }
         return escaped
