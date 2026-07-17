@@ -162,7 +162,8 @@ struct HomeView: View {
             for index in indexSet {
                 if index < list.count {
                     let event = list[index]
-                    Task { await LiveActivityManager.end(for: event) }
+                    let eventID = event.id
+                    Task { await LiveActivityManager.end(for: eventID) }
                     context.delete(event)
                 }
             }
