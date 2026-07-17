@@ -112,6 +112,7 @@ struct StoreErrorView: View {
         UserDefaults.standard.removeObject(forKey: "seedVersion")
 
         await LiveActivityManager.endAll()
+        PhotoCacheService.clear()
 
         resetComplete = true
     }

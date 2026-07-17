@@ -327,7 +327,7 @@ struct EventSummaryView: View {
                 LazyVGrid(columns: [.init(.adaptive(minimum: 100), spacing: 8)], spacing: 8) {
                     ForEach(sightingsWithPhotos, id: \.persistentModelID) { sighting in
                         VStack(spacing: 4) {
-                            if let data = sighting.photoData, let image = UIImage(data: data) {
+                            if let data = sighting.photoData, let image = PhotoCacheService.image(for: sighting.persistentModelID.description, data: data) {
                                 Image(uiImage: image)
                                     .resizable()
                                     .scaledToFill()

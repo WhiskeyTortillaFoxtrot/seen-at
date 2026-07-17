@@ -107,7 +107,7 @@ struct LiveTrackingView: View {
             }
         }
         .fullScreenCover(item: $fullScreenSighting) { sighting in
-            if let data = sighting.photoData, let image = UIImage(data: data) {
+            if let data = sighting.photoData, let image = PhotoCacheService.image(for: sighting.persistentModelID.description, data: data) {
                 FullScreenPhotoView(image: image)
             }
         }
@@ -223,7 +223,7 @@ struct LiveTrackingView: View {
                                         .font(.urbanist(.subheadline, weight: .medium))
                                 }
 
-                                if hasPhoto, let data = sighting.photoData, let image = UIImage(data: data) {
+                                if hasPhoto, let data = sighting.photoData, let image = PhotoCacheService.image(for: sighting.persistentModelID.description, data: data) {
                                     Image(uiImage: image)
                                         .resizable()
                                         .scaledToFill()
@@ -262,7 +262,7 @@ struct LiveTrackingView: View {
                             }
                         }
 
-                        if expandedSighting == sighting, hasPhoto, let data = sighting.photoData, let image = UIImage(data: data) {
+                        if expandedSighting == sighting, hasPhoto, let data = sighting.photoData, let image = PhotoCacheService.image(for: sighting.persistentModelID.description, data: data) {
                             Image(uiImage: image)
                                 .resizable()
                                 .scaledToFit()
