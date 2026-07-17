@@ -3,14 +3,21 @@ import SwiftData
 
 enum TeamSeedService {
     private static let hasSeededKey = "hasSeededTeams"
+    private static let seedVersionKey = "seedVersion"
+    private static let currentSeedVersion = 1
 
     @MainActor
     static func seedIfNeeded(modelContext: ModelContext) async {
-        guard !UserDefaults.standard.bool(forKey: hasSeededKey) else { return }
+        let storedVersion = UserDefaults.standard.integer(forKey: seedVersionKey)
+        guard storedVersion < currentSeedVersion else { return }
 
-        let descriptor = FetchDescriptor<Team>(predicate: #Predicate { $0.isBuiltIn == true })
-        let existing = (try? modelContext.fetch(descriptor)) ?? []
-        let seededSports = Set(existing.map(\.sport))
+        let builtInPredicate = #Predicate<Team> { $0.isBuiltIn == true }
+        let existing = (try? modelContext.fetch(FetchDescriptor<Team>(predicate: builtInPredicate))) ?? []
+
+        var didMutate = false
+        didMutate = migrateNames(in: modelContext, existing: existing) || didMutate
+
+        let currentNames = Set(existing.map(\.name))
 
         let leagueTeams: [(String, [Team])] = [
             ("mlb", MLBTeams.all),
@@ -22,17 +29,36 @@ enum TeamSeedService {
         ]
 
         for (sport, teams) in leagueTeams {
-            if !seededSports.contains(sport) {
-                for team in teams {
+            for team in teams {
+                if !currentNames.contains(team.name) {
                     modelContext.insert(team)
+                    didMutate = true
                 }
             }
         }
 
-        if seededSports.count < leagueTeams.count {
+        if didMutate {
             guard modelContext.saveAndLog("Failed to seed teams") else { return }
         }
 
         UserDefaults.standard.set(true, forKey: hasSeededKey)
+        UserDefaults.standard.set(currentSeedVersion, forKey: seedVersionKey)
+    }
+
+    @MainActor
+    private static func migrateNames(in modelContext: ModelContext, existing: [Team]) -> Bool {
+        let renames: [(String, String)] = [
+            ("Oakland Athletics", "Athletics"),
+            ("Utah Hockey Club", "Utah Mammoth"),
+        ]
+
+        var didRename = false
+        for (oldName, newName) in renames {
+            if let team = existing.first(where: { $0.name == oldName }) {
+                team.name = newName
+                didRename = true
+            }
+        }
+        return didRename
     }
 }
