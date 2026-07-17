@@ -107,7 +107,7 @@ final class ExportServiceTests: XCTestCase {
         context.insert(event)
 
         let csv = ExportService.generateAllDataCSV(context: context)
-        XCTAssertTrue(csv.contains("'@SUM(1,2)"))
+        XCTAssertTrue(csv.contains("'\"@SUM(1,2)\""))
     }
 
     func testEscapeCSVHandlesFormulaWithCommas() {
