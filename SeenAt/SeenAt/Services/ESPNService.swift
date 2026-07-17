@@ -1,10 +1,14 @@
 import Foundation
 
 enum ESPNService {
-    static func fetchGames(on date: Date, sportPath: String, session: URLSession = .shared) async throws -> [LeagueGame] {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyyMMdd"
-        let dateString = formatter.string(from: date)
+    private static let dateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "yyyyMMdd"
+        return f
+    }()
+
+    static func fetchGames(on date: Date, sportPath: String, session: URLSession = APICacheService.session) async throws -> [LeagueGame] {
+        let dateString = dateFormatter.string(from: date)
 
         let url = URL(string: "https://site.api.espn.com/apis/site/v2/sports/\(sportPath)/scoreboard?dates=\(dateString)")!
         let (data, _) = try await session.data(from: url)

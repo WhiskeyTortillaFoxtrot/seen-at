@@ -1,10 +1,14 @@
 import Foundation
 
 enum NHLAPIService: LeagueAPIService {
-    static func fetchGames(on date: Date, session: URLSession = .shared) async throws -> [LeagueGame] {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd"
-        let dateString = formatter.string(from: date)
+    private static let dateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "yyyy-MM-dd"
+        return f
+    }()
+
+    static func fetchGames(on date: Date, session: URLSession = APICacheService.session) async throws -> [LeagueGame] {
+        let dateString = dateFormatter.string(from: date)
 
         let url = URL(string: "https://api-web.nhle.com/v1/schedule/\(dateString)")!
         let (data, _) = try await session.data(from: url)
