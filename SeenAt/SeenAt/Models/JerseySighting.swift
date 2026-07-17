@@ -15,7 +15,7 @@ final class JerseySighting {
     @Relationship(inverse: \Team.sightings) var team: Team?
 
     var isPlayerSighting: Bool {
-        firstName != nil || lastName != nil || playerNumber != nil
+        (firstName?.isEmpty == false) || (lastName?.isEmpty == false) || (playerNumber?.isEmpty == false)
     }
 
     var displayName: String {
