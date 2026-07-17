@@ -47,7 +47,7 @@ final class Event {
     }
 
     var playerBreakdown: [(team: Team, playerName: String, count: Int)] {
-        let withPlayer = sightings.filter { !$0.displayName.isEmpty }
+        let withPlayer = sightings.filter { $0.isPlayerSighting }
         let grouped = Dictionary(grouping: withPlayer) { "\($0.team?.name ?? ""):\($0.displayName)" }
         return grouped
             .compactMap { (key, values) -> (team: Team, playerName: String, count: Int)? in
@@ -58,7 +58,7 @@ final class Event {
     }
 
     func players(for team: Team) -> [(playerName: String, count: Int)] {
-        let withPlayer = sightings.filter { $0.team?.id == team.id && !$0.displayName.isEmpty }
+        let withPlayer = sightings.filter { $0.team?.id == team.id && $0.isPlayerSighting }
         let grouped = Dictionary(grouping: withPlayer) { $0.displayName }
         return grouped.map { ($0.key, $0.value.count) }.sorted { a, b in a.count > b.count || (a.count == b.count && a.playerName < b.playerName) }
     }

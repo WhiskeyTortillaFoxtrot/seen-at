@@ -29,7 +29,7 @@ struct StatsView: View {
     }
 
     var topPlayers: [(name: String, team: Team, playerNumber: String?, count: Int)] {
-        let withPlayer = events.flatMap { $0.sightings }.filter { !$0.displayName.isEmpty }
+        let withPlayer = events.flatMap { $0.sightings }.filter { $0.isPlayerSighting }
         let grouped = Dictionary(grouping: withPlayer) { "\($0.team?.name ?? ""):\($0.displayName)" }
         return grouped
             .compactMap { (key, values) -> (name: String, team: Team, playerNumber: String?, count: Int)? in

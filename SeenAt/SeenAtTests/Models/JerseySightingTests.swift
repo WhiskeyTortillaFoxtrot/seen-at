@@ -31,4 +31,29 @@ final class JerseySightingTests: XCTestCase {
         let sighting = TestDataFactory.makeSighting(firstName: nil, lastName: nil, number: nil)
         XCTAssertEqual(sighting.displayName, "")
     }
+
+    func testIsPlayerSightingWithFirstName() {
+        let sighting = TestDataFactory.makeSighting(firstName: "John")
+        XCTAssertTrue(sighting.isPlayerSighting)
+    }
+
+    func testIsPlayerSightingWithPlayerNumber() {
+        let sighting = TestDataFactory.makeSighting(number: "42")
+        XCTAssertTrue(sighting.isPlayerSighting)
+    }
+
+    func testIsPlayerSightingWithLastNameOnly() {
+        let sighting = TestDataFactory.makeSighting(lastName: "Doe")
+        XCTAssertTrue(sighting.isPlayerSighting)
+    }
+
+    func testIsPlayerSightingAllFieldsNil() {
+        let sighting = TestDataFactory.makeSighting()
+        XCTAssertFalse(sighting.isPlayerSighting)
+    }
+
+    func testIsPlayerSightingEmptyStrings() {
+        let sighting = TestDataFactory.makeSighting(firstName: "", lastName: "", number: "")
+        XCTAssertFalse(sighting.isPlayerSighting)
+    }
 }

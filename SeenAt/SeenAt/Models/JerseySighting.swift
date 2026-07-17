@@ -14,6 +14,10 @@ final class JerseySighting {
 
     @Relationship(inverse: \Team.sightings) var team: Team?
 
+    var isPlayerSighting: Bool {
+        (firstName?.isEmpty == false) || (lastName?.isEmpty == false) || (playerNumber?.isEmpty == false)
+    }
+
     var displayName: String {
         let name = [firstName, lastName].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " ")
         if !name.isEmpty { return name }
