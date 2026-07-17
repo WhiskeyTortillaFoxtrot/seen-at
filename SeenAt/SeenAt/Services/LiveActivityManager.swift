@@ -28,7 +28,7 @@ enum LiveActivityManager {
             jerseyCount: event.totalCount,
             mostRecentJerseyName: event.sightings
                 .sorted { $0.timestamp > $1.timestamp }
-                .first?.displayName ?? ""
+                .first(where: { $0.isPlayerSighting })?.displayName ?? ""
         )
 
         let attributes = SeenAtActivityAttributes(

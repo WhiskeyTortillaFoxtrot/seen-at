@@ -24,7 +24,9 @@ struct ExportService {
                 lines.append("Most popular team: \(popular.team.name) (\(popular.count))")
             }
 
-            if let popular = event.playerBreakdown.first {
+            if !event.sightings.contains(where: { $0.isPlayerSighting }) {
+                lines.append("No player jerseys recorded")
+            } else if let popular = event.playerBreakdown.first {
                 lines.append("Most popular jersey: \(popular.team.abbreviation) \(popular.playerName) (\(popular.count))")
             }
         }
