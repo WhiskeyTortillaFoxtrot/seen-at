@@ -29,7 +29,7 @@ enum NHLTeams {
         Team(name: "St. Louis Blues", abbreviation: "STL", sport: "nhl", isBuiltIn: true, primaryColorHex: "#002F87", secondaryColorHex: "#FCB514"),
         Team(name: "Tampa Bay Lightning", abbreviation: "TBL", sport: "nhl", isBuiltIn: true, primaryColorHex: "#002868", secondaryColorHex: "#FFFFFF"),
         Team(name: "Toronto Maple Leafs", abbreviation: "TOR", sport: "nhl", isBuiltIn: true, primaryColorHex: "#00205B", secondaryColorHex: "#FFFFFF"),
-        Team(name: "Utah Hockey Club", abbreviation: "UTA", sport: "nhl", isBuiltIn: true, primaryColorHex: "#71AFE5", secondaryColorHex: "#111111"),
+        Team(name: "Utah Mammoth", abbreviation: "UTA", sport: "nhl", isBuiltIn: true, primaryColorHex: "#71AFE5", secondaryColorHex: "#111111"),
         Team(name: "Vancouver Canucks", abbreviation: "VAN", sport: "nhl", isBuiltIn: true, primaryColorHex: "#00205B", secondaryColorHex: "#00843D"),
         Team(name: "Vegas Golden Knights", abbreviation: "VGK", sport: "nhl", isBuiltIn: true, primaryColorHex: "#B9975B", secondaryColorHex: "#333F42"),
         Team(name: "Washington Capitals", abbreviation: "WSH", sport: "nhl", isBuiltIn: true, primaryColorHex: "#041E42", secondaryColorHex: "#C8102E"),

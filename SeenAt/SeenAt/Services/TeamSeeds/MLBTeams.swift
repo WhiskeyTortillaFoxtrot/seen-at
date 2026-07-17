@@ -21,7 +21,7 @@ enum MLBTeams {
         Team(name: "Minnesota Twins", abbreviation: "MIN", sport: "mlb", isBuiltIn: true, primaryColorHex: "#002B5C", secondaryColorHex: "#D31145"),
         Team(name: "New York Mets", abbreviation: "NYM", sport: "mlb", isBuiltIn: true, primaryColorHex: "#002D72", secondaryColorHex: "#FF5910"),
         Team(name: "New York Yankees", abbreviation: "NYY", sport: "mlb", isBuiltIn: true, primaryColorHex: "#003087", secondaryColorHex: "#E4002C"),
-        Team(name: "Oakland Athletics", abbreviation: "OAK", sport: "mlb", isBuiltIn: true, primaryColorHex: "#003831", secondaryColorHex: "#EFB21E"),
+        Team(name: "Athletics", abbreviation: "ATH", sport: "mlb", isBuiltIn: true, primaryColorHex: "#003831", secondaryColorHex: "#EFB21E"),
         Team(name: "Philadelphia Phillies", abbreviation: "PHI", sport: "mlb", isBuiltIn: true, primaryColorHex: "#E81828", secondaryColorHex: "#002D72"),
         Team(name: "Pittsburgh Pirates", abbreviation: "PIT", sport: "mlb", isBuiltIn: true, primaryColorHex: "#27251F", secondaryColorHex: "#FDB827"),
         Team(name: "San Diego Padres", abbreviation: "SD", sport: "mlb", isBuiltIn: true, primaryColorHex: "#2F241D", secondaryColorHex: "#FFC425"),

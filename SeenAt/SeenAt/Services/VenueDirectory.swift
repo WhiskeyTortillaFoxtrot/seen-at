@@ -27,13 +27,13 @@ enum VenueDirectory {
         "Minute Maid Park": VenueInfo(name: "Minute Maid Park", address: "501 Crawford St, Houston, TX 77002", latitude: 29.7572, longitude: -95.3556),
         "Daikin Park": VenueInfo(name: "Daikin Park", address: "501 Crawford St, Houston, TX 77002", latitude: 29.7572, longitude: -95.3556),
         "Nationals Park": VenueInfo(name: "Nationals Park", address: "1500 S Capitol St SE, Washington, DC 20003", latitude: 38.8729, longitude: -77.0074),
-        "Oakland Coliseum": VenueInfo(name: "Oakland Coliseum", address: "7000 Coliseum Way, Oakland, CA 94621", latitude: 37.7516, longitude: -122.2005),
         "Oracle Park": VenueInfo(name: "Oracle Park", address: "24 Willie Mays Plaza, San Francisco, CA 94107", latitude: 37.7786, longitude: -122.3893),
         "Oriole Park at Camden Yards": VenueInfo(name: "Oriole Park at Camden Yards", address: "333 W Camden St, Baltimore, MD 21201", latitude: 39.2839, longitude: -76.6216),
         "Petco Park": VenueInfo(name: "Petco Park", address: "100 Park Blvd, San Diego, CA 92101", latitude: 32.7076, longitude: -117.1571),
         "PNC Park": VenueInfo(name: "PNC Park", address: "115 Federal St, Pittsburgh, PA 15212", latitude: 40.4469, longitude: -80.0057),
         "Progressive Field": VenueInfo(name: "Progressive Field", address: "2401 Ontario St, Cleveland, OH 44115", latitude: 41.4961, longitude: -81.6853),
         "Rogers Centre": VenueInfo(name: "Rogers Centre", address: "1 Blue Jays Way, Toronto, ON M5V 1J1, Canada", latitude: 43.6414, longitude: -79.3894),
+        "Sutter Health Park": VenueInfo(name: "Sutter Health Park", address: "400 Ballpark Dr, West Sacramento, CA 95691", latitude: 38.5787, longitude: -121.5147),
         "T-Mobile Park": VenueInfo(name: "T-Mobile Park", address: "1250 1st Ave S, Seattle, WA 98134", latitude: 47.5914, longitude: -122.3327),
         "Target Field": VenueInfo(name: "Target Field", address: "1 Twins Way, Minneapolis, MN 55403", latitude: 44.9817, longitude: -93.2783),
         "Tropicana Field": VenueInfo(name: "Tropicana Field", address: "1 Tropicana Dr, St. Petersburg, FL 33705", latitude: 27.7683, longitude: -82.6534),
@@ -135,6 +135,7 @@ enum VenueDirectory {
         "BC Place": VenueInfo(name: "BC Place", address: "777 Pacific Blvd, Vancouver, BC V6B 4Y8, Canada", latitude: 49.2767, longitude: -123.1120),
         "BMO Field": VenueInfo(name: "BMO Field", address: "170 Princes' Blvd, Toronto, ON M6K 3C3, Canada", latitude: 43.6333, longitude: -79.4186),
         "BMO Stadium": VenueInfo(name: "BMO Stadium", address: "3939 S Figueroa St, Los Angeles, CA 90037", latitude: 34.0125, longitude: -118.2852),
+        "Chase Stadium": VenueInfo(name: "Chase Stadium", address: "1350 NW 55th St, Fort Lauderdale, FL 33309", latitude: 26.1944, longitude: -80.1616),
         "Children's Mercy Park": VenueInfo(name: "Children's Mercy Park", address: "1 Sporting Way, Kansas City, KS 66111", latitude: 39.1216, longitude: -94.8230),
         "CITYPARK": VenueInfo(name: "CITYPARK", address: "2100 Market St, St. Louis, MO 63103", latitude: 38.6303, longitude: -90.2102),
         "Dick's Sporting Goods Park": VenueInfo(name: "Dick's Sporting Goods Park", address: "6000 Victory Way, Commerce City, CO 80022", latitude: 39.8054, longitude: -104.8919),
@@ -174,6 +175,7 @@ enum VenueDirectory {
         // MLB
         case "Arizona Diamondbacks": "Chase Field"
         case "Atlanta Braves": "Truist Park"
+        case "Athletics": "Sutter Health Park"
         case "Baltimore Orioles": "Oriole Park at Camden Yards"
         case "Boston Red Sox": "Fenway Park"
         case "Chicago Cubs": "Wrigley Field"
@@ -191,7 +193,6 @@ enum VenueDirectory {
         case "Minnesota Twins": "Target Field"
         case "New York Mets": "Citi Field"
         case "New York Yankees": "Yankee Stadium"
-        case "Oakland Athletics": "Oakland Coliseum"
         case "Philadelphia Phillies": "Citizens Bank Park"
         case "Pittsburgh Pirates": "PNC Park"
         case "San Diego Padres": "Petco Park"
@@ -297,7 +298,7 @@ enum VenueDirectory {
         case "St. Louis Blues": "Enterprise Center"
         case "Tampa Bay Lightning": "Amalie Arena"
         case "Toronto Maple Leafs": "Scotiabank Arena"
-        case "Utah Hockey Club": "Delta Center"
+        case "Utah Mammoth": "Delta Center"
         case "Vancouver Canucks": "Rogers Arena"
         case "Vegas Golden Knights": "T-Mobile Arena"
         case "Washington Capitals": "Capital One Arena"
@@ -315,6 +316,7 @@ enum VenueDirectory {
         case "Atlanta United FC": "Mercedes-Benz Stadium"
         case "Austin FC": "Q2 Stadium"
         case "CF Montréal": "Stade Saputo"
+        case "Charlotte FC": "Bank of America Stadium"
         case "Chicago Fire FC": "Soldier Field"
         case "Colorado Rapids": "Dick's Sporting Goods Park"
         case "Columbus Crew": "Lower.com Field"
@@ -322,6 +324,7 @@ enum VenueDirectory {
         case "FC Cincinnati": "TQL Stadium"
         case "FC Dallas": "Toyota Stadium"
         case "Houston Dynamo FC": "Shell Energy Stadium"
+        case "Inter Miami CF": "Chase Stadium"
         case "LA Galaxy": "Dignity Health Sports Park"
         case "Los Angeles FC": "BMO Stadium"
         case "Minnesota United FC": "Allianz Field"
