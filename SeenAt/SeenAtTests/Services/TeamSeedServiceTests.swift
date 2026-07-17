@@ -65,6 +65,18 @@ final class TeamSeedServiceTests: XCTestCase {
         XCTAssertEqual(teams.last?.name, "Winnipeg Jets")
     }
 
+    func testResetClearsSeedVersion() async {
+        UserDefaults.standard.set(true, forKey: "hasSeededTeams")
+        UserDefaults.standard.set(42, forKey: "seedVersion")
+
+        XCTAssertEqual(UserDefaults.standard.integer(forKey: "seedVersion"), 42)
+
+        UserDefaults.standard.removeObject(forKey: "hasSeededTeams")
+        UserDefaults.standard.removeObject(forKey: "seedVersion")
+
+        XCTAssertNil(UserDefaults.standard.object(forKey: "seedVersion"), "seedVersion must be cleared so the versioned seed system re-runs after a store reset")
+    }
+
     func testSeedsMLSTeams() async {
         await TeamSeedService.seedIfNeeded(modelContext: context)
 
