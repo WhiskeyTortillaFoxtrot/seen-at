@@ -106,6 +106,28 @@ final class TeamSeedServiceTests: XCTestCase {
         let mammoth = teams.first { $0.name == "Utah Mammoth" }
         XCTAssertNotNil(athletics, "Oakland Athletics should be renamed to Athletics")
         XCTAssertNotNil(mammoth, "Utah Hockey Club should be renamed to Utah Mammoth")
+
+        XCTAssertNil(teams.first { $0.name == "Oakland Athletics" }, "Old name Oakland Athletics should be gone")
+        XCTAssertNil(teams.first { $0.name == "Utah Hockey Club" }, "Old name Utah Hockey Club should be gone")
+
+        XCTAssertEqual(athletics?.abbreviation, "ATH", "Abbreviation should be updated from OAK to ATH")
+    }
+
+    func testResetClearsSeedVersionAllowingReseed() async {
+        await TeamSeedService.seedIfNeeded(modelContext: context)
+
+        let countAfterSeed = try? context.fetchCount(FetchDescriptor<Team>())
+        XCTAssertEqual(countAfterSeed, 160)
+
+        UserDefaults.standard.removeObject(forKey: "hasSeededTeams")
+        UserDefaults.standard.removeObject(forKey: "seedVersion")
+
+        await TeamSeedService.seedIfNeeded(modelContext: context)
+
+        let countAfterReset = try? context.fetchCount(FetchDescriptor<Team>())
+        XCTAssertEqual(countAfterReset, 160, "Re-seeding after reset should still produce 160 teams")
+        let storedVersion = UserDefaults.standard.integer(forKey: "seedVersion")
+        XCTAssertGreaterThan(storedVersion, 0, "seedVersion should be set again after re-seeding")
     }
 
     func testSeedsMLSTeams() async {

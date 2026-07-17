@@ -47,15 +47,18 @@ enum TeamSeedService {
 
     @MainActor
     private static func migrateNames(in modelContext: ModelContext, existing: [Team]) -> Bool {
-        let renames: [(String, String)] = [
-            ("Oakland Athletics", "Athletics"),
-            ("Utah Hockey Club", "Utah Mammoth"),
+        let renames: [(String, String, String?)] = [
+            ("Oakland Athletics", "Athletics", "ATH"),
+            ("Utah Hockey Club", "Utah Mammoth", nil),
         ]
 
         var didRename = false
-        for (oldName, newName) in renames {
+        for (oldName, newName, newAbbreviation) in renames {
             if let team = existing.first(where: { $0.name == oldName }) {
                 team.name = newName
+                if let newAbbreviation {
+                    team.abbreviation = newAbbreviation
+                }
                 didRename = true
             }
         }

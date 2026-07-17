@@ -27,7 +27,6 @@ enum VenueDirectory {
         "Minute Maid Park": VenueInfo(name: "Minute Maid Park", address: "501 Crawford St, Houston, TX 77002", latitude: 29.7572, longitude: -95.3556),
         "Daikin Park": VenueInfo(name: "Daikin Park", address: "501 Crawford St, Houston, TX 77002", latitude: 29.7572, longitude: -95.3556),
         "Nationals Park": VenueInfo(name: "Nationals Park", address: "1500 S Capitol St SE, Washington, DC 20003", latitude: 38.8729, longitude: -77.0074),
-        "Oakland Coliseum": VenueInfo(name: "Oakland Coliseum", address: "7000 Coliseum Way, Oakland, CA 94621", latitude: 37.7516, longitude: -122.2005),
         "Oracle Park": VenueInfo(name: "Oracle Park", address: "24 Willie Mays Plaza, San Francisco, CA 94107", latitude: 37.7786, longitude: -122.3893),
         "Oriole Park at Camden Yards": VenueInfo(name: "Oriole Park at Camden Yards", address: "333 W Camden St, Baltimore, MD 21201", latitude: 39.2839, longitude: -76.6216),
         "Petco Park": VenueInfo(name: "Petco Park", address: "100 Park Blvd, San Diego, CA 92101", latitude: 32.7076, longitude: -117.1571),
@@ -194,7 +193,6 @@ enum VenueDirectory {
         case "Minnesota Twins": "Target Field"
         case "New York Mets": "Citi Field"
         case "New York Yankees": "Yankee Stadium"
-        case "Oakland Athletics": "Oakland Coliseum"
         case "Philadelphia Phillies": "Citizens Bank Park"
         case "Pittsburgh Pirates": "PNC Park"
         case "San Diego Padres": "Petco Park"
@@ -300,7 +298,6 @@ enum VenueDirectory {
         case "St. Louis Blues": "Enterprise Center"
         case "Tampa Bay Lightning": "Amalie Arena"
         case "Toronto Maple Leafs": "Scotiabank Arena"
-        case "Utah Hockey Club": "Delta Center"
         case "Utah Mammoth": "Delta Center"
         case "Vancouver Canucks": "Rogers Arena"
         case "Vegas Golden Knights": "T-Mobile Arena"
