@@ -231,9 +231,7 @@ struct EventFormView: View {
     }
 
     private func createEvent(from game: LeagueGame) {
-        let dateFormatter = ISO8601DateFormatter()
-        dateFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        let gameDate = dateFormatter.date(from: game.dateString) ?? date
+        let gameDate = parseISODate(game.dateString) ?? date
 
         let event = Event(
             awayTeam: game.awayTeam,
