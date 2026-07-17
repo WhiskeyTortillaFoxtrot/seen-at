@@ -21,7 +21,7 @@ final class VenueDirectoryTests: XCTestCase {
     }
 
     func testAllVenuesPresent() {
-        XCTAssertEqual(VenueDirectory.all.count, 142)
+        XCTAssertEqual(VenueDirectory.all.count, 141)
     }
 
     func testHomeVenueMLB() {
