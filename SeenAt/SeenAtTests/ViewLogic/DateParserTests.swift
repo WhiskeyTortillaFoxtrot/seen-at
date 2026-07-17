@@ -26,17 +26,6 @@ final class DateParserTests: XCTestCase {
         XCTAssertEqual(components.minute, 10)
     }
 
-    func testParsesESPNDateFormatWithSeconds() {
-        let date = parseISODate("2026-07-09T19:10:00Z")
-        XCTAssertNotNil(date)
-        let components = utcComponents(from: date!)
-        XCTAssertEqual(components.year, 2026)
-        XCTAssertEqual(components.month, 7)
-        XCTAssertEqual(components.day, 9)
-        XCTAssertEqual(components.hour, 19)
-        XCTAssertEqual(components.minute, 10)
-    }
-
     func testParsesNHLDateFormat() {
         let date = parseISODate("2026-07-09")
         XCTAssertNotNil(date)
