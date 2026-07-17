@@ -48,11 +48,15 @@ enum LiveActivityManager {
         }
     }
 
-    static func end(for event: Event) async {
-        let activities = Activity<SeenAtActivityAttributes>.activities.filter { $0.attributes.eventID == event.id }
+    static func end(for eventID: UUID) async {
+        let activities = Activity<SeenAtActivityAttributes>.activities.filter { $0.attributes.eventID == eventID }
         for activity in activities {
             await activity.end(dismissalPolicy: .immediate)
         }
+    }
+
+    static func end(for event: Event) async {
+        await end(for: event.id)
     }
 
     static func endAll() async {

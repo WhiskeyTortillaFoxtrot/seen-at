@@ -161,7 +161,10 @@ struct HomeView: View {
         { indexSet in
             for index in indexSet {
                 if index < list.count {
-                    context.delete(list[index])
+                    let event = list[index]
+                    let eventID = event.id
+                    Task { await LiveActivityManager.end(for: eventID) }
+                    context.delete(event)
                 }
             }
             if !context.saveAndLog("Failed to delete events") {
