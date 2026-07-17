@@ -64,12 +64,10 @@ struct LiveTrackingView: View {
                 }
             }
             ToolbarItem(placement: .topBarTrailing) {
-                if !event.sightings.isEmpty {
-                    Button("Finish") {
-                        Task {
-                            await LiveActivityManager.end(for: event)
-                            showingSummary = true
-                        }
+                Button("Finish") {
+                    Task {
+                        await LiveActivityManager.end(for: event)
+                        showingSummary = true
                     }
                 }
             }
