@@ -109,6 +109,7 @@ struct StoreErrorView: View {
         }
 
         UserDefaults.standard.removeObject(forKey: "hasSeededTeams")
+        UserDefaults.standard.removeObject(forKey: "seedVersion")
 
         await LiveActivityManager.endAll()
 
