@@ -28,7 +28,7 @@ enum TeamSeedService {
             ("mls", MLSTeams.all),
         ]
 
-        for (sport, teams) in leagueTeams {
+        for (_, teams) in leagueTeams {
             for team in teams {
                 if !currentNames.contains(team.name) {
                     modelContext.insert(team)
