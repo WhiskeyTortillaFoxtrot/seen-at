@@ -11,9 +11,7 @@ enum NHLAPIService: LeagueAPIService {
 
         let decoder = JSONDecoder()
         let response = try decoder.decode(NHLScheduleResponse.self, from: data)
-        return response.gameWeek.flatMap { week in
-            week.games.map { $0.toLeagueGame(dateString: week.date) }
-        }
+        return response.gameWeek.first(where: { $0.date == dateString })?.games.map { $0.toLeagueGame(dateString: dateString) } ?? []
     }
 }
 
