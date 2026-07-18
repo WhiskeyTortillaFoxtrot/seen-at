@@ -37,6 +37,7 @@ struct SettingsView: View {
 
             Section("Export") {
                 Button("Export All Data as CSV") {
+                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
                     exportCSV = ExportService.generateAllDataCSV(context: context)
                     showingExporter = true
                 }
@@ -98,6 +99,7 @@ struct SettingsView: View {
     }
 
     private func deleteAllSightings() {
+        UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
         let descriptor = FetchDescriptor<JerseySighting>()
         let sightings = (try? context.fetch(descriptor)) ?? []
         for s in sightings { context.delete(s) }
@@ -107,6 +109,7 @@ struct SettingsView: View {
     }
 
     private func resetAllData() {
+        UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
         Task { await LiveActivityManager.endAll() }
         PhotoCacheService.clear()
         let events = (try? context.fetch(FetchDescriptor<Event>())) ?? []
