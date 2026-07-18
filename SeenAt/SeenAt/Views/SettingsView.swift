@@ -108,6 +108,7 @@ struct SettingsView: View {
 
     private func resetAllData() {
         Task { await LiveActivityManager.endAll() }
+        PhotoCacheService.clear()
         let events = (try? context.fetch(FetchDescriptor<Event>())) ?? []
         for e in events { context.delete(e) }
         if !context.saveAndLog("Failed to reset all data") {
