@@ -107,7 +107,7 @@ struct LiveTrackingView: View {
             }
         }
         .fullScreenCover(item: $fullScreenSighting) { sighting in
-            if let data = sighting.photoData, let image = PhotoCacheService.image(for: sighting.persistentModelID.description, data: data) {
+            if let data = sighting.photoData, let image = PhotoCacheService.image(for: "\(sighting.persistentModelID)", data: data) {
                 FullScreenPhotoView(image: image)
             }
         }
@@ -223,7 +223,7 @@ struct LiveTrackingView: View {
                                         .font(.urbanist(.subheadline, weight: .medium))
                                 }
 
-                                if hasPhoto, let data = sighting.photoData, let image = PhotoCacheService.image(for: sighting.persistentModelID.description, data: data) {
+                                if hasPhoto, let data = sighting.photoData, let image = PhotoCacheService.image(for: "\(sighting.persistentModelID)", data: data) {
                                     Image(uiImage: image)
                                         .resizable()
                                         .scaledToFill()
@@ -262,7 +262,7 @@ struct LiveTrackingView: View {
                             }
                         }
 
-                        if expandedSighting == sighting, hasPhoto, let data = sighting.photoData, let image = PhotoCacheService.image(for: sighting.persistentModelID.description, data: data) {
+                        if expandedSighting == sighting, hasPhoto, let data = sighting.photoData, let image = PhotoCacheService.image(for: "\(sighting.persistentModelID)", data: data) {
                             Image(uiImage: image)
                                 .resizable()
                                 .scaledToFit()
@@ -347,12 +347,18 @@ struct FullScreenPhotoView: View {
                 } label: {
                     Image(systemName: "xmark.circle.fill")
                         .font(.urbanist(.title))
-                        .foregroundStyle(.white.opacity(0.8))
+                        .foregroundStyle(.white)
+                        .background(
+                            Circle()
+                                .fill(.ultraThinMaterial)
+                                .frame(width: 36, height: 36)
+                        )
                         .padding()
                 }
             }
             .onTapGesture {
                 dismiss()
             }
+            .preferredColorScheme(.dark)
     }
 }

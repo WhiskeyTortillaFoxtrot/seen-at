@@ -3,7 +3,7 @@ import SwiftData
 import Charts
 
 struct EventSummaryView: View {
-    @Bindable var event: Event
+    let event: Event
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var context
     @State private var showingAddSighting = false
@@ -14,6 +14,7 @@ struct EventSummaryView: View {
     @State private var showShareOptions = false
     @State private var shareContent: ShareContent?
     @State private var showingDeleteError = false
+    @State private var photoSightings: [JerseySighting] = []
 
     var topTeamColors: [Color] {
         let teams = event.teamBreakdown.prefix(2).map { $0.team.primaryColor }
@@ -97,6 +98,10 @@ struct EventSummaryView: View {
             Button("OK") { }
         } message: {
             Text("Could not delete the sighting. Please try again.")
+        }
+        .onAppear { photoSightings = event.sightings.filter { $0.photoData != nil } }
+        .onChange(of: event.sightings.count) { _, _ in
+            photoSightings = event.sightings.filter { $0.photoData != nil }
         }
     }
 
@@ -318,16 +323,15 @@ struct EventSummaryView: View {
 
     @ViewBuilder
     private var photoGallery: some View {
-        let sightingsWithPhotos = event.sightings.filter { $0.photoData != nil }
-        if !sightingsWithPhotos.isEmpty {
+        if !photoSightings.isEmpty {
             VStack(alignment: .leading, spacing: 12) {
                 Text("Photos")
                     .font(.urbanist(.headline))
 
                 LazyVGrid(columns: [.init(.adaptive(minimum: 100), spacing: 8)], spacing: 8) {
-                    ForEach(sightingsWithPhotos, id: \.persistentModelID) { sighting in
+                    ForEach(Array(photoSightings), id: \.persistentModelID) { sighting in
                         VStack(spacing: 4) {
-                            if let data = sighting.photoData, let image = PhotoCacheService.image(for: sighting.persistentModelID.description, data: data) {
+                            if let data = sighting.photoData, let image = PhotoCacheService.image(for: "\(sighting.persistentModelID)", data: data) {
                                 Image(uiImage: image)
                                     .resizable()
                                     .scaledToFill()
