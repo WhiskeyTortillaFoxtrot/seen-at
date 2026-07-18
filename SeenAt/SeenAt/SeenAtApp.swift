@@ -24,6 +24,8 @@ private enum DeepLinkError: Identifiable {
 struct SeenAtApp: App {
     let container: ModelContainer?
 
+    @AppStorage("hasSeenOnboarding") private var hasSeenOnboarding = false
+
     @State private var deepLinkEventID: UUID?
     @State private var deepLinkError: DeepLinkError?
     @State private var splashState = SplashState()
@@ -93,6 +95,11 @@ struct SeenAtApp: App {
 
                     if splashState.isVisible {
                         SplashView()
+                            .transition(.opacity)
+                    }
+
+                    if !hasSeenOnboarding, !splashState.isVisible {
+                        OnboardingView()
                             .transition(.opacity)
                     }
                 }

@@ -9,6 +9,7 @@ struct SettingsView: View {
 
     @AppStorage("favoriteTeams") private var favoriteTeamsString: String = ""
     @AppStorage("defaultSport") private var defaultSport: String = "mlb"
+    @AppStorage("hasSeenOnboarding") private var hasSeenOnboarding = false
 
     @State private var showingExporter = false
     @State private var exportCSV: String = ""
@@ -78,6 +79,10 @@ struct SettingsView: View {
             }
 
             Section("About") {
+                Button("Show Onboarding") {
+                    hasSeenOnboarding = false
+                }
+
                 NavigationLink("Photo Credits") {
                     PhotoCreditsView()
                 }
