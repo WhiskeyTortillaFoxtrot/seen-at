@@ -256,6 +256,7 @@ struct EventFormView: View {
             showingSaveError = true
             return
         }
+        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
         onSave?(event)
     }
 
@@ -284,6 +285,7 @@ struct EventFormView: View {
             showingSaveError = true
             return
         }
+        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
         onSave?(event)
     }
 }

@@ -7,13 +7,16 @@ struct EventSummaryView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var context
     @State private var showingAddSighting = false
+    @State private var addSightingHaptic = 0
     @State private var showLiveTracking = false
+    @State private var liveTrackingHaptic = 0
     @State private var expandedTeams: Set<PersistentIdentifier> = []
     @State private var lastIncrementTimes: [String: Date] = [:]
     @State private var showPieChart = false
     @State private var showShareOptions = false
     @State private var shareContent: ShareContent?
     @State private var showingDeleteError = false
+    @State private var deleteErrorHaptic = 0
     @State private var photoSightings: [JerseySighting] = []
 
     var topTeamColors: [Color] {
@@ -78,6 +81,7 @@ struct EventSummaryView: View {
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
                     showingAddSighting = true
+                    addSightingHaptic += 1
                 } label: {
                     Image(systemName: "plus")
                         .accessibilityLabel("Add Sighting")
@@ -96,36 +100,41 @@ struct EventSummaryView: View {
             ActivityViewController(items: content.activityItems)
         }
         .alert("Delete Failed", isPresented: $showingDeleteError) {
-            Button("OK") { }
+            Button("OK") { deleteErrorHaptic += 1 }
         } message: {
             Text("Could not delete the sighting. Please try again.")
         }
-        .onAppear { photoSightings = event.sightings.filter { $0.photoData != nil } }
+        .onAppear { photoSightings = event.sightings.filter { $0.photoData != nil }         }
         .onChange(of: event.sightings.count) { _, _ in
             photoSightings = event.sightings.filter { $0.photoData != nil }
         }
+        .sensoryFeedback(.warning, trigger: deleteErrorHaptic)
     }
 
     private var addSightingButton: some View {
         Button {
             showingAddSighting = true
+            addSightingHaptic += 1
         } label: {
             Label("Add Sighting", systemImage: "plus.circle.fill")
                 .font(.urbanist(.title3, weight: .semibold))
                 .frame(maxWidth: .infinity, minHeight: 44)
         }
         .buttonStyle(.borderedProminent)
+        .sensoryFeedback(.impact(weight: .light), trigger: addSightingHaptic)
     }
 
     private var liveTrackingButton: some View {
         Button {
             showLiveTracking = true
+            liveTrackingHaptic += 1
         } label: {
             Label("Live Tracking", systemImage: "antenna.radiowaves.left.and.right")
                 .font(.urbanist(.title3, weight: .semibold))
                 .frame(maxWidth: .infinity, minHeight: 44)
         }
         .buttonStyle(.bordered)
+        .sensoryFeedback(.impact(weight: .light), trigger: liveTrackingHaptic)
     }
 
     private func totalCountCard(topTeamColors: [Color]) -> some View {
@@ -264,6 +273,8 @@ struct EventSummaryView: View {
                                             Button(role: .destructive) {
                                                 if !EventActionHandler.deletePlayer(team: team, name: name, event: event, context: context) {
                                                     showingDeleteError = true
+                                                } else {
+                                                    UIImpactFeedbackGenerator(style: .medium).impactOccurred()
                                                 }
                                             } label: {
                                                 Label("Delete", systemImage: "trash")
@@ -370,6 +381,7 @@ struct EventSummaryView: View {
 
     private var shareButton: some View {
         Button {
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
             showShareOptions = true
         } label: {
             Label("Share Summary", systemImage: "square.and.arrow.up")

@@ -11,6 +11,8 @@ struct HomeView: View {
     @State private var selectedLiveEvent: Event?
     @State private var selectedUpcomingEvent: Event?
     @State private var showingDeleteError = false
+    @State private var deleteErrorHaptic = 0
+    @State private var deleteEventHaptic = 0
 
     private var startOfToday: Date {
         Calendar.current.startOfDay(for: .now)
@@ -77,6 +79,8 @@ struct HomeView: View {
                 }
             }
         }
+        .sensoryFeedback(.success, trigger: deleteEventHaptic)
+        .sensoryFeedback(.warning, trigger: deleteErrorHaptic)
         .navigationTitle("SeenAt")
         .navigationDestination(for: Event.self) { event in
             EventSummaryView(event: event)
@@ -105,7 +109,7 @@ struct HomeView: View {
             }
         }
         .alert("Delete Failed", isPresented: $showingDeleteError) {
-            Button("OK") { }
+            Button("OK") { deleteErrorHaptic += 1 }
         } message: {
             Text("Could not delete the game. Please try again.")
         }
@@ -171,6 +175,8 @@ struct HomeView: View {
             }
             if !context.saveAndLog("Failed to delete events") {
                 showingDeleteError = true
+            } else {
+                deleteEventHaptic += 1
             }
         }
     }

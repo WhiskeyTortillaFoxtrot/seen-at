@@ -9,6 +9,7 @@ struct LiveTrackingView: View {
 
     @State private var showingAddSighting = false
     @State private var showingSummary = false
+    @State private var summaryHaptic = 0
     @State private var expandedSighting: JerseySighting?
     @State private var fullScreenSighting: JerseySighting?
     @State private var showPieChart = false
@@ -58,6 +59,7 @@ struct LiveTrackingView: View {
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
                 Button {
+                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
                     showShareOptions = true
                 } label: {
                     Image(systemName: "square.and.arrow.up")
@@ -69,9 +71,11 @@ struct LiveTrackingView: View {
                     Task {
                         await LiveActivityManager.end(for: event)
                         showingSummary = true
+                        summaryHaptic += 1
                     }
                 }
                 .accessibilityHint("Ends live tracking and shows the event summary")
+                .sensoryFeedback(.success, trigger: summaryHaptic)
             }
         }
         .sheet(isPresented: $showingAddSighting) {
@@ -147,6 +151,7 @@ struct LiveTrackingView: View {
                 .foregroundStyle(.white.opacity(0.8))
 
             Button {
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
                 showingAddSighting = true
             } label: {
                 Label("Add Sighting", systemImage: "plus.circle.fill")
@@ -349,12 +354,18 @@ struct FullScreenPhotoView: View {
                 } label: {
                     Image(systemName: "xmark.circle.fill")
                         .font(.urbanist(.title))
-                        .foregroundStyle(.white.opacity(0.8))
+                        .foregroundStyle(.white)
+                        .background(
+                            Circle()
+                                .fill(.ultraThinMaterial)
+                                .frame(width: 36, height: 36)
+                        )
                         .padding()
                 }
             }
             .onTapGesture {
                 dismiss()
             }
+            .preferredColorScheme(.dark)
     }
 }

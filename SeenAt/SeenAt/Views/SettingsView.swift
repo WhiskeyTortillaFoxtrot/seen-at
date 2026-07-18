@@ -9,6 +9,7 @@ struct SettingsView: View {
 
     @AppStorage("favoriteTeams") private var favoriteTeamsString: String = ""
     @AppStorage("defaultSport") private var defaultSport: String = "mlb"
+    @AppStorage("hasSeenOnboarding") private var hasSeenOnboarding = false
 
     @State private var showingExporter = false
     @State private var exportCSV: String = ""
@@ -37,6 +38,7 @@ struct SettingsView: View {
 
             Section("Export") {
                 Button("Export All Data as CSV") {
+                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
                     exportCSV = ExportService.generateAllDataCSV(context: context)
                     showingExporter = true
                 }
@@ -82,6 +84,10 @@ struct SettingsView: View {
             }
 
             Section("About") {
+                Button("Show Onboarding") {
+                    hasSeenOnboarding = false
+                }
+
                 NavigationLink("Photo Credits") {
                     PhotoCreditsView()
                 }
@@ -102,6 +108,7 @@ struct SettingsView: View {
     }
 
     private func deleteAllSightings() {
+        UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
         let descriptor = FetchDescriptor<JerseySighting>()
         let sightings = (try? context.fetch(descriptor)) ?? []
         for s in sightings { context.delete(s) }
@@ -111,6 +118,7 @@ struct SettingsView: View {
     }
 
     private func resetAllData() {
+        UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
         Task { await LiveActivityManager.endAll() }
         PhotoCacheService.clear()
         let events = (try? context.fetch(FetchDescriptor<Event>())) ?? []
