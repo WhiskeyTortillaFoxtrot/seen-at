@@ -93,7 +93,7 @@ struct StatsView: View {
 
             Divider()
                 .frame(width: 1, height: 60)
-                .background(.white.opacity(0.3))
+                .overlay(.white.opacity(0.3))
 
             VStack(spacing: 4) {
                 Text("\(sightings)")
