@@ -52,14 +52,20 @@ struct StatsView: View {
             VStack(spacing: 20) {
                 if games == 0 {
                     emptyState
+                        .transition(.opacity)
                 } else {
                     totalGamesCard(games: games, sightings: sightings)
+                        .transition(.opacity.combined(with: .scale(scale: 0.95)))
                     byTeamCard(teams: teams, sightings: sightings)
+                        .transition(.opacity.combined(with: .scale(scale: 0.95)))
                     byLeagueCard(leagues: leagues)
+                        .transition(.opacity.combined(with: .scale(scale: 0.95)))
                     topPlayersCard(players: players)
+                        .transition(.opacity.combined(with: .scale(scale: 0.95)))
                 }
             }
             .padding()
+            .animation(.spring(response: 0.4, dampingFraction: 0.8), value: games)
         }
         .navigationTitle("Stats")
         .navigationBarTitleDisplayMode(.inline)
@@ -87,7 +93,7 @@ struct StatsView: View {
 
             Divider()
                 .frame(width: 1, height: 60)
-                .background(.white.opacity(0.3))
+                .overlay(.white.opacity(0.3))
 
             VStack(spacing: 4) {
                 Text("\(sightings)")
