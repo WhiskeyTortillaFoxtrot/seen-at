@@ -49,7 +49,8 @@ struct ExportService {
     static func generateAllDataCSV(context: ModelContext) -> String {
         let events = (try? context.fetch(FetchDescriptor<Event>(sortBy: [SortDescriptor(\Event.date, order: .reverse)]))) ?? []
 
-        var csv = "Event Title,Date,Venue,Watch Location,Total Sightings,Team,First Name,Last Name,Player Number\n"
+        let header = "Event Title,Date,Venue,Watch Location,Total Sightings,Team,First Name,Last Name,Player Number"
+        var rows: [String] = []
 
         for event in events {
             let title = escapeCSV(event.title)
@@ -59,19 +60,19 @@ struct ExportService {
             let watchLocation = event.watchLocation?.rawValue ?? "stadium"
 
             if event.sightings.isEmpty {
-                csv += "\(title),\(date),\(venue),\(watchLocation),\(total),,,,\n"
+                rows.append("\(title),\(date),\(venue),\(watchLocation),\(total),,,,")
             } else {
                 for sighting in event.sightings {
                     let team = escapeCSV(sighting.team?.name ?? "")
                     let first = escapeCSV(sighting.firstName ?? "")
                     let last = escapeCSV(sighting.lastName ?? "")
                     let number = escapeCSV(sighting.playerNumber ?? "")
-                    csv += "\(title),\(date),\(venue),\(watchLocation),\(total),\(team),\(first),\(last),\(number)\n"
+                    rows.append("\(title),\(date),\(venue),\(watchLocation),\(total),\(team),\(first),\(last),\(number)")
                 }
             }
         }
 
-        return csv
+        return ([header] + rows).joined(separator: "\n") + "\n"
     }
 
     private static func escapeCSV(_ value: String) -> String {

@@ -109,9 +109,7 @@ struct SettingsView: View {
     private func resetAllData() {
         Task { await LiveActivityManager.endAll() }
         let events = (try? context.fetch(FetchDescriptor<Event>())) ?? []
-        let sightings = (try? context.fetch(FetchDescriptor<JerseySighting>())) ?? []
         for e in events { context.delete(e) }
-        for s in sightings { context.delete(s) }
         if !context.saveAndLog("Failed to reset all data") {
             showingResetError = true
         }
