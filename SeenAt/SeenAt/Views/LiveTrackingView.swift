@@ -58,6 +58,7 @@ struct LiveTrackingView: View {
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
                 Button {
+                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
                     showShareOptions = true
                 } label: {
                     Image(systemName: "square.and.arrow.up")
@@ -70,6 +71,7 @@ struct LiveTrackingView: View {
                         showingSummary = true
                     }
                 }
+                .sensoryFeedback(.success, trigger: showingSummary)
             }
         }
         .sheet(isPresented: $showingAddSighting) {
@@ -107,7 +109,7 @@ struct LiveTrackingView: View {
             }
         }
         .fullScreenCover(item: $fullScreenSighting) { sighting in
-            if let data = sighting.photoData, let image = PhotoCacheService.image(for: sighting.persistentModelID.description, data: data) {
+            if let data = sighting.photoData, let image = PhotoCacheService.image(for: "\(sighting.persistentModelID)", data: data) {
                 FullScreenPhotoView(image: image)
             }
         }
@@ -145,6 +147,7 @@ struct LiveTrackingView: View {
                 .foregroundStyle(.white.opacity(0.8))
 
             Button {
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
                 showingAddSighting = true
             } label: {
                 Label("Add Sighting", systemImage: "plus.circle.fill")
@@ -223,7 +226,7 @@ struct LiveTrackingView: View {
                                         .font(.urbanist(.subheadline, weight: .medium))
                                 }
 
-                                if hasPhoto, let data = sighting.photoData, let image = PhotoCacheService.image(for: sighting.persistentModelID.description, data: data) {
+                                if hasPhoto, let data = sighting.photoData, let image = PhotoCacheService.image(for: "\(sighting.persistentModelID)", data: data) {
                                     Image(uiImage: image)
                                         .resizable()
                                         .scaledToFill()
@@ -262,7 +265,7 @@ struct LiveTrackingView: View {
                             }
                         }
 
-                        if expandedSighting == sighting, hasPhoto, let data = sighting.photoData, let image = PhotoCacheService.image(for: sighting.persistentModelID.description, data: data) {
+                        if expandedSighting == sighting, hasPhoto, let data = sighting.photoData, let image = PhotoCacheService.image(for: "\(sighting.persistentModelID)", data: data) {
                             Image(uiImage: image)
                                 .resizable()
                                 .scaledToFit()

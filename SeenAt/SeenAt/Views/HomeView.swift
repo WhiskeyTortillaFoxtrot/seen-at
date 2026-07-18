@@ -11,6 +11,7 @@ struct HomeView: View {
     @State private var selectedLiveEvent: Event?
     @State private var selectedUpcomingEvent: Event?
     @State private var showingDeleteError = false
+    @State private var didDeleteEvent = false
 
     private var startOfToday: Date {
         Calendar.current.startOfDay(for: .now)
@@ -77,6 +78,8 @@ struct HomeView: View {
                 }
             }
         }
+        .sensoryFeedback(.success, trigger: didDeleteEvent)
+        .sensoryFeedback(.warning, trigger: showingDeleteError)
         .navigationTitle("SeenAt")
         .navigationDestination(for: Event.self) { event in
             EventSummaryView(event: event)
@@ -169,6 +172,8 @@ struct HomeView: View {
             }
             if !context.saveAndLog("Failed to delete events") {
                 showingDeleteError = true
+            } else {
+                didDeleteEvent.toggle()
             }
         }
     }

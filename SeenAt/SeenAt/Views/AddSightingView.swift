@@ -24,6 +24,7 @@ struct AddSightingView: View {
     @State private var photoData: Data?
     @State private var selectedOtherLeague: OtherLeague?
     @State private var showingSaveError = false
+    @State private var didSaveSighting = false
 
     private let allLeagues: [(id: String, label: String)] = [
         ("mlb", "MLB"), ("nba", "NBA"), ("nfl", "NFL"),
@@ -113,6 +114,7 @@ struct AddSightingView: View {
             .font(.urbanist(.headline))
             .frame(maxWidth: .infinity)
             .disabled(selectedTeam == nil)
+            .sensoryFeedback(.success, trigger: didSaveSighting)
         }
         .navigationTitle("Add Sighting")
         .navigationBarTitleDisplayMode(.inline)
@@ -142,6 +144,7 @@ struct AddSightingView: View {
         } message: {
             Text("Could not save the sighting. Please try again.")
         }
+        .sensoryFeedback(.error, trigger: showingSaveError)
         .sheet(item: $selectedOtherLeague) { league in
             OtherLeaguePicker(league: league, allTeams: allTeams, favoriteTeamNames: favoriteTeamNames) { team in
                 selectedTeam = team
@@ -233,6 +236,7 @@ struct AddSightingView: View {
             showingSaveError = true
             return
         }
+        didSaveSighting.toggle()
         Task {
             await LiveActivityManager.startOrUpdate(for: event, teams: allTeams)
         }
