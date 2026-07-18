@@ -9,6 +9,7 @@ struct LiveTrackingView: View {
 
     @State private var showingAddSighting = false
     @State private var showingSummary = false
+    @State private var summaryHaptic = 0
     @State private var expandedSighting: JerseySighting?
     @State private var fullScreenSighting: JerseySighting?
     @State private var showPieChart = false
@@ -69,9 +70,10 @@ struct LiveTrackingView: View {
                     Task {
                         await LiveActivityManager.end(for: event)
                         showingSummary = true
+                        summaryHaptic += 1
                     }
                 }
-                .sensoryFeedback(.success, trigger: showingSummary)
+                .sensoryFeedback(.success, trigger: summaryHaptic)
             }
         }
         .sheet(isPresented: $showingAddSighting) {
