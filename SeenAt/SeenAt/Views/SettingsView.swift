@@ -40,6 +40,7 @@ struct SettingsView: View {
                     exportCSV = ExportService.generateAllDataCSV(context: context)
                     showingExporter = true
                 }
+                .accessibilityHint("Creates a CSV file with all your data")
             }
             .fileExporter(
                 isPresented: $showingExporter,
@@ -52,9 +53,12 @@ struct SettingsView: View {
                 Button("Delete All Sightings", role: .destructive) {
                     showingDeleteSightingsAlert = true
                 }
+                .accessibilityHint("Removes all jersey sightings but keeps events")
+
                 Button("Reset All Data", role: .destructive) {
                     showingResetAlert = true
                 }
+                .accessibilityHint("Deletes all events and sightings permanently")
             }
             .confirmationDialog("Delete All Sightings?", isPresented: $showingDeleteSightingsAlert) {
                 Button("Delete", role: .destructive) { deleteAllSightings() }

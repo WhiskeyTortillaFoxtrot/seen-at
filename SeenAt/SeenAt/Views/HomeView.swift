@@ -90,6 +90,7 @@ struct HomeView: View {
                     showingNewEvent = true
                 } label: {
                     Image(systemName: "plus")
+                        .accessibilityLabel("Add New Game")
                 }
             }
         }
@@ -155,6 +156,7 @@ struct HomeView: View {
             .padding(.vertical, 4)
         }
         .foregroundStyle(.primary)
+        .accessibilityHint("Opens a form to add a new game")
     }
 
     private func deleteEvents(in list: [Event]) -> (IndexSet) -> Void {

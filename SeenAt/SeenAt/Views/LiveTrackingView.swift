@@ -61,6 +61,7 @@ struct LiveTrackingView: View {
                     showShareOptions = true
                 } label: {
                     Image(systemName: "square.and.arrow.up")
+                        .accessibilityLabel("Share")
                 }
             }
             ToolbarItem(placement: .topBarTrailing) {
@@ -70,6 +71,7 @@ struct LiveTrackingView: View {
                         showingSummary = true
                     }
                 }
+                .accessibilityHint("Ends live tracking and shows the event summary")
             }
         }
         .sheet(isPresented: $showingAddSighting) {
@@ -107,7 +109,7 @@ struct LiveTrackingView: View {
             }
         }
         .fullScreenCover(item: $fullScreenSighting) { sighting in
-            if let data = sighting.photoData, let image = PhotoCacheService.image(for: sighting.persistentModelID.description, data: data) {
+            if let data = sighting.photoData, let image = PhotoCacheService.image(for: "\(sighting.persistentModelID)", data: data) {
                 FullScreenPhotoView(image: image)
             }
         }
@@ -223,7 +225,7 @@ struct LiveTrackingView: View {
                                         .font(.urbanist(.subheadline, weight: .medium))
                                 }
 
-                                if hasPhoto, let data = sighting.photoData, let image = PhotoCacheService.image(for: sighting.persistentModelID.description, data: data) {
+                                if hasPhoto, let data = sighting.photoData, let image = PhotoCacheService.image(for: "\(sighting.persistentModelID)", data: data) {
                                     Image(uiImage: image)
                                         .resizable()
                                         .scaledToFill()
@@ -262,7 +264,7 @@ struct LiveTrackingView: View {
                             }
                         }
 
-                        if expandedSighting == sighting, hasPhoto, let data = sighting.photoData, let image = PhotoCacheService.image(for: sighting.persistentModelID.description, data: data) {
+                        if expandedSighting == sighting, hasPhoto, let data = sighting.photoData, let image = PhotoCacheService.image(for: "\(sighting.persistentModelID)", data: data) {
                             Image(uiImage: image)
                                 .resizable()
                                 .scaledToFit()
