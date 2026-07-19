@@ -67,7 +67,7 @@ struct EventSummaryView: View {
                     playerBreakdownCard(playerBreakdown: playerBreakdown)
                 }
 
-                if !event.sightings.isEmpty, event.watchLocation != .tv {
+                if event.watchLocation != .tv {
                     photoGallery
                 }
 
@@ -335,11 +335,16 @@ struct EventSummaryView: View {
 
     @ViewBuilder
     private var photoGallery: some View {
-        if !photoSightings.isEmpty {
-            VStack(alignment: .leading, spacing: 12) {
-                Text("Photos")
-                    .font(.urbanist(.headline))
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Photos")
+                .font(.urbanist(.headline))
 
+            if photoSightings.isEmpty {
+                Text("No photos yet")
+                    .font(.urbanist(.subheadline))
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            } else {
                 LazyVGrid(columns: [.init(.adaptive(minimum: 100), spacing: 8)], spacing: 8) {
                     ForEach(Array(photoSightings), id: \.persistentModelID) { sighting in
                         VStack(spacing: 4) {
@@ -358,10 +363,10 @@ struct EventSummaryView: View {
                     }
                 }
             }
-            .padding()
-            .background(.background, in: RoundedRectangle(cornerRadius: 12))
-            .shadow(color: .black.opacity(0.05), radius: 4, y: 2)
         }
+        .padding()
+        .background(.background, in: RoundedRectangle(cornerRadius: 12))
+        .shadow(color: .black.opacity(0.05), radius: 4, y: 2)
     }
 
     private func openInMaps(venue: String) {
