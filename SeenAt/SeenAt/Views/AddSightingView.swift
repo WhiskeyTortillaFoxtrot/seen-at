@@ -222,6 +222,10 @@ struct AddSightingView: View {
 
     private func addSighting() {
         guard let team = selectedTeam else { return }
+        guard !EventPreviewPolicy.isReadOnly(event) else {
+            dismiss()
+            return
+        }
 
         let sighting = JerseySighting(
             team: team,

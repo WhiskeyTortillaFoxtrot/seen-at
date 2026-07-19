@@ -1,9 +1,11 @@
 import SwiftUI
 import SwiftData
 import Charts
+import Combine
 
 struct EventSummaryView: View {
     let event: Event
+    @Environment(\.scenePhase) private var scenePhase
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var context
     @State private var showingAddSighting = false
@@ -18,6 +20,11 @@ struct EventSummaryView: View {
     @State private var showingDeleteError = false
     @State private var deleteErrorHaptic = 0
     @State private var photoSightings: [JerseySighting] = []
+    @State private var currentDate = Date.now
+
+    private var isPreview: Bool {
+        EventPreviewPolicy.isReadOnly(event, now: currentDate)
+    }
 
     var topTeamColors: [Color] {
         let teams = event.teamBreakdown.prefix(2).map { $0.team.primaryColor }
@@ -53,14 +60,16 @@ struct EventSummaryView: View {
             VStack(spacing: 20) {
                 totalCountCard(topTeamColors: topTeamColors)
 
-                addSightingButton
+                if !isPreview {
+                    addSightingButton
+                }
 
-                if Calendar.current.isDateInToday(event.date) {
+                if !isPreview, Calendar.current.isDateInToday(event.date) {
                     liveTrackingButton
                 }
 
                 if !teamBreakdown.isEmpty {
-                    teamBreakdownCard(teamBreakdown: teamBreakdown)
+                    teamBreakdownCard(teamBreakdown: teamBreakdown, readOnly: isPreview)
                 }
 
                 if !playerBreakdown.isEmpty {
@@ -75,16 +84,18 @@ struct EventSummaryView: View {
             }
             .padding()
         }
-        .navigationTitle("Summary")
+        .navigationTitle(isPreview ? "Game Preview" : "Summary")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button {
-                    showingAddSighting = true
-                    addSightingHaptic += 1
-                } label: {
-                    Image(systemName: "plus")
-                        .accessibilityLabel("Add Sighting")
+            if !isPreview {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        showingAddSighting = true
+                        addSightingHaptic += 1
+                    } label: {
+                        Image(systemName: "plus")
+                            .accessibilityLabel("Add Sighting")
+                    }
                 }
             }
         }
@@ -107,6 +118,17 @@ struct EventSummaryView: View {
         .onAppear { photoSightings = event.sightings.filter { $0.photoData != nil }         }
         .onChange(of: event.sightings.count) { _, _ in
             photoSightings = event.sightings.filter { $0.photoData != nil }
+        }
+        .onReceive(Timer.publish(every: 60, on: .main, in: .common).autoconnect()) { date in
+            currentDate = date
+        }
+        .onAppear {
+            currentDate = .now
+        }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active {
+                currentDate = .now
+            }
         }
         .sensoryFeedback(.warning, trigger: deleteErrorHaptic)
     }
@@ -152,6 +174,12 @@ struct EventSummaryView: View {
             Text(event.title)
                 .font(.urbanist(.subheadline))
                 .foregroundStyle(.white.opacity(0.7))
+
+            if isPreview {
+                Text("Game date: \(event.date.formatted(date: .long, time: .omitted))")
+                    .font(.urbanist(.caption))
+                    .foregroundStyle(.white.opacity(0.8))
+            }
 
             if let venue = event.venue {
                 if event.watchLocation == .tv {
@@ -199,7 +227,7 @@ struct EventSummaryView: View {
         .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 
-    private func teamBreakdownCard(teamBreakdown: [(team: Team, count: Int)]) -> some View {
+    private func teamBreakdownCard(teamBreakdown: [(team: Team, count: Int)], readOnly: Bool) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("By Team")
                 .font(.urbanist(.headline))
@@ -258,28 +286,32 @@ struct EventSummaryView: View {
 
                                             Spacer()
 
-                                            Button {
-                                                EventActionHandler.incrementPlayer(team: team, name: name, event: event, context: context, lastIncrementTimes: &lastIncrementTimes)
-                                            } label: {
-                                                Image(systemName: "plus.circle")
-                                                    .font(.urbanist(.title3))
-                                                    .foregroundStyle(team.primaryColor)
-                                            }
-                                            .buttonStyle(.plain)
-                                            .disabled(EventActionHandler.disabledForDebounce(team: team, name: name, lastIncrementTimes: lastIncrementTimes))
-                                        }
-                                        .padding(.leading, 20)
-                                        .swipeActions(edge: .trailing) {
-                                            Button(role: .destructive) {
-                                                if !EventActionHandler.deletePlayer(team: team, name: name, event: event, context: context) {
-                                                    showingDeleteError = true
-                                                } else {
-                                                    UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-                                                }
-                                            } label: {
-                                                Label("Delete", systemImage: "trash")
-                                            }
-                                        }
+                                             if !readOnly {
+                                                 Button {
+                                                     EventActionHandler.incrementPlayer(team: team, name: name, event: event, context: context, lastIncrementTimes: &lastIncrementTimes)
+                                                 } label: {
+                                                     Image(systemName: "plus.circle")
+                                                         .font(.urbanist(.title3))
+                                                         .foregroundStyle(team.primaryColor)
+                                                 }
+                                                 .buttonStyle(.plain)
+                                                 .disabled(EventActionHandler.disabledForDebounce(team: team, name: name, lastIncrementTimes: lastIncrementTimes))
+                                             }
+                                         }
+                                         .padding(.leading, 20)
+                                         .swipeActions(edge: .trailing) {
+                                             if !readOnly {
+                                                 Button(role: .destructive) {
+                                                     if !EventActionHandler.deletePlayer(team: team, name: name, event: event, context: context) {
+                                                         showingDeleteError = true
+                                                     } else {
+                                                         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                                                     }
+                                                 } label: {
+                                                     Label("Delete", systemImage: "trash")
+                                                 }
+                                             }
+                                         }
                                     }
                                 }
                             }
