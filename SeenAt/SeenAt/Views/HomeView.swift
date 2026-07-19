@@ -31,7 +31,7 @@ struct HomeView: View {
     }
 
     private var todayEvents: [Event] {
-        events.filter { Calendar.current.isDateInToday($0.date) }
+        events.filter { $0.date >= startOfToday && $0.date < startOfTomorrow }
     }
 
     private var pastEvents: [Event] {
