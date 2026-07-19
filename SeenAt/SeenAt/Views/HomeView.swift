@@ -14,68 +14,65 @@ struct HomeView: View {
     @State private var deleteErrorHaptic = 0
     @State private var deleteEventHaptic = 0
 
-    private var startOfToday: Date {
-        Calendar.current.startOfDay(for: .now)
+    private var dateSections: EventDateSections {
+        EventDateSections(events: events, now: .now, calendar: .current)
     }
 
-    private var startOfTomorrow: Date {
-        Calendar.current.date(byAdding: .day, value: 1, to: startOfToday)!
-    }
+    private var upcomingEvents: [Event] { dateSections.upcoming }
 
-    private var upcomingEvents: [Event] {
-        events
-            .filter { $0.date >= startOfTomorrow }
-            .sorted { $0.date < $1.date }
-    }
+    private var todayEvents: [Event] { dateSections.today }
 
-    private var todayEvents: [Event] {
-        events.filter { Calendar.current.isDateInToday($0.date) }
-    }
-
-    private var pastEvents: [Event] {
-        Array(events.filter { $0.date < startOfToday }.prefix(5))
-    }
+    private var pastEvents: [Event] { dateSections.recentPast }
 
     var body: some View {
-        List {
-            Section("Today") {
-                if todayEvents.isEmpty {
-                    suggestionCard
-                } else {
-                    ForEach(todayEvents) { event in
-                        Button {
-                            selectedLiveEvent = event
-                        } label: {
-                            EventRow(event: event)
+        TimelineView(.periodic(from: .now, by: 60)) { _ in
+            List {
+                Section("Today") {
+                    if todayEvents.isEmpty {
+                        suggestionCard
+                    } else {
+                        ForEach(todayEvents) { event in
+                            Button {
+                                selectedLiveEvent = event
+                            } label: {
+                                EventRow(event: event)
+                            }
+                            .buttonStyle(.plain)
                         }
-                        .buttonStyle(.plain)
+                        .onDelete(perform: deleteEvents(in: todayEvents))
                     }
-                    .onDelete(perform: deleteEvents(in: todayEvents))
                 }
-            }
 
-            if !pastEvents.isEmpty {
-                Section("Recent") {
-                    ForEach(pastEvents) { event in
-                        NavigationLink(value: event) {
-                            EventRow(event: event)
+                if !pastEvents.isEmpty {
+                    Section("Recent") {
+                        ForEach(pastEvents) { event in
+                            NavigationLink(value: event) {
+                                EventRow(event: event)
+                            }
                         }
-                    }
-                    .onDelete(perform: deleteEvents(in: pastEvents))
-                }
-            }
+                        .onDelete(perform: deleteEvents(in: pastEvents))
 
-            if !upcomingEvents.isEmpty {
-                Section("Upcoming") {
-                    ForEach(upcomingEvents) { event in
-                        Button {
-                            selectedUpcomingEvent = event
+                        NavigationLink {
+                            GameHistoryView()
                         } label: {
-                            EventRow(event: event)
+                            Label("See All Games", systemImage: "list.bullet")
                         }
-                        .buttonStyle(.plain)
+                        .accessibilityHint("Shows your complete history of past games")
                     }
-                    .onDelete(perform: deleteEvents(in: upcomingEvents))
+                }
+
+                if !upcomingEvents.isEmpty {
+                    Section("Upcoming") {
+                        ForEach(upcomingEvents) { event in
+                            Button {
+                                selectedUpcomingEvent = event
+                            } label: {
+                                EventRow(event: event)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                        .onDelete(perform: deleteEvents(in: upcomingEvents))
+                    }
                 }
             }
         }
