@@ -38,6 +38,10 @@ struct HomeView: View {
         Array(events.filter { $0.date < startOfToday }.prefix(5))
     }
 
+    private func isToday(_ event: Event) -> Bool {
+        event.date >= startOfToday && event.date < startOfTomorrow
+    }
+
     var body: some View {
         List {
             Section("Today") {
@@ -109,7 +113,7 @@ struct HomeView: View {
             NavigationStack {
                 EventFormView { event in
                     showingNewEvent = false
-                    if Calendar.current.isDateInToday(event.date) {
+                    if isToday(event) {
                         selectedDestination = .live(event)
                     }
                 }
@@ -133,7 +137,7 @@ struct HomeView: View {
         }
         .onChange(of: eventToTrack) { _, event in
             if let event {
-                if EventPreviewPolicy.isReadOnly(event) {
+                if EventPreviewPolicy.isReadOnly(event, now: currentDate) {
                     selectedDestination = .preview(event)
                 } else {
                     selectedDestination = .live(event)
