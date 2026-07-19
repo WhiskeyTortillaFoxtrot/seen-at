@@ -1,15 +1,17 @@
 import SwiftUI
 import SwiftData
+import Combine
 
 struct HomeView: View {
     @Environment(\.modelContext) private var context
+    @Environment(\.scenePhase) private var scenePhase
     @Query(sort: \Event.date, order: .reverse) private var events: [Event]
 
     @Binding var eventToTrack: Event?
 
     @State private var showingNewEvent = false
-    @State private var selectedLiveEvent: Event?
-    @State private var selectedUpcomingEvent: Event?
+    @State private var selectedDestination: HomeDestination?
+    @State private var currentDate = Date.now
     @State private var showingDeleteError = false
     @State private var deleteErrorHaptic = 0
     @State private var deleteEventHaptic = 0
@@ -18,11 +20,23 @@ struct HomeView: View {
         EventDateSections(events: events, now: .now, calendar: .current)
     }
 
+    private var startOfToday: Date {
+        Calendar.current.startOfDay(for: currentDate)
+    }
+
+    private var startOfTomorrow: Date {
+        Calendar.current.date(byAdding: .day, value: 1, to: startOfToday)!
+    }
+
     private var upcomingEvents: [Event] { dateSections.upcoming }
 
     private var todayEvents: [Event] { dateSections.today }
 
     private var pastEvents: [Event] { dateSections.recentPast }
+
+    private func isToday(_ event: Event) -> Bool {
+        event.date >= startOfToday && event.date < startOfTomorrow
+    }
 
     var body: some View {
         TimelineView(.periodic(from: .now, by: 60)) { _ in
@@ -33,7 +47,7 @@ struct HomeView: View {
                     } else {
                         ForEach(todayEvents) { event in
                             Button {
-                                selectedLiveEvent = event
+                                selectedDestination = .live(event)
                             } label: {
                                 EventRow(event: event)
                             }
@@ -65,7 +79,7 @@ struct HomeView: View {
                     Section("Upcoming") {
                         ForEach(upcomingEvents) { event in
                             Button {
-                                selectedUpcomingEvent = event
+                                selectedDestination = .preview(event)
                             } label: {
                                 EventRow(event: event)
                             }
@@ -82,8 +96,13 @@ struct HomeView: View {
         .navigationDestination(for: Event.self) { event in
             EventSummaryView(event: event)
         }
-        .navigationDestination(item: $selectedLiveEvent) { event in
-            LiveTrackingView(event: event)
+        .navigationDestination(item: $selectedDestination) { destination in
+            switch destination {
+            case .live(let event):
+                LiveTrackingView(event: event)
+            case .preview(let event):
+                EventSummaryView(event: event)
+            }
         }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
@@ -99,8 +118,8 @@ struct HomeView: View {
             NavigationStack {
                 EventFormView { event in
                     showingNewEvent = false
-                    if Calendar.current.isDateInToday(event.date) {
-                        selectedLiveEvent = event
+                    if isToday(event) {
+                        selectedDestination = .live(event)
                     }
                 }
             }
@@ -110,23 +129,25 @@ struct HomeView: View {
         } message: {
             Text("Could not delete the game. Please try again.")
         }
-        .onChange(of: eventToTrack) { _, event in
-            if let event {
-                selectedLiveEvent = event
-                eventToTrack = nil
+        .onReceive(Timer.publish(every: 60, on: .main, in: .common).autoconnect()) { date in
+            currentDate = date
+        }
+        .onAppear {
+            currentDate = .now
+        }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active {
+                currentDate = .now
             }
         }
-        .alert(
-            selectedUpcomingEvent?.title ?? "",
-            isPresented: .init(
-                get: { selectedUpcomingEvent != nil },
-                set: { if !$0 { selectedUpcomingEvent = nil } }
-            )
-        ) {
-            Button("OK") { selectedUpcomingEvent = nil }
-        } message: {
-            if let date = selectedUpcomingEvent?.date {
-                Text("This game on \(date.formatted(date: .long, time: .omitted)) is in the future. Be sure to check back on gameday to add your sightings!")
+        .onChange(of: eventToTrack) { _, event in
+            if let event {
+                if EventPreviewPolicy.isReadOnly(event, now: currentDate) {
+                    selectedDestination = .preview(event)
+                } else {
+                    selectedDestination = .live(event)
+                }
+                eventToTrack = nil
             }
         }
     }
@@ -162,20 +183,44 @@ struct HomeView: View {
 
     private func deleteEvents(in list: [Event]) -> (IndexSet) -> Void {
         { indexSet in
+            var eventIDs: [UUID] = []
             for index in indexSet {
                 if index < list.count {
                     let event = list[index]
-                    let eventID = event.id
-                    Task { await LiveActivityManager.end(for: eventID) }
+                    eventIDs.append(event.id)
                     context.delete(event)
                 }
             }
             if !context.saveAndLog("Failed to delete events") {
+                context.rollback()
                 showingDeleteError = true
             } else {
+                for eventID in eventIDs {
+                    Task { await LiveActivityManager.end(for: eventID) }
+                }
                 deleteEventHaptic += 1
             }
         }
+    }
+}
+
+private enum HomeDestination: Identifiable, Hashable {
+    case live(Event)
+    case preview(Event)
+
+    var id: String {
+        switch self {
+        case .live(let event): "live-\(event.id.uuidString)"
+        case .preview(let event): "preview-\(event.id.uuidString)"
+        }
+    }
+
+    static func == (lhs: HomeDestination, rhs: HomeDestination) -> Bool {
+        lhs.id == rhs.id
+    }
+
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
     }
 }
 
