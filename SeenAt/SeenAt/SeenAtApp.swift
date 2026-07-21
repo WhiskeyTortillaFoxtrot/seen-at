@@ -39,6 +39,12 @@ struct SeenAtApp: App {
     @State private var splashState = SplashState()
     @State private var storeState = StoreState()
 
+    /// All backup/restore work runs synchronously on `@MainActor` because
+    /// SwiftData's `ModelContainer` must be created on the main actor, and the
+    /// backup must exist *before* container creation so the recovery path can
+    /// restore it on failure.  If launch time becomes a concern, the escape
+    /// hatch is pre-warming the backup on a background thread during a push
+    /// notification handler or app extension.
     init() {
         let storeState = StoreState()
         _storeState = State(wrappedValue: storeState)
@@ -152,7 +158,10 @@ struct SeenAtApp: App {
                 } catch {
                     recoveryError = error
                     logger.error("Restored migration backup could not be reopened: \(error, privacy: .public)")
-                    storeState.recoveryCompleted = true
+                    try? StoreBackupService.completeMigrationAttempt(
+                        applicationSupportURL: applicationSupportURL
+                    )
+                    storeState.failureReason = .restoreFailed
                 }
             } catch {
                 recoveryError = error

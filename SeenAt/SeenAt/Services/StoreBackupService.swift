@@ -890,7 +890,6 @@ enum StoreBackupService {
                 try fileManager.moveItem(at: quarantinedURL, to: destination)
                 restored.append((destination, quarantinedURL))
             }
-            try fileManager.removeItem(at: restoreDirectory)
         } catch {
             var rollbackFailed = false
             for item in restored.reversed() {
@@ -914,6 +913,7 @@ enum StoreBackupService {
             }
             throw error
         }
+        try fileManager.removeItem(at: restoreDirectory)
     }
 
     private static func isSafeFileTree(at directory: URL, fileManager: FileManager = .default) -> Bool {
