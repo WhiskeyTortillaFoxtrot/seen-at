@@ -162,10 +162,14 @@ struct SeenAtApp: App {
                         applicationSupportURL: applicationSupportURL
                     )
                     storeState.failureReason = .restoreFailed
+                    storeState.recoveryCompleted = true
                 }
             } catch {
                 recoveryError = error
                 logger.error("Could not restore the migration backup: \(error, privacy: .public)")
+                try? StoreBackupService.completeMigrationAttempt(
+                    applicationSupportURL: applicationSupportURL
+                )
             }
             storeState.error = recoveryError ?? migrationError
             storeState.storeURL = storeURL
