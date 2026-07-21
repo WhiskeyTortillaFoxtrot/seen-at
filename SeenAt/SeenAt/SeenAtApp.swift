@@ -34,28 +34,41 @@ struct SeenAtApp: App {
     init() {
         let storeState = StoreState()
         _storeState = State(wrappedValue: storeState)
-        let config = ModelConfiguration()
+        let storeURL = StoreBackupService.defaultStoreURL()
+        let applicationSupportURL = StoreBackupService.applicationSupportURL(for: storeURL)
+        let config = ModelConfiguration(url: storeURL)
 
         do {
-            container = try ModelContainer(
+            try StoreBackupService.prepareForMigration(
+                storeURL: storeURL,
+                applicationSupportURL: applicationSupportURL,
+                targetSchemaVersion: SeenAtMigrationPlan.currentVersion
+            )
+            let loadedContainer = try ModelContainer(
                 for: Team.self, Event.self, JerseySighting.self,
                 migrationPlan: SeenAtMigrationPlan.self,
                 configurations: config
             )
+            try StoreBackupService.markMigrationSucceeded(
+                applicationSupportURL: applicationSupportURL,
+                schemaVersion: SeenAtMigrationPlan.currentVersion
+            )
+            container = loadedContainer
         } catch {
-            logger.error("ModelContainer creation with migration failed: \(error, privacy: .public)")
+            logger.error("Store preparation or ModelContainer creation failed: \(error, privacy: .public)")
             do {
-                container = try ModelContainer(
-                    for: Team.self, Event.self, JerseySighting.self,
-                    configurations: config
+                try StoreBackupService.restoreCurrentBackup(
+                    storeURL: storeURL,
+                    applicationSupportURL: applicationSupportURL,
+                    expectedSchemaVersion: SeenAtMigrationPlan.currentVersion
                 )
+                logger.error("Restored the last valid migration backup after store failure")
             } catch {
-                logger.error("ModelContainer creation without migration failed: \(error, privacy: .public)")
-                storeState.error = error
-                storeState.storeURL = config.url
-                container = nil
-                return
+                logger.error("Could not restore the last migration backup: \(error, privacy: .public)")
             }
+            storeState.error = error
+            storeState.storeURL = storeURL
+            container = nil
         }
 
         guard let c = container else { return }
