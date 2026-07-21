@@ -5,6 +5,14 @@ import OSLog
 
 private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "com.seenat", category: "Store")
 
+enum StoreFailureReason {
+    case storeLoad
+    case restoreFailed
+    case migrationFinalization
+    case restoredMigrationFinalization
+    case recoveryRequired
+}
+
 private enum DeepLinkError: Identifiable {
     case malformedURL
     case eventNotFound
@@ -38,36 +46,121 @@ struct SeenAtApp: App {
         let applicationSupportURL = StoreBackupService.applicationSupportURL(for: storeURL)
         let config = ModelConfiguration(url: storeURL)
 
+        let rollbackID: UUID?
         do {
-            try StoreBackupService.prepareForMigration(
+            rollbackID = try StoreBackupService.prepareForMigration(
                 storeURL: storeURL,
                 applicationSupportURL: applicationSupportURL,
                 targetSchemaVersion: SeenAtMigrationPlan.currentVersion
             )
+        } catch {
+            logger.error("Store backup preparation failed: \(error, privacy: .public)")
+            storeState.error = error
+            storeState.storeURL = storeURL
+            switch error {
+            case StoreBackupService.BackupError.migrationFinalization:
+                storeState.failureReason = .migrationFinalization
+            case StoreBackupService.BackupError.recoveryRequired:
+                storeState.failureReason = .recoveryRequired
+            case StoreBackupService.BackupError.staleMigrationAttempt:
+                storeState.failureReason = .recoveryRequired
+            case StoreBackupService.BackupError.invalidBackup:
+                storeState.failureReason = .recoveryRequired
+            default:
+                storeState.failureReason = .storeLoad
+            }
+            container = nil
+            return
+        }
+
+        do {
             let loadedContainer = try ModelContainer(
                 for: Team.self, Event.self, JerseySighting.self,
                 migrationPlan: SeenAtMigrationPlan.self,
                 configurations: config
             )
-            try StoreBackupService.markMigrationSucceeded(
-                applicationSupportURL: applicationSupportURL,
-                schemaVersion: SeenAtMigrationPlan.currentVersion
-            )
+            do {
+                try StoreBackupService.completeMigrationAttempt(
+                    applicationSupportURL: applicationSupportURL
+                )
+            } catch {
+                logger.error("Migration attempt could not be finalized: \(error, privacy: .public)")
+                storeState.error = error
+                storeState.storeURL = storeURL
+                storeState.failureReason = .migrationFinalization
+                container = nil
+                return
+            }
+            do {
+                try StoreBackupService.cleanupAfterSuccessfulLaunch(
+                    applicationSupportURL: applicationSupportURL
+                )
+            } catch {
+                logger.error("Post-launch migration cleanup failed: \(error, privacy: .public)")
+            }
             container = loadedContainer
         } catch {
-            logger.error("Store preparation or ModelContainer creation failed: \(error, privacy: .public)")
+            let migrationError = error
+            logger.error("ModelContainer creation or migration failed: \(migrationError, privacy: .public)")
+            guard let rollbackID else {
+                storeState.error = migrationError
+                storeState.storeURL = storeURL
+                storeState.failureReason = .storeLoad
+                container = nil
+                return
+            }
+
+            var recoveryError: Error?
             do {
                 try StoreBackupService.restoreCurrentBackup(
                     storeURL: storeURL,
                     applicationSupportURL: applicationSupportURL,
-                    expectedSchemaVersion: SeenAtMigrationPlan.currentVersion
+                    expectedSchemaVersion: SeenAtMigrationPlan.currentVersion,
+                    backupID: rollbackID
                 )
-                logger.error("Restored the last valid migration backup after store failure")
+
+                do {
+                    let recoveredContainer = try ModelContainer(
+                        for: Team.self, Event.self, JerseySighting.self,
+                        migrationPlan: SeenAtMigrationPlan.self,
+                        configurations: config
+                    )
+                    do {
+                        try StoreBackupService.completeMigrationAttempt(
+                            applicationSupportURL: applicationSupportURL
+                        )
+                    } catch {
+                        recoveryError = error
+                        logger.error("Restored migration attempt could not be finalized: \(error, privacy: .public)")
+                        storeState.error = error
+                        storeState.storeURL = storeURL
+                        storeState.failureReason = .restoredMigrationFinalization
+                        container = nil
+                        return
+                    }
+                    do {
+                        try StoreBackupService.cleanupAfterSuccessfulLaunch(
+                            applicationSupportURL: applicationSupportURL
+                        )
+                    } catch {
+                        logger.error("Post-restore migration cleanup failed: \(error, privacy: .public)")
+                    }
+                    container = recoveredContainer
+                    logger.info("Restored and reopened the migration backup after store failure")
+                    splashState.isVisible = false
+                    return
+                } catch {
+                    recoveryError = error
+                    logger.error("Restored migration backup could not be reopened: \(error, privacy: .public)")
+                    storeState.recoveryCompleted = true
+                }
             } catch {
-                logger.error("Could not restore the last migration backup: \(error, privacy: .public)")
+                recoveryError = error
+                logger.error("Could not restore the migration backup: \(error, privacy: .public)")
             }
-            storeState.error = error
+            storeState.error = recoveryError ?? migrationError
             storeState.storeURL = storeURL
+            storeState.failureReason = .restoreFailed
             container = nil
         }
 
@@ -156,4 +249,6 @@ final class SplashState {
 final class StoreState {
     var error: Error?
     var storeURL: URL?
+    var recoveryCompleted = false
+    var failureReason: StoreFailureReason = .storeLoad
 }

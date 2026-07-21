@@ -25,7 +25,17 @@ enum TestModelContainer {
     static func cleanupSQLite(_ container: ModelContainer) {
         if let url = container.configurations.first?.url,
            url.absoluteString.contains("test_") {
-            try? FileManager.default.removeItem(at: url)
+            let base = url.deletingPathExtension()
+            let sidecars = [
+                url,
+                base.appendingPathExtension("\(url.pathExtension)-wal"),
+                base.appendingPathExtension("\(url.pathExtension)-shm"),
+                url.deletingLastPathComponent()
+                    .appendingPathComponent(".\(base.lastPathComponent)_SUPPORT", isDirectory: true),
+            ]
+            for artifact in sidecars {
+                try? FileManager.default.removeItem(at: artifact)
+            }
         }
     }
 }

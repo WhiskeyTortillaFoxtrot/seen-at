@@ -37,7 +37,7 @@ struct StoreErrorView: View {
                 .font(.urbanist(.title, weight: .bold))
                 .foregroundStyle(.white)
 
-            Text("Your data could not be loaded. It has been preserved on your device.")
+            Text(message)
                 .font(.urbanist(.body))
                 .foregroundStyle(.white.opacity(0.8))
                 .multilineTextAlignment(.center)
@@ -53,22 +53,55 @@ struct StoreErrorView: View {
 
             Spacer()
 
-            Button(role: .destructive) {
-                showResetConfirmation = true
-            } label: {
-                Text("Reset All Data")
+            if allowsReset {
+                Button(role: .destructive) {
+                    showResetConfirmation = true
+                } label: {
+                    Text("Reset All Data")
+                        .font(.urbanist(.headline))
+                        .frame(maxWidth: 280, minHeight: 50)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(.red)
+                .padding(.bottom, 48)
+            } else {
+                Text("Close and reopen the app to retry.")
                     .font(.urbanist(.headline))
-                    .frame(maxWidth: 280, minHeight: 50)
+                    .foregroundStyle(.white.opacity(0.8))
+                    .padding(.bottom, 48)
             }
-            .buttonStyle(.borderedProminent)
-            .tint(.red)
-            .padding(.bottom, 48)
         }
         .alert("Reset All Data?", isPresented: $showResetConfirmation) {
             Button("Cancel", role: .cancel) {}
             Button("Reset", role: .destructive) { Task { await resetStore() } }
         } message: {
             Text("All events, sightings, and teams will be permanently deleted. A fresh database will be created on next launch. This cannot be undone.")
+        }
+    }
+
+    private var message: String {
+        switch state.failureReason {
+        case .migrationFinalization:
+            "Your data opened successfully, but migration safety cleanup could not be completed. The app is blocked from writing to protect your data."
+        case .restoredMigrationFinalization:
+            "A migration backup was restored and reopened, but safety cleanup could not be completed. Your restored data is preserved."
+        case .recoveryRequired:
+            "Migration recovery could not be completed safely. Your data has been preserved. Close and reopen the app after addressing the recovery state."
+        case .restoreFailed:
+            state.recoveryCompleted
+                ? "A migration backup was restored. Please close and reopen the app to try again."
+                : "Your data could not be loaded. It has been preserved on your device."
+        case .storeLoad:
+            "Your data could not be loaded. It has been preserved on your device."
+        }
+    }
+
+    private var allowsReset: Bool {
+        switch state.failureReason {
+        case .migrationFinalization, .restoredMigrationFinalization, .recoveryRequired:
+            false
+        case .storeLoad, .restoreFailed:
+            true
         }
     }
 
@@ -97,15 +130,14 @@ struct StoreErrorView: View {
 
     private func resetStore() async {
         guard let url = state.storeURL else { return }
-
-        let base = url.deletingPathExtension()
-        let ext = url.pathExtension
-        let sidecars = [
-            base.appendingPathExtension("\(ext)-wal"),
-            base.appendingPathExtension("\(ext)-shm"),
-        ]
-        for file in [url] + sidecars {
-            try? FileManager.default.removeItem(at: file)
+        do {
+            try StoreBackupService.resetStoreData(
+                storeURL: url,
+                applicationSupportURL: StoreBackupService.applicationSupportURL(for: url)
+            )
+        } catch {
+            state.error = error
+            return
         }
 
         UserDefaults.standard.removeObject(forKey: "hasSeededTeams")

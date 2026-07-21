@@ -6,6 +6,10 @@ final class JerseySighting {
     var firstName: String?
     var lastName: String?
     var playerNumber: String?
+    /// Added in V3 (2026-07-15): photo blobs were migrated to on-disk storage
+    /// to reduce model-store size.  The migration plan must copy files from the
+    /// old in-row `photoData` column into the on-disk `.externalStorage` directory
+    /// before the column is dropped.
     @Attribute(.externalStorage) var photoData: Data?
     var photoLocalIdentifier: String?
     var timestamp: Date

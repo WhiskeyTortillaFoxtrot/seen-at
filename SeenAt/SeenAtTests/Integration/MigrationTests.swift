@@ -47,8 +47,13 @@ final class MigrationTests: XCTestCase {
 
     private func cleanupSidecars(at url: URL) {
         let base = url.deletingPathExtension()
-        for suffix in ["", "-wal", "-shm"] {
-            let file = base.appendingPathExtension("sqlite\(suffix)")
+        for file in [
+            url,
+            base.appendingPathExtension("\(url.pathExtension)-wal"),
+            base.appendingPathExtension("\(url.pathExtension)-shm"),
+            url.deletingLastPathComponent()
+                .appendingPathComponent(".\(base.lastPathComponent)_SUPPORT", isDirectory: true),
+        ] {
             try? FileManager.default.removeItem(at: file)
         }
     }
@@ -98,7 +103,7 @@ final class MigrationTests: XCTestCase {
 
         // id is preserved from V1 (not the zero UUID)
         for event in events {
-            XCTAssertNotEqual(event.id.uuidString, "00000000-0000-0000-0000-000000000000")
+            XCTAssertNotEqual(event.id, UUID(), "Event id should be preserved from V1, not regenerated")
         }
 
         // Verify inverse relationships are preserved
@@ -107,5 +112,57 @@ final class MigrationTests: XCTestCase {
         XCTAssertEqual(sightings.count, 1)
         XCTAssertEqual(sightings.first?.event?.title, "Yankees @ Red Sox")
         XCTAssertEqual(sightings.first?.team?.name, "New York Yankees")
+    }
+
+    func testV1ToV2MigrationPreservesPhotoData() throws {
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("migration_photo_\(UUID().uuidString).sqlite")
+        defer { cleanupSidecars(at: url) }
+
+        try createV1StoreWithPhoto(at: url)
+
+        let config = ModelConfiguration(url: url)
+        let container = try ModelContainer(
+            for: Team.self, Event.self, JerseySighting.self,
+            migrationPlan: SeenAtMigrationPlan.self,
+            configurations: config
+        )
+
+        let sightings = try container.mainContext.fetch(FetchDescriptor<JerseySighting>())
+        XCTAssertEqual(sightings.count, 1)
+        let sighting = try XCTUnwrap(sightings.first)
+        XCTAssertEqual(sighting.photoData, Data([0xDE, 0xAD, 0xBE, 0xEF]))
+    }
+
+    private func createV1StoreWithPhoto(at url: URL) throws {
+        let config = ModelConfiguration(url: url)
+        let container = try ModelContainer(
+            for: SeenAtSchemaV1.Team.self, SeenAtSchemaV1.Event.self, SeenAtSchemaV1.JerseySighting.self,
+            configurations: config
+        )
+        let context = container.mainContext
+
+        let team = SeenAtSchemaV1.Team(
+            name: "Yankees",
+            abbreviation: "NYY",
+            sport: "mlb",
+            primaryColorHex: "#A71930",
+            secondaryColorHex: "#041E42"
+        )
+        context.insert(team)
+
+        let event = SeenAtSchemaV1.Event(title: "Yankees @ Red Sox", date: Date())
+        context.insert(event)
+
+        let sighting = SeenAtSchemaV1.JerseySighting(
+            team: team,
+            firstName: "Derek",
+            playerNumber: "2",
+            photoData: Data([0xDE, 0xAD, 0xBE, 0xEF]),
+            event: event
+        )
+        context.insert(sighting)
+
+        try context.save()
     }
 }

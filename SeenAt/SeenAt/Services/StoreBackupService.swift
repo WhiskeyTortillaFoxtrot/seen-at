@@ -8,7 +8,27 @@ struct StoreBackupArtifact: Codable, Equatable {
     let sha256: String
 }
 
+enum StoreRestorePhase: String, Codable {
+    case quarantining
+    case installing
+    case installed
+}
+
+struct StoreRestoreJournal: Codable {
+    let backupID: UUID
+    var phase: StoreRestorePhase
+    let artifacts: [StoreBackupArtifact]
+}
+
+struct StoreMigrationAttempt: Codable {
+    let backupID: UUID
+    let sourceStorePath: String
+    let targetSchemaVersion: String
+    let stagingDirectoryPath: String?
+}
+
 struct StoreBackupManifest: Codable, Equatable {
+    let backupID: UUID
     let sourceStorePath: String
     let storeFileName: String
     let targetSchemaVersion: String
@@ -16,24 +36,32 @@ struct StoreBackupManifest: Codable, Equatable {
     let artifacts: [StoreBackupArtifact]
 }
 
-struct StoreSchemaState: Codable, Equatable {
-    let schemaVersion: String
-}
-
 enum StoreBackupService {
     enum BackupError: LocalizedError {
         case invalidBackup(URL)
+        case staleMigrationAttempt(URL)
+        case migrationFinalization(URL)
+        case recoveryRequired(URL)
 
         var errorDescription: String? {
             switch self {
             case .invalidBackup(let url):
                 "The migration backup at \(url.path) is incomplete."
+            case .staleMigrationAttempt:
+                "An earlier migration attempt requires attention before this store can be opened."
+            case .migrationFinalization(let url):
+                "Migration safety state could not be finalized at \(url.path)."
+            case .recoveryRequired(let url):
+                "Migration recovery requires attention at \(url.path)."
             }
         }
     }
 
     static let backupDirectoryName = "MigrationBackup"
-    static let schemaStateFileName = "schema-state.json"
+    static let legacySchemaStateFileName = "schema-state.json"
+    static let migrationAttemptFileName = "migration-attempt.json"
+    static let failedStoreDirectoryPrefix = "failed-migration-store-"
+    static let recoveryQuarantineDirectoryPrefix = "recovery-quarantine-"
 
     static func defaultStoreURL() -> URL {
         ModelConfiguration().url
@@ -44,16 +72,12 @@ enum StoreBackupService {
         applicationSupportURL: URL,
         targetSchemaVersion: String,
         fileManager: FileManager = .default
-    ) throws {
+    ) throws -> UUID? {
         try recoverInterruptedRestores(
             storeURL: storeURL,
             applicationSupportURL: applicationSupportURL,
             fileManager: fileManager
         )
-        guard fileManager.fileExists(atPath: storeURL.path) else {
-            return
-        }
-
         let backupDirectory = applicationSupportURL.appendingPathComponent(backupDirectoryName)
         let currentBackup = backupDirectory.appendingPathComponent("current", isDirectory: true)
         if isSymbolicLink(at: backupDirectory) ||
@@ -61,24 +85,122 @@ enum StoreBackupService {
             throw BackupError.invalidBackup(backupDirectory)
         }
 
-        if let state = try? loadSchemaState(at: applicationSupportURL, fileManager: fileManager),
-           state.schemaVersion == targetSchemaVersion {
-            if let manifest = try? loadManifest(at: currentBackup, fileManager: fileManager),
-               manifest.targetSchemaVersion == targetSchemaVersion,
-               isValidBackup(at: currentBackup, manifest: manifest, storeURL: storeURL, fileManager: fileManager) {
-                return
+        if let attempt = try loadMigrationAttempt(
+            at: applicationSupportURL,
+            fileManager: fileManager
+        ) {
+            let sourceMatches = attempt.sourceStorePath == storeURL.path
+            let targetMatches = attempt.targetSchemaVersion == targetSchemaVersion
+            if !sourceMatches {
+                guard isRegularFile(at: storeURL) else {
+                    throw BackupError.staleMigrationAttempt(storeURL)
+                }
+                try validateStoreArtifacts(storeURL: storeURL, fileManager: fileManager)
+                _ = try supportDirectoryURLs(for: storeURL, fileManager: fileManager)
+                try completeMigrationAttempt(applicationSupportURL: applicationSupportURL, fileManager: fileManager)
+            } else if !targetMatches {
+                guard let manifest = try? loadManifest(at: currentBackup, fileManager: fileManager),
+                      manifest.backupID == attempt.backupID,
+                      manifest.targetSchemaVersion == attempt.targetSchemaVersion,
+                      isValidBackup(
+                          at: currentBackup,
+                          manifest: manifest,
+                          storeURL: storeURL,
+                          fileManager: fileManager
+                      ) else {
+                    throw BackupError.staleMigrationAttempt(storeURL)
+                }
+                try restoreCurrentBackup(
+                    storeURL: storeURL,
+                    applicationSupportURL: applicationSupportURL,
+                    expectedSchemaVersion: attempt.targetSchemaVersion,
+                    backupID: attempt.backupID,
+                    fileManager: fileManager
+                )
+                try completeMigrationAttempt(applicationSupportURL: applicationSupportURL, fileManager: fileManager)
+            } else if let manifest = try? loadManifest(at: currentBackup, fileManager: fileManager),
+                      manifest.backupID == attempt.backupID,
+                      manifest.targetSchemaVersion == targetSchemaVersion,
+                      isValidBackup(
+                          at: currentBackup,
+                          manifest: manifest,
+                          storeURL: storeURL,
+                          fileManager: fileManager,
+                          verifyChecksums: false
+                      ) {
+                try ensureLiveStoreForAttempt(
+                    storeURL: storeURL,
+                    applicationSupportURL: applicationSupportURL,
+                    targetSchemaVersion: targetSchemaVersion,
+                    backupID: attempt.backupID,
+                    fileManager: fileManager
+                )
+                return attempt.backupID
+            } else if let stagingDirectoryPath = attempt.stagingDirectoryPath {
+                let stagingDirectory = URL(fileURLWithPath: stagingDirectoryPath, isDirectory: true)
+                guard stagingDirectory.lastPathComponent.hasPrefix("staging-"),
+                      stagingDirectory.deletingLastPathComponent().standardizedFileURL.path == backupDirectory.standardizedFileURL.path,
+                      let manifest = try loadManifest(at: stagingDirectory, fileManager: fileManager),
+                      manifest.backupID == attempt.backupID,
+                      manifest.targetSchemaVersion == targetSchemaVersion,
+                      isValidBackup(
+                          at: stagingDirectory,
+                          manifest: manifest,
+                          storeURL: storeURL,
+                          fileManager: fileManager,
+                          verifyChecksums: false
+                      ) else {
+                    throw BackupError.invalidBackup(currentBackup)
+                }
+                try replaceCurrentBackup(
+                    at: currentBackup,
+                    with: stagingDirectory,
+                    fileManager: fileManager
+                )
+                try ensureLiveStoreForAttempt(
+                    storeURL: storeURL,
+                    applicationSupportURL: applicationSupportURL,
+                    targetSchemaVersion: targetSchemaVersion,
+                    backupID: attempt.backupID,
+                    fileManager: fileManager
+                )
+                return attempt.backupID
+            } else {
+                throw BackupError.invalidBackup(currentBackup)
             }
         }
 
+        guard isRegularFile(at: storeURL) else {
+            guard !fileManager.fileExists(atPath: storeURL.path) && !isSymbolicLink(at: storeURL) else {
+                throw BackupError.invalidBackup(storeURL)
+            }
+            if storeSidecarURLs(for: storeURL).contains(where: {
+                fileManager.fileExists(atPath: $0.path) || isSymbolicLink(at: $0)
+            }) {
+                throw BackupError.invalidBackup(storeURL)
+            }
+            return nil
+        }
+        try validateStoreArtifacts(storeURL: storeURL, fileManager: fileManager)
+
         if let manifest = try? loadManifest(at: currentBackup, fileManager: fileManager),
            manifest.targetSchemaVersion == targetSchemaVersion,
-           isValidBackup(at: currentBackup, manifest: manifest, storeURL: storeURL, fileManager: fileManager) {
-            return
+           isValidBackup(
+               at: currentBackup,
+               manifest: manifest,
+               storeURL: storeURL,
+               fileManager: fileManager,
+               verifyChecksums: false
+           ) {
+            return nil
         }
 
+        try cleanupStagingDirectories(in: backupDirectory, fileManager: fileManager)
         let stagingDirectory = backupDirectory.appendingPathComponent("staging-\(UUID().uuidString)", isDirectory: true)
         try fileManager.createDirectory(at: stagingDirectory, withIntermediateDirectories: true)
+        try excludeFromBackup(at: backupDirectory, fileManager: fileManager)
 
+        var migrationAttemptWritten = false
         do {
             let storeDirectory = stagingDirectory.appendingPathComponent("store", isDirectory: true)
             try fileManager.createDirectory(at: storeDirectory, withIntermediateDirectories: true)
@@ -107,6 +229,7 @@ enum StoreBackupService {
             }
 
             let manifest = StoreBackupManifest(
+                backupID: UUID(),
                 sourceStorePath: storeURL.path,
                 storeFileName: storeURL.lastPathComponent,
                 targetSchemaVersion: targetSchemaVersion,
@@ -119,29 +242,29 @@ enum StoreBackupService {
                 throw BackupError.invalidBackup(stagingDirectory)
             }
 
+            try writeMigrationAttempt(
+                StoreMigrationAttempt(
+                    backupID: manifest.backupID,
+                    sourceStorePath: storeURL.path,
+                    targetSchemaVersion: targetSchemaVersion,
+                    stagingDirectoryPath: stagingDirectory.path
+                ),
+                to: applicationSupportURL,
+                fileManager: fileManager
+            )
+            migrationAttemptWritten = true
             try replaceCurrentBackup(
                 at: currentBackup,
                 with: stagingDirectory,
                 fileManager: fileManager
             )
+            return manifest.backupID
         } catch {
-            try? fileManager.removeItem(at: stagingDirectory)
+            if !migrationAttemptWritten {
+                try? fileManager.removeItem(at: stagingDirectory)
+            }
             throw error
         }
-    }
-
-    static func markMigrationSucceeded(
-        applicationSupportURL: URL,
-        schemaVersion: String,
-        fileManager: FileManager = .default
-    ) throws {
-        try fileManager.createDirectory(at: applicationSupportURL, withIntermediateDirectories: true)
-        let state = StoreSchemaState(schemaVersion: schemaVersion)
-        let data = try JSONEncoder().encode(state)
-        try data.write(
-            to: applicationSupportURL.appendingPathComponent(schemaStateFileName),
-            options: .atomic
-        )
     }
 
     static func applicationSupportURL(for storeURL: URL) -> URL {
@@ -170,19 +293,12 @@ enum StoreBackupService {
         return try JSONDecoder().decode(StoreBackupManifest.self, from: Data(contentsOf: url))
     }
 
-    static func loadSchemaState(
-        at applicationSupportURL: URL,
-        fileManager: FileManager = .default
-    ) throws -> StoreSchemaState? {
-        let url = applicationSupportURL.appendingPathComponent(schemaStateFileName)
-        guard fileManager.fileExists(atPath: url.path) else { return nil }
-        return try JSONDecoder().decode(StoreSchemaState.self, from: Data(contentsOf: url))
-    }
 
     static func restoreCurrentBackup(
         storeURL: URL,
         applicationSupportURL: URL,
         expectedSchemaVersion: String,
+        backupID: UUID,
         fileManager: FileManager = .default
     ) throws {
         let backupDirectory = applicationSupportURL.appendingPathComponent(backupDirectoryName)
@@ -193,6 +309,7 @@ enum StoreBackupService {
         let currentBackup = backupDirectory
             .appendingPathComponent("current", isDirectory: true)
         guard let manifest = try loadManifest(at: currentBackup, fileManager: fileManager),
+              manifest.backupID == backupID,
               manifest.targetSchemaVersion == expectedSchemaVersion,
               isValidBackup(at: currentBackup, manifest: manifest, storeURL: storeURL, fileManager: fileManager) else {
             throw BackupError.invalidBackup(currentBackup)
@@ -227,15 +344,32 @@ enum StoreBackupService {
             try fileManager.createDirectory(at: quarantineDirectory, withIntermediateDirectories: true)
             var quarantined: [(original: URL, backup: URL)] = []
             var installed: [URL] = []
+            let liveURLs = storeArtifactURLs(for: storeURL, fileManager: fileManager)
+                + (try supportDirectoryURLs(for: storeURL, fileManager: fileManager))
+            guard !fileManager.fileExists(atPath: storeURL.path) || isRegularFile(at: storeURL) else {
+                throw BackupError.invalidBackup(storeURL)
+            }
+            guard !isSymbolicLink(at: storeURL) else {
+                throw BackupError.invalidBackup(storeURL)
+            }
+            try validateStoreArtifacts(storeURL: storeURL, fileManager: fileManager)
+            var journal = try makeRestoreJournal(
+                backupID: manifest.backupID,
+                liveURLs: liveURLs,
+                storeURL: storeURL,
+                fileManager: fileManager
+            )
+            try writeRestoreJournal(journal, to: restoreDirectory, fileManager: fileManager)
 
             do {
-                let liveURLs = storeArtifactURLs(for: storeURL, fileManager: fileManager)
-                    + (try supportDirectoryURLs(for: storeURL, fileManager: fileManager))
                 for liveURL in liveURLs {
                     let backupURL = quarantineDirectory.appendingPathComponent(liveURL.lastPathComponent)
                     try fileManager.moveItem(at: liveURL, to: backupURL)
                     quarantined.append((liveURL, backupURL))
                 }
+
+                journal.phase = .installing
+                try writeRestoreJournal(journal, to: restoreDirectory, fileManager: fileManager)
 
                 for artifact in manifest.artifacts {
                     let sourceURL = restoreDirectory.appendingPathComponent(artifact.path)
@@ -251,7 +385,12 @@ enum StoreBackupService {
                     installed.append(destinationURL)
                 }
 
-                try fileManager.removeItem(at: quarantineDirectory)
+                journal.phase = .installed
+                try writeRestoreJournal(journal, to: restoreDirectory, fileManager: fileManager)
+                let failedStoreDirectory = applicationSupportURL
+                    .appendingPathComponent("\(failedStoreDirectoryPrefix)\(UUID().uuidString)", isDirectory: true)
+                try fileManager.moveItem(at: quarantineDirectory, to: failedStoreDirectory)
+                try? excludeFromBackup(at: failedStoreDirectory, fileManager: fileManager)
             } catch {
                 var rollbackFailed = false
                 for destinationURL in installed {
@@ -289,6 +428,80 @@ enum StoreBackupService {
                 throw error
             }
         }
+    }
+
+    static func cleanupAfterSuccessfulLaunch(
+        applicationSupportURL: URL,
+        fileManager: FileManager = .default
+    ) throws {
+        guard fileManager.fileExists(atPath: applicationSupportURL.path) else { return }
+        let entries = try fileManager.contentsOfDirectory(at: applicationSupportURL, includingPropertiesForKeys: nil)
+        for entry in entries where entry.lastPathComponent.hasPrefix(failedStoreDirectoryPrefix) {
+            try removeIfPresent(entry, fileManager: fileManager)
+        }
+        try removeIfPresent(
+            applicationSupportURL.appendingPathComponent(legacySchemaStateFileName),
+            fileManager: fileManager
+        )
+
+        let backupDirectory = applicationSupportURL.appendingPathComponent(backupDirectoryName)
+        try cleanupStagingDirectories(in: backupDirectory, fileManager: fileManager)
+    }
+
+    static func completeMigrationAttempt(
+        applicationSupportURL: URL,
+        fileManager: FileManager = .default
+    ) throws {
+        do {
+            try clearMigrationAttempt(at: applicationSupportURL, fileManager: fileManager)
+        } catch {
+            throw BackupError.migrationFinalization(
+                applicationSupportURL.appendingPathComponent(migrationAttemptFileName)
+            )
+        }
+    }
+
+    static func resetStoreData(
+        storeURL: URL,
+        applicationSupportURL: URL,
+        fileManager: FileManager = .default
+    ) throws {
+        let baseURL = storeURL.deletingPathExtension()
+        let sidecars = [
+            baseURL.appendingPathExtension("\(storeURL.pathExtension)-wal"),
+            baseURL.appendingPathExtension("\(storeURL.pathExtension)-shm"),
+        ]
+        for url in [storeURL] + sidecars {
+            try removeIfPresent(url, fileManager: fileManager)
+        }
+
+        for supportURL in supportDirectoryNames(for: storeURL).map({
+            storeURL.deletingLastPathComponent().appendingPathComponent($0, isDirectory: true)
+        }) {
+            try removeIfPresent(supportURL, fileManager: fileManager)
+        }
+
+        if fileManager.fileExists(atPath: applicationSupportURL.path) {
+            let entries = try fileManager.contentsOfDirectory(at: applicationSupportURL, includingPropertiesForKeys: nil)
+            for entry in entries where entry.lastPathComponent.hasPrefix("restore-") ||
+                entry.lastPathComponent.hasPrefix(failedStoreDirectoryPrefix) ||
+                entry.lastPathComponent.hasPrefix(recoveryQuarantineDirectoryPrefix) {
+                try removeIfPresent(entry, fileManager: fileManager)
+            }
+        }
+
+        try removeIfPresent(
+            applicationSupportURL.appendingPathComponent(backupDirectoryName),
+            fileManager: fileManager
+        )
+        try removeIfPresent(
+            applicationSupportURL.appendingPathComponent(legacySchemaStateFileName),
+            fileManager: fileManager
+        )
+        try removeIfPresent(
+            applicationSupportURL.appendingPathComponent(migrationAttemptFileName),
+            fileManager: fileManager
+        )
     }
 
     private static func writeManifest(
@@ -335,41 +548,84 @@ enum StoreBackupService {
                   isSymbolicLink == false else {
                 return nil
             }
-            return url.path.replacingOccurrences(of: root.path + "/", with: "")
+            let prefix = root.path.hasSuffix("/") ? root.path : root.path + "/"
+            return url.path.hasPrefix(prefix) ? String(url.path.dropFirst(prefix.count)) : url.path
         }
     }
 
     private static func storeArtifactURLs(for storeURL: URL, fileManager: FileManager) -> [URL] {
+        return ([storeURL] + storeSidecarURLs(for: storeURL)).filter {
+            fileManager.fileExists(atPath: $0.path)
+        }
+    }
+
+    private static func storeSidecarURLs(for storeURL: URL) -> [URL] {
         let baseURL = storeURL.deletingPathExtension()
-        let sidecars = [
+        return [
             baseURL.appendingPathExtension("\(storeURL.pathExtension)-wal"),
             baseURL.appendingPathExtension("\(storeURL.pathExtension)-shm"),
         ]
-        return ([storeURL] + sidecars).filter { fileManager.fileExists(atPath: $0.path) }
+    }
+
+    private static func validateStoreArtifacts(
+        storeURL: URL,
+        fileManager: FileManager
+    ) throws {
+        for sidecar in storeSidecarURLs(for: storeURL) where fileManager.fileExists(atPath: sidecar.path) || isSymbolicLink(at: sidecar) {
+            guard isRegularFile(at: sidecar) else {
+                throw BackupError.invalidBackup(sidecar)
+            }
+        }
+    }
+
+    private static func ensureLiveStoreForAttempt(
+        storeURL: URL,
+        applicationSupportURL: URL,
+        targetSchemaVersion: String,
+        backupID: UUID,
+        fileManager: FileManager
+    ) throws {
+        if fileManager.fileExists(atPath: storeURL.path) {
+            guard isRegularFile(at: storeURL) else {
+                throw BackupError.invalidBackup(storeURL)
+            }
+            _ = try supportDirectoryURLs(for: storeURL, fileManager: fileManager)
+            try validateStoreArtifacts(storeURL: storeURL, fileManager: fileManager)
+            return
+        }
+        guard !isSymbolicLink(at: storeURL) else {
+            throw BackupError.invalidBackup(storeURL)
+        }
+        try restoreCurrentBackup(
+            storeURL: storeURL,
+            applicationSupportURL: applicationSupportURL,
+            expectedSchemaVersion: targetSchemaVersion,
+            backupID: backupID,
+            fileManager: fileManager
+        )
     }
 
     private static func supportDirectoryURLs(for storeURL: URL, fileManager: FileManager) throws -> [URL] {
         let parent = storeURL.deletingLastPathComponent()
         return try supportDirectoryNames(for: storeURL).compactMap { name in
-            parent.appendingPathComponent(name, isDirectory: true)
-        }.compactMap { url in
-            guard let values = try? url.resourceValues(forKeys: [.isDirectoryKey, .isSymbolicLinkKey]) else {
+            let url = parent.appendingPathComponent(name, isDirectory: true)
+            guard fileManager.fileExists(atPath: url.path) || isSymbolicLink(at: url) else {
                 return nil
             }
+            let values = try url.resourceValues(forKeys: [.isDirectoryKey, .isSymbolicLinkKey])
             if values.isSymbolicLink == true {
                 throw BackupError.invalidBackup(url)
             }
-            return values.isDirectory == true ? url : nil
+            guard values.isDirectory == true else {
+                throw BackupError.invalidBackup(url)
+            }
+            return url
         }
     }
 
     private static func supportDirectoryNames(for storeURL: URL) -> Set<String> {
         let baseName = storeURL.deletingPathExtension().lastPathComponent
-        return [
-            "\(baseName)_SUPPORT",
-            "\(baseName).SUPPORT",
-            "\(storeURL.lastPathComponent)_SUPPORT",
-        ]
+        return [".\(baseName)_SUPPORT"]
     }
 
     private static func isValidBackup(
@@ -426,9 +682,9 @@ enum StoreBackupService {
                 fileManager: fileManager
             )
         )
-        guard isSafeFileTree(at: backupDirectory.appendingPathComponent("store", isDirectory: true)),
-              isSafeFileTree(at: backupDirectory.appendingPathComponent("support", isDirectory: true)),
-              isSafeFileTree(at: backupDirectory),
+        guard isSafeFileTree(at: backupDirectory.appendingPathComponent("store", isDirectory: true), fileManager: fileManager),
+              isSafeFileTree(at: backupDirectory.appendingPathComponent("support", isDirectory: true), fileManager: fileManager),
+              isSafeFileTree(at: backupDirectory, fileManager: fileManager),
               actualPaths == Set(artifactPaths) else {
             return false
         }
@@ -454,10 +710,21 @@ enum StoreBackupService {
     private static func destinationURL(for relativePath: String, storeURL: URL) -> URL {
         let components = relativePath.split(separator: "/").map(String.init)
         let parent = storeURL.deletingLastPathComponent()
-        if components.first == "store" {
-            return parent.appendingPathComponent(components.dropFirst().joined(separator: "/"))
-        }
         return parent.appendingPathComponent(components.dropFirst().joined(separator: "/"))
+    }
+
+    private static func restoreDestinationRoots(
+        manifest: StoreBackupManifest,
+        storeURL: URL
+    ) -> [URL] {
+        Set(manifest.artifacts.compactMap { artifact in
+            let components = artifact.path.split(separator: "/").map(String.init)
+            guard components.count >= 2 else { return nil }
+            return destinationURL(
+                for: "\(components[0])/\(components[1])",
+                storeURL: storeURL
+            )
+        }).map { $0 }
     }
 
     private static func destinationIsContained(_ destinationURL: URL, by storeURL: URL) -> Bool {
@@ -480,108 +747,182 @@ enum StoreBackupService {
             (try? url.resourceValues(forKeys: [.isDirectoryKey, .isSymbolicLinkKey]).isDirectory) == true &&
             (try? url.resourceValues(forKeys: [.isDirectoryKey, .isSymbolicLinkKey]).isSymbolicLink) == false
         }
+        if let quarantine = try fileManager.contentsOfDirectory(
+            at: applicationSupportURL,
+            includingPropertiesForKeys: nil
+        ).first(where: {
+            $0.lastPathComponent.hasPrefix(recoveryQuarantineDirectoryPrefix) &&
+            (fileManager.fileExists(atPath: $0.path) || isSymbolicLink(at: $0))
+        }) {
+            throw BackupError.recoveryRequired(quarantine)
+        }
 
         for restoreDirectory in restoreDirectories {
-            let quarantineDirectory = restoreDirectory.appendingPathComponent("quarantine", isDirectory: true)
-            if isSymbolicLink(at: quarantineDirectory) {
-                throw BackupError.invalidBackup(restoreDirectory)
-            }
-            guard fileManager.fileExists(atPath: quarantineDirectory.path) else {
-                try fileManager.removeItem(at: restoreDirectory)
-                continue
-            }
-            guard isRealDirectory(at: quarantineDirectory) else {
-                throw BackupError.invalidBackup(restoreDirectory)
-            }
-            let quarantined = try fileManager.contentsOfDirectory(
-                at: quarantineDirectory,
-                includingPropertiesForKeys: nil
-            )
-            guard !quarantined.isEmpty else {
-                try fileManager.removeItem(at: restoreDirectory)
-                continue
-            }
-
-            var restored: [(destination: URL, quarantine: URL)] = []
-            let replacedDirectory = restoreDirectory.appendingPathComponent("replaced", isDirectory: true)
-            if isSymbolicLink(at: replacedDirectory) {
-                throw BackupError.invalidBackup(restoreDirectory)
-            }
-            if fileManager.fileExists(atPath: replacedDirectory.path) {
-                guard isRealDirectory(at: replacedDirectory) else {
-                    throw BackupError.invalidBackup(restoreDirectory)
-                }
-            } else {
-                try fileManager.createDirectory(at: replacedDirectory, withIntermediateDirectories: true)
-            }
-            var replaced: [(destination: URL, backup: URL)] = []
             do {
-                for quarantinedURL in quarantined {
-                    let name = quarantinedURL.lastPathComponent
-                        let values = try quarantinedURL.resourceValues(
-                            forKeys: [.isDirectoryKey, .isRegularFileKey, .isSymbolicLinkKey]
-                        )
-                    let destination: URL
-                    if name == storeURL.lastPathComponent ||
-                        name == "\(storeURL.deletingPathExtension().lastPathComponent).\(storeURL.pathExtension)-wal" ||
-                        name == "\(storeURL.deletingPathExtension().lastPathComponent).\(storeURL.pathExtension)-shm" {
-                        guard values.isRegularFile == true, values.isSymbolicLink != true else {
-                            throw BackupError.invalidBackup(restoreDirectory)
-                        }
-                        destination = storeURL.deletingLastPathComponent().appendingPathComponent(name)
-                    } else if supportDirectoryNames(for: storeURL).contains(name) {
-                        guard values.isDirectory == true, values.isSymbolicLink != true else {
-                            throw BackupError.invalidBackup(restoreDirectory)
-                        }
-                        guard isSafeFileTree(at: quarantinedURL) else {
-                            throw BackupError.invalidBackup(restoreDirectory)
-                        }
-                        destination = storeURL.deletingLastPathComponent().appendingPathComponent(name, isDirectory: true)
-                    } else {
-                        throw BackupError.invalidBackup(restoreDirectory)
-                    }
-                    if fileManager.fileExists(atPath: destination.path) {
-                        let backupDestination = replacedDirectory.appendingPathComponent(name, isDirectory: values.isDirectory == true)
-                        try fileManager.moveItem(at: destination, to: backupDestination)
-                        replaced.append((destination, backupDestination))
-                    }
-                    try fileManager.moveItem(at: quarantinedURL, to: destination)
-                    restored.append((destination, quarantinedURL))
-                }
-                try fileManager.removeItem(at: restoreDirectory)
+                try recoverInterruptedRestore(
+                    at: restoreDirectory,
+                    storeURL: storeURL,
+                    fileManager: fileManager
+                )
             } catch {
-                var rollbackFailed = false
-                for item in restored.reversed() {
-                    do {
-                        if fileManager.fileExists(atPath: item.destination.path) {
-                            try fileManager.moveItem(at: item.destination, to: item.quarantine)
-                        }
-                    } catch {
-                        rollbackFailed = true
-                    }
+                let quarantineURL = applicationSupportURL.appendingPathComponent(
+                    "\(recoveryQuarantineDirectoryPrefix)\(UUID().uuidString)",
+                    isDirectory: true
+                )
+                do {
+                    try fileManager.moveItem(at: restoreDirectory, to: quarantineURL)
+                } catch {
+                    throw BackupError.recoveryRequired(restoreDirectory)
                 }
-                for item in replaced.reversed() {
-                    do {
-                        try fileManager.moveItem(at: item.backup, to: item.destination)
-                    } catch {
-                        rollbackFailed = true
-                    }
-                }
-                if rollbackFailed {
-                    throw BackupError.invalidBackup(restoreDirectory)
-                }
-                throw error
+                try? excludeFromBackup(at: quarantineURL, fileManager: fileManager)
+                throw BackupError.recoveryRequired(quarantineURL)
             }
         }
     }
 
-    private static func isSafeFileTree(at directory: URL) -> Bool {
+    private static func recoverInterruptedRestore(
+        at restoreDirectory: URL,
+        storeURL: URL,
+        fileManager: FileManager
+    ) throws {
+        guard let journal = try loadRestoreJournal(at: restoreDirectory, fileManager: fileManager) else {
+            try? fileManager.removeItem(at: restoreDirectory)
+            return
+        }
+        guard let manifest = try? loadManifest(at: restoreDirectory, fileManager: fileManager),
+              journal.backupID == manifest.backupID,
+              isValidBackup(
+                  at: restoreDirectory,
+                  manifest: manifest,
+                  storeURL: storeURL,
+                  fileManager: fileManager,
+                  verifyChecksums: true
+              ) else {
+            throw BackupError.invalidBackup(restoreDirectory)
+        }
+        let quarantineDirectory = restoreDirectory.appendingPathComponent("quarantine", isDirectory: true)
+        if isSymbolicLink(at: quarantineDirectory) {
+            throw BackupError.invalidBackup(restoreDirectory)
+        }
+        guard fileManager.fileExists(atPath: quarantineDirectory.path) else {
+            try fileManager.removeItem(at: restoreDirectory)
+            return
+        }
+        guard isRealDirectory(at: quarantineDirectory) else {
+            throw BackupError.invalidBackup(restoreDirectory)
+        }
+        let quarantined = try fileManager.contentsOfDirectory(
+            at: quarantineDirectory,
+            includingPropertiesForKeys: nil
+        )
+        guard isValidRestoreQuarantine(
+            at: quarantineDirectory,
+            journal: journal,
+            fileManager: fileManager,
+            requireComplete: journal.phase == .installed
+        ) else {
+            throw BackupError.invalidBackup(restoreDirectory)
+        }
+
+        if journal.phase == .installed {
+            let failedStoreDirectory = restoreDirectory.deletingLastPathComponent()
+                .appendingPathComponent("\(failedStoreDirectoryPrefix)\(UUID().uuidString)", isDirectory: true)
+            try fileManager.moveItem(at: quarantineDirectory, to: failedStoreDirectory)
+            try? excludeFromBackup(at: failedStoreDirectory, fileManager: fileManager)
+            try fileManager.removeItem(at: restoreDirectory)
+            return
+        }
+
+        var restored: [(destination: URL, quarantine: URL)] = []
+        if journal.phase == .installing {
+            let originalNames = Set(journal.artifacts.map { artifact in
+                artifact.path.split(separator: "/").dropFirst().first.map(String.init) ?? artifact.path
+            })
+            for destination in restoreDestinationRoots(
+                manifest: manifest,
+                storeURL: storeURL
+            ) where !originalNames.contains(destination.lastPathComponent) {
+                try removeIfPresent(destination, fileManager: fileManager)
+            }
+        }
+        let replacedDirectory = restoreDirectory.appendingPathComponent("replaced", isDirectory: true)
+        if isSymbolicLink(at: replacedDirectory) {
+            throw BackupError.invalidBackup(restoreDirectory)
+        }
+        if fileManager.fileExists(atPath: replacedDirectory.path) {
+            guard isRealDirectory(at: replacedDirectory) else {
+                throw BackupError.invalidBackup(restoreDirectory)
+            }
+        } else {
+            try fileManager.createDirectory(at: replacedDirectory, withIntermediateDirectories: true)
+        }
+        var replaced: [(destination: URL, backup: URL)] = []
+        do {
+            for quarantinedURL in quarantined {
+                let name = quarantinedURL.lastPathComponent
+                let values = try quarantinedURL.resourceValues(
+                    forKeys: [.isDirectoryKey, .isRegularFileKey, .isSymbolicLinkKey]
+                )
+                let destination: URL
+                if name == storeURL.lastPathComponent ||
+                    name == "\(storeURL.deletingPathExtension().lastPathComponent).\(storeURL.pathExtension)-wal" ||
+                    name == "\(storeURL.deletingPathExtension().lastPathComponent).\(storeURL.pathExtension)-shm" {
+                    guard values.isRegularFile == true, values.isSymbolicLink != true else {
+                        throw BackupError.invalidBackup(restoreDirectory)
+                    }
+                    destination = storeURL.deletingLastPathComponent().appendingPathComponent(name)
+                } else if supportDirectoryNames(for: storeURL).contains(name) {
+                    guard values.isDirectory == true, values.isSymbolicLink != true else {
+                        throw BackupError.invalidBackup(restoreDirectory)
+                    }
+                    guard isSafeFileTree(at: quarantinedURL, fileManager: fileManager) else {
+                        throw BackupError.invalidBackup(restoreDirectory)
+                    }
+                    destination = storeURL.deletingLastPathComponent().appendingPathComponent(name, isDirectory: true)
+                } else {
+                    throw BackupError.invalidBackup(restoreDirectory)
+                }
+                if fileManager.fileExists(atPath: destination.path) {
+                    let backupDestination = replacedDirectory.appendingPathComponent(name, isDirectory: values.isDirectory == true)
+                    try fileManager.moveItem(at: destination, to: backupDestination)
+                    replaced.append((destination, backupDestination))
+                }
+                try fileManager.moveItem(at: quarantinedURL, to: destination)
+                restored.append((destination, quarantinedURL))
+            }
+            try fileManager.removeItem(at: restoreDirectory)
+        } catch {
+            var rollbackFailed = false
+            for item in restored.reversed() {
+                do {
+                    if fileManager.fileExists(atPath: item.destination.path) {
+                        try fileManager.moveItem(at: item.destination, to: item.quarantine)
+                    }
+                } catch {
+                    rollbackFailed = true
+                }
+            }
+            for item in replaced.reversed() {
+                do {
+                    try fileManager.moveItem(at: item.backup, to: item.destination)
+                } catch {
+                    rollbackFailed = true
+                }
+            }
+            if rollbackFailed {
+                throw BackupError.invalidBackup(restoreDirectory)
+            }
+            throw error
+        }
+    }
+
+    private static func isSafeFileTree(at directory: URL, fileManager: FileManager = .default) -> Bool {
         guard !isSymbolicLink(at: directory) else { return false }
-        guard FileManager.default.fileExists(atPath: directory.path) else { return true }
+        guard fileManager.fileExists(atPath: directory.path) else { return true }
         guard let values = try? directory.resourceValues(forKeys: [.isDirectoryKey, .isSymbolicLinkKey]),
               values.isDirectory == true,
               values.isSymbolicLink != true,
-              let enumerator = FileManager.default.enumerator(
+              let enumerator = fileManager.enumerator(
                   at: directory,
                   includingPropertiesForKeys: [.isDirectoryKey, .isSymbolicLinkKey, .isRegularFileKey]
               ) else {
@@ -596,6 +937,105 @@ enum StoreBackupService {
             }
         }
         return true
+    }
+
+    private static func makeRestoreJournal(
+        backupID: UUID,
+        liveURLs: [URL],
+        storeURL: URL,
+        fileManager: FileManager
+    ) throws -> StoreRestoreJournal {
+        let artifacts = try liveURLs.map { url -> StoreBackupArtifact in
+            if storeArtifactURLs(for: storeURL, fileManager: fileManager).contains(url) {
+                guard isRegularFile(at: url) else {
+                    throw BackupError.invalidBackup(url)
+                }
+                return try makeArtifactForFile(path: url.lastPathComponent, url: url, fileManager: fileManager)
+            }
+            let name = url.lastPathComponent
+            if isRealDirectory(at: url) {
+                return StoreBackupArtifact(path: name, byteCount: 0, sha256: "directory")
+            }
+            guard isRegularFile(at: url) else {
+                throw BackupError.invalidBackup(url)
+            }
+            return try makeArtifactForFile(path: name, url: url, fileManager: fileManager)
+        }
+        return StoreRestoreJournal(backupID: backupID, phase: .quarantining, artifacts: artifacts)
+    }
+
+    private static func makeArtifactForFile(
+        path: String,
+        url: URL,
+        fileManager: FileManager
+    ) throws -> StoreBackupArtifact {
+        let attributes = try fileManager.attributesOfItem(atPath: url.path)
+        let byteCount = (attributes[.size] as? NSNumber)?.int64Value ?? 0
+        let data = try Data(contentsOf: url, options: .mappedIfSafe)
+        let digest = SHA256.hash(data: data)
+            .map { String(format: "%02x", $0) }
+            .joined()
+        return StoreBackupArtifact(path: path, byteCount: byteCount, sha256: digest)
+    }
+
+    private static func writeRestoreJournal(
+        _ journal: StoreRestoreJournal,
+        to directory: URL,
+        fileManager: FileManager
+    ) throws {
+        let data = try JSONEncoder().encode(journal)
+        try data.write(to: directory.appendingPathComponent("restore-journal.json"), options: .atomic)
+    }
+
+    private static func loadRestoreJournal(
+        at directory: URL,
+        fileManager: FileManager
+    ) throws -> StoreRestoreJournal? {
+        let url = directory.appendingPathComponent("restore-journal.json")
+        guard !isSymbolicLink(at: url) else {
+            throw BackupError.invalidBackup(directory)
+        }
+        guard fileManager.fileExists(atPath: url.path) else { return nil }
+        guard isRegularFile(at: url) else {
+            throw BackupError.invalidBackup(directory)
+        }
+        return try JSONDecoder().decode(StoreRestoreJournal.self, from: Data(contentsOf: url))
+    }
+
+    private static func isValidRestoreQuarantine(
+        at quarantineDirectory: URL,
+        journal: StoreRestoreJournal,
+        fileManager: FileManager,
+        requireComplete: Bool
+    ) -> Bool {
+        guard isRealDirectory(at: quarantineDirectory),
+              isSafeFileTree(at: quarantineDirectory, fileManager: fileManager) else {
+            return false
+        }
+        let entries = (try? fileManager.contentsOfDirectory(at: quarantineDirectory, includingPropertiesForKeys: nil)) ?? []
+        let entryNames = Set(entries.map(\.lastPathComponent))
+        let journalNames = Set(journal.artifacts.map(\.path))
+        guard entryNames.isSubset(of: journalNames),
+              !requireComplete || entryNames == journalNames else {
+            return false
+        }
+        return journal.artifacts.filter { entryNames.contains($0.path) }.allSatisfy { artifact in
+            let url = quarantineDirectory.appendingPathComponent(artifact.path)
+            if artifact.sha256 == "directory" {
+                return isRealDirectory(at: url) && isSafeFileTree(at: url, fileManager: fileManager)
+            }
+            guard isRegularFile(at: url),
+                  let attributes = try? fileManager.attributesOfItem(atPath: url.path),
+                  let byteCount = (attributes[.size] as? NSNumber)?.int64Value,
+                  byteCount == artifact.byteCount,
+                  let data = try? Data(contentsOf: url, options: .mappedIfSafe) else {
+                return false
+            }
+            let digest = SHA256.hash(data: data)
+                .map { String(format: "%02x", $0) }
+                .joined()
+            return digest == artifact.sha256
+        }
     }
 
     private static func isSymbolicLink(at url: URL) -> Bool {
@@ -614,6 +1054,71 @@ enum StoreBackupService {
             return false
         }
         return values.isRegularFile == true && values.isSymbolicLink != true
+    }
+
+    private static func excludeFromBackup(at url: URL, fileManager: FileManager) throws {
+        guard fileManager.fileExists(atPath: url.path) else { return }
+        var values = URLResourceValues()
+        values.isExcludedFromBackup = true
+        var mutableURL = url
+        try mutableURL.setResourceValues(values)
+    }
+
+    private static func removeIfPresent(_ url: URL, fileManager: FileManager) throws {
+        guard fileManager.fileExists(atPath: url.path) || isSymbolicLink(at: url) else { return }
+        try fileManager.removeItem(at: url)
+    }
+
+    private static func cleanupStagingDirectories(
+        in backupDirectory: URL,
+        fileManager: FileManager
+    ) throws {
+        guard fileManager.fileExists(atPath: backupDirectory.path) else { return }
+        guard !isSymbolicLink(at: backupDirectory), isRealDirectory(at: backupDirectory) else {
+            throw BackupError.invalidBackup(backupDirectory)
+        }
+        let entries = try fileManager.contentsOfDirectory(at: backupDirectory, includingPropertiesForKeys: nil)
+        for entry in entries where entry.lastPathComponent.hasPrefix("staging-") {
+            try removeIfPresent(entry, fileManager: fileManager)
+        }
+    }
+
+    private static func loadMigrationAttempt(
+        at applicationSupportURL: URL,
+        fileManager: FileManager
+    ) throws -> StoreMigrationAttempt? {
+        let url = applicationSupportURL.appendingPathComponent(migrationAttemptFileName)
+        guard !isSymbolicLink(at: url) else {
+            throw BackupError.invalidBackup(url)
+        }
+        guard fileManager.fileExists(atPath: url.path) else { return nil }
+        guard isRegularFile(at: url) else {
+            throw BackupError.invalidBackup(url)
+        }
+        return try JSONDecoder().decode(StoreMigrationAttempt.self, from: Data(contentsOf: url))
+    }
+
+    private static func writeMigrationAttempt(
+        _ attempt: StoreMigrationAttempt,
+        to applicationSupportURL: URL,
+        fileManager: FileManager
+    ) throws {
+        try fileManager.createDirectory(at: applicationSupportURL, withIntermediateDirectories: true)
+        let data = try JSONEncoder().encode(attempt)
+        try data.write(
+            to: applicationSupportURL.appendingPathComponent(migrationAttemptFileName),
+            options: .atomic
+        )
+    }
+
+    private static func clearMigrationAttempt(
+        at applicationSupportURL: URL,
+        fileManager: FileManager
+    ) throws {
+        try removeIfPresent(
+            applicationSupportURL.appendingPathComponent(migrationAttemptFileName),
+            fileManager: fileManager
+        )
     }
 
     private static func replaceCurrentBackup(
