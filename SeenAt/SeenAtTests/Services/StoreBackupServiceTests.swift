@@ -911,6 +911,43 @@ final class StoreBackupServiceTests: XCTestCase {
         XCTAssertFalse(FileManager.default.fileExists(atPath: restoreDirectory.path))
     }
 
+    func testCompleteMigrationAttemptClearsMigrationAttemptFile() throws {
+        try write("original", to: storeURL)
+        _ = try XCTUnwrap(try StoreBackupService.prepareForMigration(
+            storeURL: storeURL,
+            applicationSupportURL: applicationSupportURL,
+            targetSchemaVersion: "2.0.0"
+        ))
+        try StoreBackupService.completeMigrationAttempt(
+            applicationSupportURL: applicationSupportURL
+        )
+
+        // Simulate a second migration that will fail (e.g., ModelContainer creation fails).
+        // A new migration attempt file is written before the failure.
+        try writeMigrationAttempt(
+            StoreMigrationAttempt(
+                backupID: UUID(),
+                sourceStorePath: storeURL.path,
+                targetSchemaVersion: "2.0.0",
+                stagingDirectoryPath: nil
+            )
+        )
+        let attemptFile = applicationSupportURL
+            .appendingPathComponent(StoreBackupService.migrationAttemptFileName)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: attemptFile.path))
+
+        // Simulate the recovery-loop fix: clear the migration attempt after
+        // restoreCurrentBackup succeeds but ModelContainer creation fails.
+        try StoreBackupService.completeMigrationAttempt(
+            applicationSupportURL: applicationSupportURL
+        )
+
+        XCTAssertFalse(
+            FileManager.default.fileExists(atPath: attemptFile.path),
+            "Migration attempt file must be cleared to prevent infinite recovery loop on next launch"
+        )
+    }
+
     private func recoveryQuarantineExists() throws -> Bool {
         guard FileManager.default.fileExists(atPath: applicationSupportURL.path) else { return false }
         return try FileManager.default.contentsOfDirectory(
