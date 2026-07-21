@@ -100,7 +100,9 @@ struct StoreErrorView: View {
         switch state.failureReason {
         case .migrationFinalization, .restoredMigrationFinalization, .recoveryRequired:
             false
-        case .storeLoad, .restoreFailed:
+        case .restoreFailed:
+            !state.recoveryCompleted
+        case .storeLoad:
             true
         }
     }

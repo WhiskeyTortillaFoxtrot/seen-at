@@ -265,3 +265,4 @@ final class StoreState {
     var recoveryCompleted = false
     var failureReason: StoreFailureReason = .storeLoad
 }
+
