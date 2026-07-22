@@ -165,4 +165,9 @@ final class MigrationTests: XCTestCase {
 
         try context.save()
     }
+
+    func testCurrentVersionMatchesV2SchemaIdentifier() {
+        let expected = String(describing: Schema.Version(2, 0, 0))
+        XCTAssertEqual(SeenAtMigrationPlan.currentVersion, expected)
+    }
 }

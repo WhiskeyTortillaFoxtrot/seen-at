@@ -27,13 +27,63 @@ struct StoreMigrationAttempt: Codable {
     let stagingDirectoryPath: String?
 }
 
-struct StoreBackupManifest: Codable, Equatable {
+struct StoreBackupManifest: Equatable {
+    static let currentFormatVersion = 1
+
+    let formatVersion: Int
     let backupID: UUID
     let sourceStorePath: String
     let storeFileName: String
     let targetSchemaVersion: String
     let createdAt: Date
     let artifacts: [StoreBackupArtifact]
+
+    init(
+        formatVersion: Int = currentFormatVersion,
+        backupID: UUID,
+        sourceStorePath: String,
+        storeFileName: String,
+        targetSchemaVersion: String,
+        createdAt: Date,
+        artifacts: [StoreBackupArtifact]
+    ) {
+        self.formatVersion = formatVersion
+        self.backupID = backupID
+        self.sourceStorePath = sourceStorePath
+        self.storeFileName = storeFileName
+        self.targetSchemaVersion = targetSchemaVersion
+        self.createdAt = createdAt
+        self.artifacts = artifacts
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case formatVersion, backupID, sourceStorePath, storeFileName
+        case targetSchemaVersion, createdAt, artifacts
+    }
+}
+
+extension StoreBackupManifest: Codable {
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        formatVersion = (try? container.decode(Int.self, forKey: .formatVersion)) ?? Self.currentFormatVersion
+        backupID = try container.decode(UUID.self, forKey: .backupID)
+        sourceStorePath = try container.decode(String.self, forKey: .sourceStorePath)
+        storeFileName = try container.decode(String.self, forKey: .storeFileName)
+        targetSchemaVersion = try container.decode(String.self, forKey: .targetSchemaVersion)
+        createdAt = try container.decode(Date.self, forKey: .createdAt)
+        artifacts = try container.decode([StoreBackupArtifact].self, forKey: .artifacts)
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(formatVersion, forKey: .formatVersion)
+        try container.encode(backupID, forKey: .backupID)
+        try container.encode(sourceStorePath, forKey: .sourceStorePath)
+        try container.encode(storeFileName, forKey: .storeFileName)
+        try container.encode(targetSchemaVersion, forKey: .targetSchemaVersion)
+        try container.encode(createdAt, forKey: .createdAt)
+        try container.encode(artifacts, forKey: .artifacts)
+    }
 }
 
 enum StoreBackupService {
@@ -290,9 +340,12 @@ enum StoreBackupService {
         guard isRegularFile(at: url) else {
             throw BackupError.invalidBackup(url)
         }
-        return try JSONDecoder().decode(StoreBackupManifest.self, from: Data(contentsOf: url))
+        let manifest = try JSONDecoder().decode(StoreBackupManifest.self, from: Data(contentsOf: url))
+        guard manifest.formatVersion <= StoreBackupManifest.currentFormatVersion else {
+            throw BackupError.invalidBackup(backupDirectory)
+        }
+        return manifest
     }
-
 
     static func restoreCurrentBackup(
         storeURL: URL,
