@@ -91,6 +91,9 @@ enum SeenAtSchemaV2: VersionedSchema {
 // MARK: - Migration Plan
 
 enum SeenAtMigrationPlan: SchemaMigrationPlan {
+    static var currentVersion: String {
+        String(describing: SeenAtSchemaV2.versionIdentifier)
+    }
     static var schemas: [any VersionedSchema.Type] { [SeenAtSchemaV1.self, SeenAtSchemaV2.self] }
     static var stages: [MigrationStage] { [migrateV1toV2] }
 

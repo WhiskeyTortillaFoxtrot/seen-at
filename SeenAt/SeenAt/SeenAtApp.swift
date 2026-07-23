@@ -3,7 +3,13 @@ import SwiftData
 import Observation
 import OSLog
 
-private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "com.seenat", category: "Store")
+enum StoreFailureReason {
+    case storeLoad
+    case restoreFailed
+    case migrationFinalization
+    case restoredMigrationFinalization
+    case recoveryRequired
+}
 
 private enum DeepLinkError: Identifiable {
     case malformedURL
@@ -31,34 +37,29 @@ struct SeenAtApp: App {
     @State private var splashState = SplashState()
     @State private var storeState = StoreState()
 
+    /// All backup/restore work runs synchronously on `@MainActor` because
+    /// SwiftData's `ModelContainer` must be created on the main actor, and the
+    /// backup must exist *before* container creation so the recovery path can
+    /// restore it on failure.  If launch time becomes a concern, the escape
+    /// hatch is pre-warming the backup on a background thread during a push
+    /// notification handler or app extension.
     init() {
-        let storeState = StoreState()
-        _storeState = State(wrappedValue: storeState)
-        let config = ModelConfiguration()
-
-        do {
-            container = try ModelContainer(
+        let result = StoreLauncher.launch { config in
+            try ModelContainer(
                 for: Team.self, Event.self, JerseySighting.self,
                 migrationPlan: SeenAtMigrationPlan.self,
                 configurations: config
             )
-        } catch {
-            logger.error("ModelContainer creation with migration failed: \(error, privacy: .public)")
-            do {
-                container = try ModelContainer(
-                    for: Team.self, Event.self, JerseySighting.self,
-                    configurations: config
-                )
-            } catch {
-                logger.error("ModelContainer creation without migration failed: \(error, privacy: .public)")
-                storeState.error = error
-                storeState.storeURL = config.url
-                container = nil
-                return
-            }
         }
+        container = result.container
+        _storeState = State(wrappedValue: result.storeState)
 
-        guard let c = container else { return }
+        guard let c = container else {
+            if result.storeState.recoveryCompleted {
+                splashState.isVisible = false
+            }
+            return
+        }
         let state = splashState
         Task {
             await TeamSeedService.seedIfNeeded(modelContext: c.mainContext)
@@ -143,4 +144,7 @@ final class SplashState {
 final class StoreState {
     var error: Error?
     var storeURL: URL?
+    var recoveryCompleted = false
+    var failureReason: StoreFailureReason = .storeLoad
 }
+
