@@ -133,4 +133,31 @@ struct StoreLauncher {
 
         return Result(container: container, storeState: storeState)
     }
+
+    @MainActor
+    static func seedIfNeeded(in container: ModelContainer) async {
+        await TeamSeedService.seedIfNeeded(modelContext: container.mainContext)
+        if ProcessInfo.processInfo.arguments.contains("--seedData") {
+            SeedData.seedIfNeeded(in: container.mainContext)
+        }
+    }
+
+    @MainActor
+    static func startLiveActivities(for container: ModelContainer) async {
+        let cal = Calendar.current
+        let startOfToday = cal.startOfDay(for: .now)
+        let startOfTomorrow = cal.date(byAdding: .day, value: 1, to: startOfToday)!
+        let todayPredicate = #Predicate<Event> {
+            $0.date >= startOfToday && $0.date < startOfTomorrow
+        }
+        let context = container.mainContext
+        let todayEvents = (try? context.fetch(FetchDescriptor(predicate: todayPredicate))) ?? []
+        await LiveActivityManager.endStaleActivities(for: todayEvents)
+        if let event = LiveActivityManager.findBestTodayEvent(in: todayEvents) {
+            let names = [event.homeTeam, event.awayTeam].compactMap { $0 }
+            let teamPredicate = #Predicate<Team> { names.contains($0.name) }
+            let teams = (try? context.fetch(FetchDescriptor(predicate: teamPredicate))) ?? []
+            await LiveActivityManager.startOrUpdate(for: event, teams: teams)
+        }
+    }
 }
