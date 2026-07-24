@@ -30,6 +30,7 @@ struct EventFormView: View {
     @State private var manualHomeTeamText: String = ""
     @State private var manualVenue: String = ""
     @State private var watchLocation: WatchLocation = .stadium
+    @State private var fetchTask: Task<Void, Never>?
 
     let onSave: ((Event) -> Void)?
 
@@ -205,36 +206,42 @@ struct EventFormView: View {
     }
 
     private func fetchGames() {
+        fetchTask?.cancel()
+        fetchTask = Task {
+            try? await Task.sleep(nanoseconds: 300_000_000)
+            await performFetch()
+        }
+    }
+
+    private func performFetch() async {
         isLoading = true
         errorMessage = nil
         hasFetched = false
 
-        Task {
-            do {
-                let fetched: [LeagueGame]
-                switch selectedLeague {
-                case "nhl":
-                    fetched = try await NHLAPIService.fetchGames(on: date)
-                case "nba":
-                    fetched = try await ESPNService.fetchGames(on: date, sportPath: "basketball/nba")
-                case "nfl":
-                    fetched = try await ESPNService.fetchGames(on: date, sportPath: "football/nfl")
-        case "lovb", "mls", "other":
-            fetched = []
-        default:
-            fetched = try await MLBAPIService.fetchGames(on: date)
-                }
-                await MainActor.run {
-                    games = fetched
-                    isLoading = false
-                    hasFetched = true
-                }
-            } catch {
-                await MainActor.run {
-                    errorMessage = "Could not load games"
-                    isLoading = false
-                    hasFetched = true
-                }
+        do {
+            let fetched: [LeagueGame]
+            switch selectedLeague {
+            case "nhl":
+                fetched = try await NHLAPIService.fetchGames(on: date)
+            case "nba":
+                fetched = try await ESPNService.fetchGames(on: date, sportPath: "basketball/nba")
+            case "nfl":
+                fetched = try await ESPNService.fetchGames(on: date, sportPath: "football/nfl")
+            case "lovb", "mls", "other":
+                fetched = []
+            default:
+                fetched = try await MLBAPIService.fetchGames(on: date)
+            }
+            await MainActor.run {
+                games = fetched
+                isLoading = false
+                hasFetched = true
+            }
+        } catch {
+            await MainActor.run {
+                errorMessage = "Could not load games"
+                isLoading = false
+                hasFetched = true
             }
         }
     }

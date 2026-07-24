@@ -9,13 +9,26 @@ enum ESPNService {
 
     static func fetchGames(on date: Date, sportPath: String, session: URLSession = APICacheService.session) async throws -> [LeagueGame] {
         let dateString = dateFormatter.string(from: date)
+        let league = sportPath.contains("nba") ? "nba" : sportPath.contains("nfl") ? "nfl" : sportPath
+
+        if let cached = APICacheService.getCachedGames(league: league, date: date) {
+            return cached
+        }
 
         let url = URL(string: "https://site.api.espn.com/apis/site/v2/sports/\(sportPath)/scoreboard?dates=\(dateString)")!
-        let (data, _) = try await session.data(from: url)
-
-        let decoder = JSONDecoder()
-        let response = try decoder.decode(ESPNResponse.self, from: data)
-        return response.events.map { $0.toLeagueGame(sportPath: sportPath) }
+        do {
+            let (data, _) = try await session.data(from: url)
+            let decoder = JSONDecoder()
+            let response = try decoder.decode(ESPNResponse.self, from: data)
+            let games = response.events.map { $0.toLeagueGame(sportPath: sportPath) }
+            APICacheService.setCachedGames(games, league: league, date: date)
+            return games
+        } catch {
+            if let cached = APICacheService.getCachedGames(league: league, date: date) {
+                return cached
+            }
+            throw error
+        }
     }
 }
 
@@ -28,6 +41,7 @@ struct ESPNEvent: Codable, Identifiable {
     let name: String
     let date: String
     let competitions: [ESPNCompetition]
+    let links: [ESPNLink]?
 
     func toLeagueGame(sportPath: String) -> LeagueGame {
         let league: String
@@ -42,6 +56,7 @@ struct ESPNEvent: Codable, Identifiable {
         let venueName = competitions.first?.venue?.fullName ?? ""
         let awayName = competitions.first?.competitors.first(where: { $0.homeAway == "away" })?.team.name ?? ""
         let homeName = competitions.first?.competitors.first(where: { $0.homeAway == "home" })?.team.name ?? ""
+        let gameURL = links?.compactMap(\.web?.href).first.flatMap(URL.init)
         return LeagueGame(
             id: "\(league)-\(id)",
             awayTeam: awayName,
@@ -49,7 +64,7 @@ struct ESPNEvent: Codable, Identifiable {
             venueName: venueName,
             dateString: date,
             league: league,
-            url: nil,
+            url: gameURL,
             dayNight: nil
         )
     }
@@ -71,4 +86,12 @@ struct ESPNCompetitor: Codable {
 
 struct ESPNSimpleTeam: Codable {
     let name: String
+}
+
+struct ESPNLink: Codable {
+    let web: ESPNWebLink?
+}
+
+struct ESPNWebLink: Codable {
+    let href: String?
 }
