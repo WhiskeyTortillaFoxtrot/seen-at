@@ -10,12 +10,24 @@ enum MLBAPIService: LeagueAPIService {
     static func fetchGames(on date: Date, session: URLSession = APICacheService.session) async throws -> [LeagueGame] {
         let dateString = dateFormatter.string(from: date)
 
-        let url = URL(string: "https://statsapi.mlb.com/api/v1/schedule?date=\(dateString)&sportId=1")!
-        let (data, _) = try await session.data(from: url)
+        if let cached = APICacheService.getCachedGames(league: "mlb", date: date) {
+            return cached
+        }
 
-        let decoder = JSONDecoder()
-        let response = try decoder.decode(ScheduleResponse.self, from: data)
-        return response.dates.first?.games.map { $0.toLeagueGame } ?? []
+        let url = URL(string: "https://statsapi.mlb.com/api/v1/schedule?date=\(dateString)&sportId=1")!
+        do {
+            let (data, _) = try await session.data(from: url)
+            let decoder = JSONDecoder()
+            let response = try decoder.decode(ScheduleResponse.self, from: data)
+            let games = response.dates.first?.games.map { $0.toLeagueGame } ?? []
+            APICacheService.setCachedGames(games, league: "mlb", date: date)
+            return games
+        } catch {
+            if let cached = APICacheService.getCachedGames(league: "mlb", date: date) {
+                return cached
+            }
+            throw error
+        }
     }
 }
 

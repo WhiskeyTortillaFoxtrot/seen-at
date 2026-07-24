@@ -10,12 +10,24 @@ enum NHLAPIService: LeagueAPIService {
     static func fetchGames(on date: Date, session: URLSession = APICacheService.session) async throws -> [LeagueGame] {
         let dateString = dateFormatter.string(from: date)
 
-        let url = URL(string: "https://api-web.nhle.com/v1/schedule/\(dateString)")!
-        let (data, _) = try await session.data(from: url)
+        if let cached = APICacheService.getCachedGames(league: "nhl", date: date) {
+            return cached
+        }
 
-        let decoder = JSONDecoder()
-        let response = try decoder.decode(NHLScheduleResponse.self, from: data)
-        return response.gameWeek.first(where: { $0.date == dateString })?.games.map { $0.toLeagueGame(dateString: dateString) } ?? []
+        let url = URL(string: "https://api-web.nhle.com/v1/schedule/\(dateString)")!
+        do {
+            let (data, _) = try await session.data(from: url)
+            let decoder = JSONDecoder()
+            let response = try decoder.decode(NHLScheduleResponse.self, from: data)
+            let games = response.gameWeek.first(where: { $0.date == dateString })?.games.map { $0.toLeagueGame(dateString: dateString) } ?? []
+            APICacheService.setCachedGames(games, league: "nhl", date: date)
+            return games
+        } catch {
+            if let cached = APICacheService.getCachedGames(league: "nhl", date: date) {
+                return cached
+            }
+            throw error
+        }
     }
 }
 
@@ -33,6 +45,7 @@ struct NHLGame: Codable {
     let venue: NHLVenue
     let homeTeam: NHLTeamWrapper
     let awayTeam: NHLTeamWrapper
+    let gameLink: String?
 
     var title: String {
         "\(awayTeam.name.default) @ \(homeTeam.name.default)"
@@ -46,7 +59,7 @@ struct NHLGame: Codable {
             venueName: venue.default,
             dateString: dateString,
             league: "nhl",
-            url: nil,
+            url: gameLink.flatMap(URL.init),
             dayNight: nil
         )
     }
