@@ -55,6 +55,7 @@ struct ContentView: View {
                 if let event = try context.fetch(descriptor).first {
                     eventToTrack = event
                     selectedTab = 0
+                    deepLinkEventID = nil
                 } else {
                     onDeepLinkError?()
                 }
@@ -62,7 +63,6 @@ struct ContentView: View {
                 logger.error("Failed to fetch deep-linked event: \(error, privacy: .auto)")
                 onDeepLinkError?()
             }
-            deepLinkEventID = nil
         }
     }
 }
