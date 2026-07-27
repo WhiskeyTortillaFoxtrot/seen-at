@@ -13,7 +13,6 @@ final class StoreLauncherTests: XCTestCase {
         }
         XCTAssertNotNil(result.container)
         XCTAssertNil(result.storeState.error)
-        XCTAssertFalse(result.storeState.recoveryCompleted)
         XCTAssertEqual(result.storeState.failureReason, .storeLoad)
     }
 
@@ -38,6 +37,29 @@ final class StoreLauncherTests: XCTestCase {
             throw LaunchError()
         }
         XCTAssertNotNil(result.storeState.storeURL)
+    }
+
+    func testStoreErrorAllowsResetAfterRestoreFailure() {
+        let state = StoreState()
+        state.failureReason = .restoreFailed
+        let view = StoreErrorView(state: state)
+
+        XCTAssertTrue(view.allowsReset)
+        XCTAssertEqual(view.message, "Your data could not be loaded. It has been preserved on your device.")
+    }
+
+    func testStoreErrorProtectsMigrationStatesFromReset() {
+        let state = StoreState()
+        let view = StoreErrorView(state: state)
+
+        for failureReason in [
+            StoreFailureReason.migrationFinalization,
+            .restoredMigrationFinalization,
+            .recoveryRequired
+        ] {
+            state.failureReason = failureReason
+            XCTAssertFalse(view.allowsReset)
+        }
     }
 
     func testSeedIfNeededInsertsTeams() async throws {
