@@ -79,7 +79,7 @@ struct StoreErrorView: View {
         }
     }
 
-    private var message: String {
+    var message: String {
         switch state.failureReason {
         case .migrationFinalization:
             "Your data opened successfully, but migration safety cleanup could not be completed. The app is blocked from writing to protect your data."
@@ -88,21 +88,17 @@ struct StoreErrorView: View {
         case .recoveryRequired:
             "Migration recovery could not be completed safely. Your data has been preserved. Close and reopen the app after addressing the recovery state."
         case .restoreFailed:
-            state.recoveryCompleted
-                ? "A migration backup was restored. Please close and reopen the app to try again."
-                : "Your data could not be loaded. It has been preserved on your device."
+            "Your data could not be loaded. It has been preserved on your device."
         case .storeLoad:
             "Your data could not be loaded. It has been preserved on your device."
         }
     }
 
-    private var allowsReset: Bool {
+    var allowsReset: Bool {
         switch state.failureReason {
         case .migrationFinalization, .restoredMigrationFinalization, .recoveryRequired:
             false
-        case .restoreFailed:
-            !state.recoveryCompleted
-        case .storeLoad:
+        case .restoreFailed, .storeLoad:
             true
         }
     }

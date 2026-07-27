@@ -109,7 +109,6 @@ struct StoreLauncher {
                     }
                     container = recoveredContainer
                     logger.info("Restored and reopened the migration backup after store failure")
-                    storeState.recoveryCompleted = true
                 } catch {
                     recoveryError = error
                     logger.error("Restored migration backup could not be reopened: \(error, privacy: .public)")
@@ -117,7 +116,6 @@ struct StoreLauncher {
                         applicationSupportURL: applicationSupportURL
                     )
                     storeState.failureReason = .restoreFailed
-                    storeState.recoveryCompleted = true
                 }
             } catch {
                 recoveryError = error

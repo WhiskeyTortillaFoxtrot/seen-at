@@ -53,12 +53,7 @@ struct SeenAtApp: App {
         container = result.container
         _storeState = State(wrappedValue: result.storeState)
 
-        guard let c = container else {
-            if result.storeState.recoveryCompleted {
-                splashState.isVisible = false
-            }
-            return
-        }
+        guard let c = container else { return }
         let state = splashState
         Task {
             await StoreLauncher.seedIfNeeded(in: c)
@@ -121,7 +116,5 @@ final class SplashState {
 final class StoreState {
     var error: Error?
     var storeURL: URL?
-    var recoveryCompleted = false
     var failureReason: StoreFailureReason = .storeLoad
 }
-
