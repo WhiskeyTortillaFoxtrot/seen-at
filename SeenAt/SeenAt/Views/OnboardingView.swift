@@ -2,21 +2,33 @@ import SwiftUI
 
 struct OnboardingView: View {
     @AppStorage("hasSeenOnboarding") private var hasSeenOnboarding = false
+    @AppStorage("favoriteTeams") private var favoriteTeamsString: String = ""
     @State private var currentPage = 0
+    @State private var showFavoriteTeams = false
+
+    private var favoriteCount: Int {
+        favoriteTeamsString.split(separator: ",").count
+    }
+
+    private var isFinalPage: Bool {
+        currentPage == 4
+    }
 
     var body: some View {
         VStack(spacing: 0) {
             TabView(selection: $currentPage) {
                 welcomePage.tag(0)
                 howItWorksPage.tag(1)
-                getStartedPage.tag(2)
+                favoriteTeamsPage.tag(2)
+                liveActivitiesPage.tag(3)
+                getStartedPage.tag(4)
             }
             .tabViewStyle(.page(indexDisplayMode: .always))
             .animation(.easeInOut, value: currentPage)
 
             VStack(spacing: 16) {
-                if currentPage == 2 {
-                    Button("Get Started") {
+                if isFinalPage {
+                    Button("Track Your First Game") {
                         hasSeenOnboarding = true
                     }
                     .buttonStyle(.borderedProminent)
@@ -37,6 +49,18 @@ struct OnboardingView: View {
             .animation(.default, value: currentPage)
         }
         .background(.background)
+        .sheet(isPresented: $showFavoriteTeams) {
+            NavigationStack {
+                FavoriteTeamsView()
+                    .toolbar {
+                        ToolbarItem(placement: .topBarTrailing) {
+                            Button("Done") {
+                                showFavoriteTeams = false
+                            }
+                        }
+                    }
+            }
+        }
     }
 
     private var welcomePage: some View {
@@ -71,6 +95,60 @@ struct OnboardingView: View {
                 stepView(icon: "chart.bar.fill", title: "View Stats", description: "See your breakdown by team, league, and player. Share summaries with friends.")
             }
             .padding(.horizontal, 32)
+
+            Spacer()
+        }
+    }
+
+    private var favoriteTeamsPage: some View {
+        VStack(spacing: 24) {
+            Spacer()
+
+            Image(systemName: "star.fill")
+                .font(.system(size: 72))
+                .foregroundStyle(Color.accentColor)
+
+            Text("Pick Your Favorite Teams")
+                .font(.urbanist(.title, weight: .bold))
+                .multilineTextAlignment(.center)
+
+            Text("Select your favorite teams so SeenAt can highlight their sightings and tailor your stats.")
+                .font(.urbanist(.body))
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 32)
+
+            Button {
+                showFavoriteTeams = true
+            } label: {
+                Label(favoriteCount > 0 ? "\(favoriteCount) Team\(favoriteCount == 1 ? "" : "s") Selected" : "Select Favorite Teams",
+                      systemImage: favoriteCount > 0 ? "checkmark.circle.fill" : "star")
+            }
+            .buttonStyle(.borderedProminent)
+            .font(.urbanist(.headline))
+            .frame(maxWidth: 280, minHeight: 50)
+
+            Spacer()
+        }
+    }
+
+    private var liveActivitiesPage: some View {
+        VStack(spacing: 24) {
+            Spacer()
+
+            Image(systemName: "livephoto.play")
+                .font(.system(size: 72))
+                .foregroundStyle(Color.accentColor)
+
+            Text("Live Activities")
+                .font(.urbanist(.title, weight: .bold))
+                .multilineTextAlignment(.center)
+
+            Text("Track games in real time with Live Activities. See jersey counts update live on your Lock Screen and in the Dynamic Island.")
+                .font(.urbanist(.body))
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 32)
 
             Spacer()
         }
