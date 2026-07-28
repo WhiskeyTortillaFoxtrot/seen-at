@@ -1,6 +1,7 @@
 import Foundation
 import SwiftData
 import CryptoKit
+import Darwin
 
 struct StoreBackupArtifact: Codable, Equatable {
     let path: String
@@ -92,8 +93,10 @@ enum StoreBackupService {
         case staleMigrationAttempt(URL)
         case migrationFinalization(URL)
         case recoveryRequired(URL)
+        case incompatibleFormatVersion(Int, Int)
+        case insufficientStorage(Int64, Int64)
 
-        var errorDescription: String? {
+            var errorDescription: String? {
             switch self {
             case .invalidBackup(let url):
                 "The migration backup at \(url.path) is incomplete."
@@ -103,6 +106,10 @@ enum StoreBackupService {
                 "Migration safety state could not be finalized at \(url.path)."
             case .recoveryRequired(let url):
                 "Migration recovery requires attention at \(url.path)."
+            case .incompatibleFormatVersion(let found, let required):
+                "Backup format version \(found) is not supported (requires ≤ \(required))."
+            case .insufficientStorage(let required, let available):
+                "Insufficient storage for backup. Required: \(required) bytes, available: \(available) bytes."
             }
         }
     }
@@ -145,7 +152,8 @@ enum StoreBackupService {
                 guard isRegularFile(at: storeURL) else {
                     throw BackupError.staleMigrationAttempt(storeURL)
                 }
-                try validateStoreArtifacts(storeURL: storeURL, fileManager: fileManager)
+        try validateStoreArtifacts(storeURL: storeURL, fileManager: fileManager)
+        try checkDiskSpace(for: storeURL, fileManager: fileManager)
                 _ = try supportDirectoryURLs(for: storeURL, fileManager: fileManager)
                 try completeMigrationAttempt(applicationSupportURL: applicationSupportURL, fileManager: fileManager)
             } else if !targetMatches {
@@ -258,7 +266,7 @@ enum StoreBackupService {
             var artifactPaths: [String] = []
             for sourceURL in storeArtifactURLs(for: storeURL, fileManager: fileManager) {
                 let destinationURL = storeDirectory.appendingPathComponent(sourceURL.lastPathComponent)
-                try fileManager.copyItem(at: sourceURL, to: destinationURL)
+                try cloneOrCopyItem(from: sourceURL, to: destinationURL, fileManager: fileManager)
                 artifactPaths.append("store/\(sourceURL.lastPathComponent)")
             }
 
@@ -266,7 +274,7 @@ enum StoreBackupService {
                 let supportDirectory = stagingDirectory.appendingPathComponent("support", isDirectory: true)
                 try fileManager.createDirectory(at: supportDirectory, withIntermediateDirectories: true)
                 let destinationURL = supportDirectory.appendingPathComponent(sourceURL.lastPathComponent, isDirectory: true)
-                try fileManager.copyItem(at: sourceURL, to: destinationURL)
+                try cloneOrCopyItem(from: sourceURL, to: destinationURL, fileManager: fileManager)
                 artifactPaths.append(contentsOf: filePaths(
                     under: destinationURL,
                     relativeTo: stagingDirectory,
@@ -342,7 +350,10 @@ enum StoreBackupService {
         }
         let manifest = try JSONDecoder().decode(StoreBackupManifest.self, from: Data(contentsOf: url))
         guard manifest.formatVersion <= StoreBackupManifest.currentFormatVersion else {
-            throw BackupError.invalidBackup(backupDirectory)
+            throw BackupError.incompatibleFormatVersion(
+                manifest.formatVersion,
+                StoreBackupManifest.currentFormatVersion
+            )
         }
         return manifest
     }
@@ -386,7 +397,7 @@ enum StoreBackupService {
                     at: destinationURL.deletingLastPathComponent(),
                     withIntermediateDirectories: true
                 )
-                try fileManager.copyItem(at: sourceURL, to: destinationURL)
+                try cloneOrCopyItem(from: sourceURL, to: destinationURL, fileManager: fileManager)
             }
             try writeManifest(manifest, to: restoreDirectory, fileManager: fileManager)
             guard isValidBackup(at: restoreDirectory, manifest: manifest, storeURL: storeURL, fileManager: fileManager) else {
@@ -434,7 +445,7 @@ enum StoreBackupService {
                         at: destinationURL.deletingLastPathComponent(),
                         withIntermediateDirectories: true
                     )
-                    try fileManager.copyItem(at: sourceURL, to: destinationURL)
+                    try cloneOrCopyItem(from: sourceURL, to: destinationURL, fileManager: fileManager)
                     installed.append(destinationURL)
                 }
 
@@ -1120,6 +1131,59 @@ enum StoreBackupService {
     private static func removeIfPresent(_ url: URL, fileManager: FileManager) throws {
         guard fileManager.fileExists(atPath: url.path) || isSymbolicLink(at: url) else { return }
         try fileManager.removeItem(at: url)
+    }
+
+    private static func cloneOrCopyItem(from source: URL, to destination: URL, fileManager: FileManager) throws {
+        if isSymbolicLink(at: source) || isSymbolicLink(at: source.deletingLastPathComponent()) {
+            try fileManager.copyItem(at: source, to: destination)
+            return
+        }
+        let result = clonefile(source.path, destination.path, 0)
+        if result != 0 {
+            try fileManager.copyItem(at: source, to: destination)
+        }
+    }
+
+    private static func checkDiskSpace(
+        for storeURL: URL,
+        fileManager: FileManager
+    ) throws {
+        let storeArtifacts = storeArtifactURLs(for: storeURL, fileManager: fileManager)
+        var requiredBytes: Int64 = 0
+        for url in storeArtifacts {
+            let attributes = try fileManager.attributesOfItem(atPath: url.path)
+            requiredBytes += (attributes[.size] as? NSNumber)?.int64Value ?? 0
+        }
+        for supportURL in (try? supportDirectoryURLs(for: storeURL, fileManager: fileManager)) ?? [] {
+            requiredBytes += directorySize(supportURL, fileManager: fileManager)
+        }
+        requiredBytes *= 2
+
+        let resourceValues = try storeURL.resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey])
+        guard let availableBytes = resourceValues.volumeAvailableCapacityForImportantUsage else {
+            return
+        }
+        guard availableBytes >= requiredBytes else {
+            throw BackupError.insufficientStorage(requiredBytes, availableBytes)
+        }
+    }
+
+    private static func directorySize(_ url: URL, fileManager: FileManager) -> Int64 {
+        guard let enumerator = fileManager.enumerator(
+            at: url,
+            includingPropertiesForKeys: [.isDirectoryKey, .fileSizeKey]
+        ) else {
+            return 0
+        }
+        var total: Int64 = 0
+        for case let item as URL in enumerator {
+            guard let attrs = try? fileManager.attributesOfItem(atPath: item.path),
+                  let size = (attrs[.size] as? NSNumber)?.int64Value else {
+                continue
+            }
+            total += size
+        }
+        return total
     }
 
     private static func cleanupStagingDirectories(
