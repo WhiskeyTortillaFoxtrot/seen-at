@@ -911,6 +911,142 @@ final class StoreBackupServiceTests: XCTestCase {
         XCTAssertFalse(FileManager.default.fileExists(atPath: restoreDirectory.path))
     }
 
+    func testLoadManifestRejectsFutureFormatVersion() throws {
+        try write("store", to: storeURL)
+        try StoreBackupService.prepareForMigration(
+            storeURL: storeURL,
+            applicationSupportURL: applicationSupportURL,
+            targetSchemaVersion: "2.0.0"
+        )
+        let current = applicationSupportURL
+            .appendingPathComponent(StoreBackupService.backupDirectoryName)
+            .appendingPathComponent("current")
+        let manifest = try XCTUnwrap(try StoreBackupService.loadManifest(at: current))
+        var futureManifest = manifest
+        futureManifest = StoreBackupManifest(
+            formatVersion: StoreBackupManifest.currentFormatVersion + 1,
+            backupID: manifest.backupID,
+            sourceStorePath: manifest.sourceStorePath,
+            storeFileName: manifest.storeFileName,
+            targetSchemaVersion: manifest.targetSchemaVersion,
+            createdAt: manifest.createdAt,
+            artifacts: manifest.artifacts
+        )
+        let encoder = JSONEncoder()
+        let decoder = JSONDecoder()
+        let data = try encoder.encode(futureManifest)
+        try data.write(to: current.appendingPathComponent("manifest.json"), options: .atomic)
+
+        XCTAssertThrowsError(
+            try StoreBackupService.loadManifest(at: current)
+        ) { error in
+            guard case StoreBackupService.BackupError.incompatibleFormatVersion(let found, let required) = error else {
+                return XCTFail("Expected incompatibleFormatVersion, got \(error)")
+            }
+            XCTAssertEqual(found, StoreBackupManifest.currentFormatVersion + 1)
+            XCTAssertEqual(required, StoreBackupManifest.currentFormatVersion)
+        }
+    }
+
+    func testLoadManifestAcceptsCurrentFormatVersion() throws {
+        try write("store", to: storeURL)
+        try StoreBackupService.prepareForMigration(
+            storeURL: storeURL,
+            applicationSupportURL: applicationSupportURL,
+            targetSchemaVersion: "2.0.0"
+        )
+        let current = applicationSupportURL
+            .appendingPathComponent(StoreBackupService.backupDirectoryName)
+            .appendingPathComponent("current")
+
+        let loaded = try StoreBackupService.loadManifest(at: current)
+        XCTAssertNotNil(loaded)
+        XCTAssertEqual(loaded?.formatVersion, StoreBackupManifest.currentFormatVersion)
+    }
+
+    func testLoadManifestAcceptsMissingFormatVersion() throws {
+        try write("store", to: storeURL)
+        try StoreBackupService.prepareForMigration(
+            storeURL: storeURL,
+            applicationSupportURL: applicationSupportURL,
+            targetSchemaVersion: "2.0.0"
+        )
+        let current = applicationSupportURL
+            .appendingPathComponent(StoreBackupService.backupDirectoryName)
+            .appendingPathComponent("current")
+        let manifest = try XCTUnwrap(try StoreBackupService.loadManifest(at: current))
+
+        var legacyJSON = try JSONSerialization.data(withJSONObject: try JSONSerialization.jsonObject(with: JSONEncoder().encode(manifest)))
+        if var dict = try JSONSerialization.jsonObject(with: legacyJSON) as? [String: Any] {
+            dict.removeValue(forKey: "formatVersion")
+            legacyJSON = try JSONSerialization.data(withJSONObject: dict)
+        }
+        try legacyJSON.write(to: current.appendingPathComponent("manifest.json"), options: .atomic)
+
+        let loaded = try StoreBackupService.loadManifest(at: current)
+        XCTAssertNotNil(loaded)
+        XCTAssertEqual(loaded?.formatVersion, StoreBackupManifest.currentFormatVersion)
+    }
+
+    func testInsufficientStorageErrorDescription() {
+        let error = StoreBackupService.BackupError.insufficientStorage(1024, 512)
+        XCTAssertEqual(error.errorDescription, "Insufficient storage for backup. Required: 1024 bytes, available: 512 bytes.")
+    }
+
+    func testIncompatibleFormatVersionErrorDescription() {
+        let error = StoreBackupService.BackupError.incompatibleFormatVersion(3, 1)
+        XCTAssertEqual(error.errorDescription, "Backup format version 3 is not supported (requires ≤ 1).")
+    }
+
+    func testBackupUsesCloneWhenAvailable() throws {
+        try write("store-data", to: storeURL)
+        try FileManager.default.createDirectory(at: supportURL, withIntermediateDirectories: true)
+        try write("photo", to: supportURL.appendingPathComponent("_EXTERNAL_DATA/photo.bin"))
+
+        let backupID = try XCTUnwrap(try StoreBackupService.prepareForMigration(
+            storeURL: storeURL,
+            applicationSupportURL: applicationSupportURL,
+            targetSchemaVersion: "2.0.0"
+        ))
+
+        let current = applicationSupportURL
+            .appendingPathComponent(StoreBackupService.backupDirectoryName)
+            .appendingPathComponent("current")
+        let manifest = try XCTUnwrap(try StoreBackupService.loadManifest(at: current))
+        XCTAssertEqual(manifest.backupID, backupID)
+        XCTAssertEqual(try Data(contentsOf: current.appendingPathComponent("store/default.store")), Data("store-data".utf8))
+        XCTAssertEqual(
+            try Data(contentsOf: current.appendingPathComponent("support/.default_SUPPORT/_EXTERNAL_DATA/photo.bin")),
+            Data("photo".utf8)
+        )
+    }
+
+    func testRestoreUsesCloneWhenAvailable() throws {
+        try write("original", to: storeURL)
+        try FileManager.default.createDirectory(at: supportURL, withIntermediateDirectories: true)
+        try write("photo", to: supportURL.appendingPathComponent("_EXTERNAL_DATA/photo.bin"))
+        let backupID = try XCTUnwrap(try StoreBackupService.prepareForMigration(
+            storeURL: storeURL,
+            applicationSupportURL: applicationSupportURL,
+            targetSchemaVersion: "2.0.0"
+        ))
+
+        try write("changed", to: storeURL)
+        try write("changed-photo", to: supportURL.appendingPathComponent("_EXTERNAL_DATA/photo.bin"))
+        try StoreBackupService.restoreCurrentBackup(
+            storeURL: storeURL,
+            applicationSupportURL: applicationSupportURL,
+            expectedSchemaVersion: "2.0.0",
+            backupID: backupID
+        )
+
+        XCTAssertEqual(try Data(contentsOf: storeURL), Data("original".utf8))
+        XCTAssertEqual(
+            try Data(contentsOf: supportURL.appendingPathComponent("_EXTERNAL_DATA/photo.bin")),
+            Data("photo".utf8)
+        )
+    }
+
     func testCompleteMigrationAttemptClearsMigrationAttemptFile() throws {
         try write("original", to: storeURL)
         _ = try XCTUnwrap(try StoreBackupService.prepareForMigration(
