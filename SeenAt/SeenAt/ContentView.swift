@@ -4,6 +4,25 @@ import OSLog
 
 private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "com.seenat", category: "DeepLink")
 
+struct DeepLinkNavigationState {
+    var eventToTrack: Event?
+    var selectedTab: Int
+    var deepLinkEventID: UUID?
+    var shouldReportError = false
+
+    mutating func apply(_ resolution: DeepLinkService.Resolution) {
+        switch resolution {
+        case .openEvent(let event, let selectedTab):
+            eventToTrack = event
+            self.selectedTab = selectedTab
+            deepLinkEventID = nil
+            shouldReportError = false
+        case .notFound:
+            shouldReportError = true
+        }
+    }
+}
+
 struct ContentView: View {
     @Binding var deepLinkEventID: UUID?
     let onDeepLinkError: (() -> Void)?
@@ -49,14 +68,17 @@ struct ContentView: View {
         }
         .task(id: deepLinkEventID) {
             guard let id = deepLinkEventID else { return }
-            let predicate = #Predicate<Event> { $0.id == id }
-            let descriptor = FetchDescriptor(predicate: predicate)
             do {
-                if let event = try context.fetch(descriptor).first {
-                    eventToTrack = event
-                    selectedTab = 0
-                    deepLinkEventID = nil
-                } else {
+                var navigationState = DeepLinkNavigationState(
+                    eventToTrack: eventToTrack,
+                    selectedTab: selectedTab,
+                    deepLinkEventID: deepLinkEventID
+                )
+                navigationState.apply(try DeepLinkService.resolve(eventID: id, context: context))
+                eventToTrack = navigationState.eventToTrack
+                selectedTab = navigationState.selectedTab
+                deepLinkEventID = navigationState.deepLinkEventID
+                if navigationState.shouldReportError {
                     onDeepLinkError?()
                 }
             } catch {

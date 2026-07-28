@@ -28,14 +28,16 @@ enum VenueImageService {
         image(for: venueKey) != nil
     }
 
-    private static func normalize(_ key: String) -> String {
-        key.lowercased()
+    static func normalize(_ key: String) -> String {
+        let normalized = key.lowercased()
             .replacingOccurrences(of: "'", with: "")
             .replacingOccurrences(of: ".", with: "")
             .replacingOccurrences(of: "(", with: "")
             .replacingOccurrences(of: ")", with: "")
             .replacingOccurrences(of: "&", with: "and")
-            .replacingOccurrences(of: "  ", with: " ")
-            .replacingOccurrences(of: " ", with: "-")
+
+        return normalized
+            .split(whereSeparator: \.isWhitespace)
+            .joined(separator: "-")
     }
 }
