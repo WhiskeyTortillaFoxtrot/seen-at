@@ -4,7 +4,7 @@ import SwiftData
 @MainActor
 enum DeepLinkService {
     enum Resolution {
-        case openEvent(Event)
+        case openEvent(Event, selectedTab: Int)
         case notFound
     }
 
@@ -18,6 +18,6 @@ enum DeepLinkService {
         guard let event = try fetchEvent(by: eventID, context: context) else {
             return .notFound
         }
-        return .openEvent(event)
+        return .openEvent(event, selectedTab: 0)
     }
 }

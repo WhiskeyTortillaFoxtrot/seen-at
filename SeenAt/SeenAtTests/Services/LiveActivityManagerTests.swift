@@ -4,7 +4,9 @@ import XCTest
 @MainActor
 final class LiveActivityManagerTests: XCTestCase {
     private final class MockLiveActivityClient: LiveActivityClient {
-        var activeEventIDs: [UUID]
+        private var storedActiveEventIDs: [UUID]
+        private var activeEventIDsReadWaiters: [(Int, CheckedContinuation<Void, Never>)] = []
+        var activeEventIDsReadCount = 0
         var requestedAttributes: SeenAtActivityAttributes?
         var requestedContentState: SeenAtActivityAttributes.ContentState?
         var updatedEventIDs: [UUID] = []
@@ -12,9 +14,25 @@ final class LiveActivityManagerTests: XCTestCase {
         var endedEventIDs: [UUID] = []
         var endAllCallCount = 0
         var requestCount = 0
+        var blockRequests = false
+        var requestStarted = false
+        var requestStartWaiters: [CheckedContinuation<Void, Never>] = []
+        var requestFinish: CheckedContinuation<Void, Never>?
+        var blockUpdates = false
+        var updateStarted = false
+        var updateStartWaiters: [CheckedContinuation<Void, Never>] = []
+        var updateFinish: CheckedContinuation<Void, Never>?
 
         init(activeEventIDs: [UUID] = []) {
-            self.activeEventIDs = activeEventIDs
+            self.storedActiveEventIDs = activeEventIDs
+        }
+
+        var activeEventIDs: [UUID] {
+            activeEventIDsReadCount += 1
+            let readyWaiters = activeEventIDsReadWaiters.filter { $0.0 <= activeEventIDsReadCount }
+            activeEventIDsReadWaiters.removeAll { $0.0 <= activeEventIDsReadCount }
+            readyWaiters.forEach { $0.1.resume() }
+            return storedActiveEventIDs
         }
 
         func request(
@@ -24,23 +42,83 @@ final class LiveActivityManagerTests: XCTestCase {
             requestCount += 1
             requestedAttributes = attributes
             requestedContentState = contentState
-            try? await Task.sleep(nanoseconds: 10_000_000)
-            if !activeEventIDs.contains(attributes.eventID) {
-                activeEventIDs.append(attributes.eventID)
+            if blockRequests {
+                await withCheckedContinuation { continuation in
+                    requestFinish = continuation
+                    requestStarted = true
+                    requestStartWaiters.forEach { $0.resume() }
+                    requestStartWaiters.removeAll()
+                }
+            } else {
+                requestStarted = true
+                requestStartWaiters.forEach { $0.resume() }
+                requestStartWaiters.removeAll()
+            }
+            if !storedActiveEventIDs.contains(attributes.eventID) {
+                storedActiveEventIDs.append(attributes.eventID)
+            }
+        }
+
+        func waitUntilRequestStarts() async {
+            if requestStarted { return }
+            await withCheckedContinuation { continuation in
+                requestStartWaiters.append(continuation)
+            }
+        }
+
+        func finishRequest() {
+            requestFinish?.resume()
+            requestFinish = nil
+        }
+
+        func waitUntilActiveEventIDsRead(_ count: Int) async {
+            if activeEventIDsReadCount >= count { return }
+            await withCheckedContinuation { continuation in
+                activeEventIDsReadWaiters.append((count, continuation))
             }
         }
 
         func update(eventID: UUID, contentState: SeenAtActivityAttributes.ContentState) async {
+            if blockUpdates {
+                await withCheckedContinuation { continuation in
+                    updateFinish = continuation
+                    updateStarted = true
+                    updateStartWaiters.forEach { $0.resume() }
+                    updateStartWaiters.removeAll()
+                }
+            }
             updatedEventIDs.append(eventID)
             updatedContentStates[eventID] = contentState
         }
 
+        func waitUntilUpdateStarts() async {
+            if updateStarted { return }
+            await withCheckedContinuation { continuation in
+                updateStartWaiters.append(continuation)
+            }
+        }
+
+        func finishUpdate() {
+            updateFinish?.resume()
+            updateFinish = nil
+        }
+
         func end(eventID: UUID) async {
             endedEventIDs.append(eventID)
+            storedActiveEventIDs.removeAll { $0 == eventID }
+            requestFinish?.resume()
+            requestFinish = nil
+            updateFinish?.resume()
+            updateFinish = nil
         }
 
         func endAll() async {
             endAllCallCount += 1
+            storedActiveEventIDs.removeAll()
+            requestFinish?.resume()
+            requestFinish = nil
+            updateFinish?.resume()
+            updateFinish = nil
         }
     }
 
@@ -127,18 +205,210 @@ final class LiveActivityManagerTests: XCTestCase {
     func testConcurrentStartOrUpdateRequestsOnlyOneActivity() async {
         let event = TestDataFactory.makeEvent(awayTeam: "Away", homeTeam: "Home")
         let client = MockLiveActivityClient()
+        client.blockRequests = true
 
         let firstStart = Task { @MainActor in
             await LiveActivityManager.startOrUpdate(for: event, teams: [], client: client)
         }
+        await client.waitUntilRequestStarts()
         let secondStart = Task { @MainActor in
             await LiveActivityManager.startOrUpdate(for: event, teams: [], client: client)
         }
+        await client.waitUntilActiveEventIDsRead(2)
+        client.finishRequest()
         await firstStart.value
         await secondStart.value
 
         XCTAssertEqual(client.requestCount, 1)
         XCTAssertEqual(client.activeEventIDs, [event.id])
+    }
+
+    func testConcurrentStartOrUpdateAppliesLatestContentState() async {
+        let event = TestDataFactory.makeEvent(awayTeam: "Away", homeTeam: "Home")
+        let client = MockLiveActivityClient()
+        client.blockRequests = true
+
+        let firstStart = Task { @MainActor in
+            await LiveActivityManager.startOrUpdate(for: event, teams: [], client: client)
+        }
+        await client.waitUntilRequestStarts()
+
+        let sighting = TestDataFactory.makeSighting(firstName: "Latest", event: event)
+        event.sightings = [sighting]
+        let secondStart = Task { @MainActor in
+            await LiveActivityManager.startOrUpdate(for: event, teams: [], client: client)
+        }
+        await client.waitUntilActiveEventIDsRead(2)
+        client.finishRequest()
+        await firstStart.value
+        await secondStart.value
+
+        XCTAssertEqual(client.requestCount, 1)
+        XCTAssertEqual(client.updatedContentStates[event.id]?.jerseyCount, 1)
+        XCTAssertEqual(client.updatedContentStates[event.id]?.mostRecentJerseyName, "Latest")
+    }
+
+    func testThreeConcurrentStartsApplyNewestContentState() async {
+        let event = TestDataFactory.makeEvent(awayTeam: "Away", homeTeam: "Home")
+        let client = MockLiveActivityClient()
+        client.blockRequests = true
+
+        let firstStart = Task { @MainActor in
+            await LiveActivityManager.startOrUpdate(for: event, teams: [], client: client)
+        }
+        await client.waitUntilRequestStarts()
+
+        let secondSighting = TestDataFactory.makeSighting(firstName: "Second", event: event)
+        event.sightings = [secondSighting]
+        let secondStart = Task { @MainActor in
+            await LiveActivityManager.startOrUpdate(for: event, teams: [], client: client)
+        }
+        await client.waitUntilActiveEventIDsRead(2)
+
+        let thirdSighting = TestDataFactory.makeSighting(firstName: "Third", event: event)
+        event.sightings = [secondSighting, thirdSighting]
+        let thirdStart = Task { @MainActor in
+            await LiveActivityManager.startOrUpdate(for: event, teams: [], client: client)
+        }
+        await client.waitUntilActiveEventIDsRead(3)
+
+        client.finishRequest()
+        await firstStart.value
+        await secondStart.value
+        await thirdStart.value
+
+        XCTAssertEqual(client.updatedContentStates[event.id]?.jerseyCount, 2)
+        XCTAssertEqual(client.updatedContentStates[event.id]?.mostRecentJerseyName, "Third")
+    }
+
+    func testConcurrentActiveUpdatesApplyNewestContentState() async {
+        let event = TestDataFactory.makeEvent(awayTeam: "Away", homeTeam: "Home")
+        let client = MockLiveActivityClient(activeEventIDs: [event.id])
+        client.blockUpdates = true
+
+        let firstUpdate = Task { @MainActor in
+            await LiveActivityManager.startOrUpdate(for: event, teams: [], client: client)
+        }
+        await client.waitUntilUpdateStarts()
+
+        let sighting = TestDataFactory.makeSighting(firstName: "Newest", event: event)
+        event.sightings = [sighting]
+        let secondUpdate = Task { @MainActor in
+            await LiveActivityManager.startOrUpdate(for: event, teams: [], client: client)
+        }
+        await client.waitUntilActiveEventIDsRead(2)
+
+        client.blockUpdates = false
+        client.finishUpdate()
+        await firstUpdate.value
+        await secondUpdate.value
+
+        XCTAssertEqual(client.updatedContentStates[event.id]?.jerseyCount, 1)
+        XCTAssertEqual(client.updatedContentStates[event.id]?.mostRecentJerseyName, "Newest")
+    }
+
+    func testEndInvalidatesPendingStart() async {
+        let event = TestDataFactory.makeEvent(awayTeam: "Away", homeTeam: "Home")
+        let client = MockLiveActivityClient()
+        client.blockRequests = true
+
+        let start = Task { @MainActor in
+            await LiveActivityManager.startOrUpdate(for: event, teams: [], client: client)
+        }
+        await client.waitUntilRequestStarts()
+
+        await LiveActivityManager.end(for: event.id, client: client)
+        client.finishRequest()
+        await start.value
+
+        XCTAssertTrue(client.activeEventIDs.isEmpty)
+        XCTAssertGreaterThanOrEqual(client.endedEventIDs.count, 1)
+    }
+
+    func testEndStaleActivitiesInvalidatesPendingStart() async {
+        let event = TestDataFactory.makeEvent(awayTeam: "Away", homeTeam: "Home", date: .now)
+        let client = MockLiveActivityClient()
+        client.blockRequests = true
+
+        let start = Task { @MainActor in
+            await LiveActivityManager.startOrUpdate(for: event, teams: [], client: client)
+        }
+        await client.waitUntilRequestStarts()
+
+        await LiveActivityManager.endStaleActivities(for: [], client: client)
+        client.finishRequest()
+        await start.value
+
+        XCTAssertTrue(client.activeEventIDs.isEmpty)
+        XCTAssertGreaterThanOrEqual(client.endedEventIDs.count, 1)
+    }
+
+    func testEndWaitsForInvalidatedStartBeforeReplacementBegins() async {
+        let event = TestDataFactory.makeEvent(awayTeam: "Away", homeTeam: "Home")
+        let client = MockLiveActivityClient()
+        client.blockRequests = true
+
+        let originalStart = Task { @MainActor in
+            await LiveActivityManager.startOrUpdate(for: event, teams: [], client: client)
+        }
+        await client.waitUntilRequestStarts()
+
+        await LiveActivityManager.end(for: event.id, client: client)
+        client.blockRequests = false
+        let replacementStart = Task { @MainActor in
+            await LiveActivityManager.startOrUpdate(for: event, teams: [], client: client)
+        }
+        client.finishRequest()
+        await originalStart.value
+        await replacementStart.value
+
+        XCTAssertEqual(client.requestCount, 2)
+        XCTAssertEqual(client.activeEventIDs, [event.id])
+    }
+
+    func testEndAllPreventsWaitingStartFromRestarting() async {
+        let event = TestDataFactory.makeEvent(awayTeam: "Away", homeTeam: "Home")
+        let client = MockLiveActivityClient()
+        client.blockRequests = true
+
+        let originalStart = Task { @MainActor in
+            await LiveActivityManager.startOrUpdate(for: event, teams: [], client: client)
+        }
+        await client.waitUntilRequestStarts()
+        let waitingStart = Task { @MainActor in
+            await LiveActivityManager.startOrUpdate(for: event, teams: [], client: client)
+        }
+        await client.waitUntilActiveEventIDsRead(2)
+
+        await LiveActivityManager.endAll(client: client)
+        client.finishRequest()
+        await originalStart.value
+        await waitingStart.value
+
+        XCTAssertEqual(client.endAllCallCount, 1)
+        XCTAssertTrue(client.activeEventIDs.isEmpty)
+    }
+
+    func testEndStaleActivitiesPreventsWaitingStartFromRestarting() async {
+        let event = TestDataFactory.makeEvent(awayTeam: "Away", homeTeam: "Home")
+        let client = MockLiveActivityClient()
+        client.blockRequests = true
+
+        let originalStart = Task { @MainActor in
+            await LiveActivityManager.startOrUpdate(for: event, teams: [], client: client)
+        }
+        await client.waitUntilRequestStarts()
+        let waitingStart = Task { @MainActor in
+            await LiveActivityManager.startOrUpdate(for: event, teams: [], client: client)
+        }
+        await client.waitUntilActiveEventIDsRead(2)
+
+        await LiveActivityManager.endStaleActivities(for: [], client: client)
+        client.finishRequest()
+        await originalStart.value
+        await waitingStart.value
+
+        XCTAssertTrue(client.activeEventIDs.isEmpty)
     }
 
     func testEndDelegatesToClient() async {
