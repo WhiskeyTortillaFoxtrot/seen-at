@@ -49,14 +49,13 @@ struct ContentView: View {
         }
         .task(id: deepLinkEventID) {
             guard let id = deepLinkEventID else { return }
-            let predicate = #Predicate<Event> { $0.id == id }
-            let descriptor = FetchDescriptor(predicate: predicate)
             do {
-                if let event = try context.fetch(descriptor).first {
+                switch try DeepLinkService.resolve(eventID: id, context: context) {
+                case .openEvent(let event):
                     eventToTrack = event
                     selectedTab = 0
                     deepLinkEventID = nil
-                } else {
+                case .notFound:
                     onDeepLinkError?()
                 }
             } catch {

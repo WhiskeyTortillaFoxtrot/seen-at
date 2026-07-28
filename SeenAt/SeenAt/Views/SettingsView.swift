@@ -109,22 +109,17 @@ struct SettingsView: View {
 
     private func deleteAllSightings() {
         UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
-        let descriptor = FetchDescriptor<JerseySighting>()
-        let sightings = (try? context.fetch(descriptor)) ?? []
-        for s in sightings { context.delete(s) }
-        if !context.saveAndLog("Failed to delete all sightings") {
+        if !SettingsService.deleteAllSightings(context: context) {
             showingDeleteError = true
         }
     }
 
     private func resetAllData() {
         UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
-        Task { await LiveActivityManager.endAll() }
-        PhotoCacheService.clear()
-        let events = (try? context.fetch(FetchDescriptor<Event>())) ?? []
-        for e in events { context.delete(e) }
-        if !context.saveAndLog("Failed to reset all data") {
-            showingResetError = true
+        Task {
+            if !(await SettingsService.resetAllData(context: context)) {
+                showingResetError = true
+            }
         }
     }
 }

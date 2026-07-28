@@ -45,6 +45,15 @@ final class MigrationTests: XCTestCase {
         try context.save()
     }
 
+    private func createEmptyV1Store(at url: URL) throws {
+        let config = ModelConfiguration(url: url)
+        let container = try ModelContainer(
+            for: SeenAtSchemaV1.Team.self, SeenAtSchemaV1.Event.self, SeenAtSchemaV1.JerseySighting.self,
+            configurations: config
+        )
+        try container.mainContext.save()
+    }
+
     private func cleanupSidecars(at url: URL) {
         let base = url.deletingPathExtension()
         for file in [
@@ -132,6 +141,25 @@ final class MigrationTests: XCTestCase {
         XCTAssertEqual(sightings.count, 1)
         let sighting = try XCTUnwrap(sightings.first)
         XCTAssertEqual(sighting.photoData, Data([0xDE, 0xAD, 0xBE, 0xEF]))
+    }
+
+    func testV1ToV2MigrationHandlesEmptyStore() throws {
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("migration_empty_\(UUID().uuidString).sqlite")
+        defer { cleanupSidecars(at: url) }
+
+        try createEmptyV1Store(at: url)
+
+        let config = ModelConfiguration(url: url)
+        let container = try ModelContainer(
+            for: Team.self, Event.self, JerseySighting.self,
+            migrationPlan: SeenAtMigrationPlan.self,
+            configurations: config
+        )
+
+        XCTAssertTrue(try container.mainContext.fetch(FetchDescriptor<Team>()).isEmpty)
+        XCTAssertTrue(try container.mainContext.fetch(FetchDescriptor<Event>()).isEmpty)
+        XCTAssertTrue(try container.mainContext.fetch(FetchDescriptor<JerseySighting>()).isEmpty)
     }
 
     private func createV1StoreWithPhoto(at url: URL) throws {

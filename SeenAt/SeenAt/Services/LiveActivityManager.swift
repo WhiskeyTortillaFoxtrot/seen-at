@@ -2,7 +2,58 @@ import Foundation
 @preconcurrency import ActivityKit
 
 @MainActor
+protocol LiveActivityClient {
+    var activeEventIDs: [UUID] { get }
+
+    func request(
+        attributes: SeenAtActivityAttributes,
+        contentState: SeenAtActivityAttributes.ContentState
+    ) async
+    func update(eventID: UUID, contentState: SeenAtActivityAttributes.ContentState) async
+    func end(eventID: UUID) async
+    func endAll() async
+}
+
+@MainActor
+struct ActivityKitLiveActivityClient: LiveActivityClient {
+    var activeEventIDs: [UUID] {
+        Activity<SeenAtActivityAttributes>.activities.map { $0.attributes.eventID }
+    }
+
+    func request(
+        attributes: SeenAtActivityAttributes,
+        contentState: SeenAtActivityAttributes.ContentState
+    ) async {
+        try? await Activity<SeenAtActivityAttributes>.request(
+            attributes: attributes,
+            content: .init(state: contentState, staleDate: nil)
+        )
+    }
+
+    func update(eventID: UUID, contentState: SeenAtActivityAttributes.ContentState) async {
+        for activity in Activity<SeenAtActivityAttributes>.activities
+            where activity.attributes.eventID == eventID {
+            await activity.update(using: contentState)
+        }
+    }
+
+    func end(eventID: UUID) async {
+        for activity in Activity<SeenAtActivityAttributes>.activities
+            where activity.attributes.eventID == eventID {
+            await activity.end(dismissalPolicy: .immediate)
+        }
+    }
+
+    func endAll() async {
+        for activity in Activity<SeenAtActivityAttributes>.activities {
+            await activity.end(dismissalPolicy: .immediate)
+        }
+    }
+}
+
+@MainActor
 enum LiveActivityManager {
+    private static var pendingStartEventIDs = Set<UUID>()
 
     static func findBestTodayEvent(in events: [Event]) -> Event? {
         let todayEvents = events.filter { Calendar.current.isDateInToday($0.date) }
@@ -14,7 +65,11 @@ enum LiveActivityManager {
         }
     }
 
-    static func startOrUpdate(for event: Event, teams: [Team]) async {
+    static func startOrUpdate(
+        for event: Event,
+        teams: [Team],
+        client: any LiveActivityClient = ActivityKitLiveActivityClient()
+    ) async {
         let awayTeamName = event.awayTeam ?? ""
         let homeTeamName = event.homeTeam ?? ""
 
@@ -38,38 +93,45 @@ enum LiveActivityManager {
             awayTeamColor: awayColor
         )
 
-        if let existing = Activity<SeenAtActivityAttributes>.activities.first(where: { $0.attributes.eventID == event.id }) {
-            await existing.update(using: contentState)
+        if client.activeEventIDs.contains(event.id) {
+            await client.update(eventID: event.id, contentState: contentState)
         } else {
-            try? await Activity<SeenAtActivityAttributes>.request(
+            guard pendingStartEventIDs.insert(event.id).inserted else { return }
+            defer { pendingStartEventIDs.remove(event.id) }
+
+            await client.request(
                 attributes: attributes,
-                content: .init(state: contentState, staleDate: nil)
+                contentState: contentState
             )
         }
     }
 
-    static func end(for eventID: UUID) async {
-        let activities = Activity<SeenAtActivityAttributes>.activities.filter { $0.attributes.eventID == eventID }
-        for activity in activities {
-            await activity.end(dismissalPolicy: .immediate)
-        }
+    static func end(
+        for eventID: UUID,
+        client: any LiveActivityClient = ActivityKitLiveActivityClient()
+    ) async {
+        await client.end(eventID: eventID)
     }
 
-    static func end(for event: Event) async {
-        await end(for: event.id)
+    static func end(
+        for event: Event,
+        client: any LiveActivityClient = ActivityKitLiveActivityClient()
+    ) async {
+        await end(for: event.id, client: client)
     }
 
-    static func endAll() async {
-        for activity in Activity<SeenAtActivityAttributes>.activities {
-            await activity.end(dismissalPolicy: .immediate)
-        }
+    static func endAll(client: any LiveActivityClient = ActivityKitLiveActivityClient()) async {
+        await client.endAll()
     }
 
-    static func endStaleActivities(for events: [Event]) async {
+    static func endStaleActivities(
+        for events: [Event],
+        client: any LiveActivityClient = ActivityKitLiveActivityClient()
+    ) async {
         let activeIDs = Set(events.filter { Calendar.current.isDateInToday($0.date) }.map(\.id))
-        for activity in Activity<SeenAtActivityAttributes>.activities {
-            if !activeIDs.contains(activity.attributes.eventID) {
-                await activity.end(dismissalPolicy: .immediate)
+        for eventID in client.activeEventIDs {
+            if !activeIDs.contains(eventID) {
+                await client.end(eventID: eventID)
             }
         }
     }
