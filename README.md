@@ -45,7 +45,7 @@ SeenAt lets you log jerseys you spot at live sporting events, track which teams 
 
 ## Requirements
 
-- iOS 17.0+
+- iOS 18.0+
 - Xcode 16+
 - Swift 6.0
 
