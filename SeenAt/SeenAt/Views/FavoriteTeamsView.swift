@@ -50,6 +50,7 @@ struct FavoriteTeamsView: View {
                                     Circle()
                                         .fill(team.primaryColor)
                                         .frame(width: 12, height: 12)
+                                        .accessibilityHidden(true)
                                     Text(team.name)
                                     Spacer()
                                     if favoriteNames.contains(team.name) {

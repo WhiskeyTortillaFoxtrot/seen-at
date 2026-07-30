@@ -14,6 +14,7 @@ struct LiveTrackingView: View {
     @State private var fullScreenSighting: JerseySighting?
     @State private var showPieChart = false
     @State private var showShareOptions = false
+    @ScaledMetric(relativeTo: .largeTitle) private var heroCountSize: CGFloat = 72
     @State private var shareContent: ShareContent?
 
     private var relevantTeams: [Team] {
@@ -140,7 +141,7 @@ struct LiveTrackingView: View {
             }
 
             Text("\(event.totalCount)")
-                .font(.urbanist(size: 72, weight: .bold))
+                .font(.urbanist(size: heroCountSize, weight: .bold))
                 .foregroundStyle(.white)
                 .shadow(color: homeTeamColor.opacity(0.6), radius: 2, x: 1, y: 1)
                 .shadow(color: homeTeamColor.opacity(0.3), radius: 8, y: 4)
@@ -223,6 +224,7 @@ struct LiveTrackingView: View {
                             Rectangle()
                                 .fill(sighting.team?.primaryColor ?? .gray)
                                 .frame(width: 4)
+                                .accessibilityHidden(true)
 
                             HStack {
                                 if let team = sighting.team {
@@ -268,6 +270,8 @@ struct LiveTrackingView: View {
                                 }
                             }
                         }
+                        .accessibilityAddTraits(.isButton)
+                        .accessibilityHint("Tap to expand photo")
 
                         if expandedSighting == sighting, hasPhoto, let data = sighting.photoData, let image = PhotoCacheService.image(for: "\(sighting.persistentModelID)", data: data) {
                             Image(uiImage: image)
@@ -347,6 +351,8 @@ struct FullScreenPhotoView: View {
                     .resizable()
                     .scaledToFit()
                     .padding()
+                    .accessibilityLabel("Enlarged photo")
+                    .accessibilityHint("Double-tap to dismiss")
             }
             .overlay(alignment: .topTrailing) {
                 Button {
@@ -362,6 +368,7 @@ struct FullScreenPhotoView: View {
                         )
                         .padding()
                 }
+                .accessibilityLabel("Dismiss photo")
             }
             .onTapGesture {
                 dismiss()

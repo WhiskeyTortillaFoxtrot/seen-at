@@ -5,6 +5,7 @@ struct OnboardingView: View {
     @AppStorage("favoriteTeams") private var favoriteTeamsString: String = ""
     @State private var currentPage = 0
     @State private var showFavoriteTeams = false
+    @ScaledMetric(relativeTo: .largeTitle) private var iconSize: CGFloat = 72
 
     private var favoriteCount: Int {
         favoriteTeamsString.split(separator: ",").count
@@ -68,7 +69,7 @@ struct OnboardingView: View {
             Spacer()
 
             Image(systemName: "tshirt.fill")
-                .font(.system(size: 72))
+                .font(.system(size: iconSize))
                 .foregroundStyle(Color.accentColor)
 
             Text("Welcome to SeenAt")
@@ -105,7 +106,7 @@ struct OnboardingView: View {
             Spacer()
 
             Image(systemName: "star.fill")
-                .font(.system(size: 72))
+                .font(.system(size: iconSize))
                 .foregroundStyle(Color.accentColor)
 
             Text("Pick Your Favorite Teams")
@@ -137,7 +138,7 @@ struct OnboardingView: View {
             Spacer()
 
             Image(systemName: "livephoto.play")
-                .font(.system(size: 72))
+                .font(.system(size: iconSize))
                 .foregroundStyle(Color.accentColor)
 
             Text("Live Activities")
@@ -159,7 +160,7 @@ struct OnboardingView: View {
             Spacer()
 
             Image(systemName: "figure.baseball")
-                .font(.system(size: 72))
+                .font(.system(size: iconSize))
                 .foregroundStyle(Color.accentColor)
 
             Text("You're All Set!")

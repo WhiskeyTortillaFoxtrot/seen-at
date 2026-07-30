@@ -190,6 +190,7 @@ struct AddSightingView: View {
                         Circle()
                             .fill(team.primaryColor)
                             .frame(width: 12, height: 12)
+                            .accessibilityHidden(true)
                         Text(team.name)
                             .foregroundStyle(.secondary)
                     }
@@ -209,6 +210,7 @@ struct AddSightingView: View {
                 Circle()
                     .fill(team.primaryColor)
                     .frame(width: 12, height: 12)
+                    .accessibilityHidden(true)
                 Text(team.name)
                 if favoriteTeamNames.contains(team.name) {
                     Spacer()
@@ -287,6 +289,7 @@ private struct OtherLeaguePicker: View {
                         Circle()
                             .fill(team.primaryColor)
                             .frame(width: 12, height: 12)
+                            .accessibilityHidden(true)
                         Text(team.name)
                             .font(favoriteTeamNames.contains(team.name) ? .urbanist(.body, weight: .bold) : .urbanist(.body))
                         if favoriteTeamNames.contains(team.name) {
