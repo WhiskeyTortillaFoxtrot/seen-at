@@ -12,9 +12,11 @@ enum ESPNService {
         let league = sportPath.contains("nba") ? "nba" : sportPath.contains("nfl") ? "nfl" : sportPath
 
         if let cached = APICacheService.getCachedGames(league: league, date: date) {
+            DiagnosticsService.shared.log(category: "ESPN", level: .debug, message: "Cache hit for \(league) \(dateString)")
             return cached
         }
 
+        DiagnosticsService.shared.log(category: "ESPN", level: .info, message: "Fetching \(league) games for \(dateString)")
         let url = URL(string: "https://site.api.espn.com/apis/site/v2/sports/\(sportPath)/scoreboard?dates=\(dateString)")!
         do {
             let (data, _) = try await session.data(from: url)
@@ -22,11 +24,14 @@ enum ESPNService {
             let response = try decoder.decode(ESPNResponse.self, from: data)
             let games = response.events.map { $0.toLeagueGame(sportPath: sportPath) }
             APICacheService.setCachedGames(games, league: league, date: date)
+            DiagnosticsService.shared.log(category: "ESPN", level: .info, message: "Fetched \(games.count) \(league) games")
             return games
         } catch {
             if let cached = APICacheService.getCachedGames(league: league, date: date) {
+                DiagnosticsService.shared.log(category: "ESPN", level: .warning, message: "Fetch failed for \(league), using cache: \(error.localizedDescription)")
                 return cached
             }
+            DiagnosticsService.shared.log(category: "ESPN", level: .error, message: "Fetch failed for \(league), no cache: \(error.localizedDescription)")
             throw error
         }
     }

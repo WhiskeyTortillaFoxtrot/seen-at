@@ -71,7 +71,10 @@ enum LiveActivityManager {
 
     static func findBestTodayEvent(in events: [Event]) -> Event? {
         let todayEvents = events.filter { Calendar.current.isDateInToday($0.date) }
-        guard !todayEvents.isEmpty else { return nil }
+        guard !todayEvents.isEmpty else {
+            DiagnosticsService.shared.log(category: "LiveActivity", level: .debug, message: "No today events to find best from")
+            return nil
+        }
         return todayEvents.max { a, b in
             let aLatest = a.sightings.max(by: { $0.timestamp < $1.timestamp })?.timestamp ?? a.createdAt
             let bLatest = b.sightings.max(by: { $0.timestamp < $1.timestamp })?.timestamp ?? b.createdAt
@@ -84,6 +87,7 @@ enum LiveActivityManager {
         teams: [Team],
         client: any LiveActivityClient = ActivityKitLiveActivityClient()
     ) async {
+        DiagnosticsService.shared.log(category: "LiveActivity", level: .info, message: "startOrUpdate for event: \(event.title) (id: \(event.id.uuidString.prefix(8))...)")
         let generation = lifecycleGenerations[event.id, default: 0]
         let globalGeneration = globalLifecycleGeneration
         await startOrUpdate(
@@ -239,6 +243,7 @@ enum LiveActivityManager {
         for eventID: UUID,
         client: any LiveActivityClient = ActivityKitLiveActivityClient()
     ) async {
+        DiagnosticsService.shared.log(category: "LiveActivity", level: .info, message: "Ending Live Activity for event: \(eventID.uuidString.prefix(8))...")
         if let endingTask = endingTasks[eventID] {
             await endingTask.value
             return
@@ -267,6 +272,7 @@ enum LiveActivityManager {
     }
 
     static func endAll(client: any LiveActivityClient = ActivityKitLiveActivityClient()) async {
+        DiagnosticsService.shared.log(category: "LiveActivity", level: .info, message: "Ending all Live Activities")
         if let endingAllTask {
             await endingAllTask.value
             return
@@ -306,14 +312,20 @@ enum LiveActivityManager {
         let pendingIDs = Set(pendingStartTasks.keys)
             .union(retiredStarts.keys)
             .union(pendingUpdateTasks.keys)
+        var staleCount = 0
         for eventID in pendingIDs
             where !activeIDs.contains(eventID) {
             await end(for: eventID, client: client)
+            staleCount += 1
         }
         for eventID in client.activeEventIDs {
             if !activeIDs.contains(eventID) {
                 await end(for: eventID, client: client)
+                staleCount += 1
             }
+        }
+        if staleCount > 0 {
+            DiagnosticsService.shared.log(category: "LiveActivity", level: .debug, message: "Ended \(staleCount) stale Live Activities")
         }
     }
 
