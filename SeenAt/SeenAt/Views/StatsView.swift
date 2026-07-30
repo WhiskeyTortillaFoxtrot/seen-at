@@ -5,31 +5,69 @@ import Charts
 struct StatsView: View {
     @Query(sort: \Event.date, order: .reverse) private var events: [Event]
     @State private var showPieChart = false
+    @State private var selectedYear: Int? = nil
+    @State private var trendGranularity: TrendGranularity = .perMonth
 
-    var totalGames: Int { events.count }
+    private var availableYears: [Int] {
+        let calendar = Calendar.current
+        let years = Set(events.compactMap { calendar.component(.year, from: $0.date) })
+        return years.sorted().reversed()
+    }
+
+    private var filteredEvents: [Event] {
+        guard let year = selectedYear else { return events }
+        let calendar = Calendar.current
+        return events.filter { calendar.component(.year, from: $0.date) == year }
+    }
+
+    var totalGames: Int { filteredEvents.count }
 
     var totalSightings: Int {
-        events.reduce(0) { $0 + $1.sightings.count }
+        filteredEvents.reduce(0) { $0 + $1.sightings.count }
     }
 
     var teamTotals: [(team: Team, count: Int)] {
-        let allSightings = events.flatMap { $0.sightings.compactMap { $0.team == nil ? nil : $0 } }
-        let grouped = Dictionary(grouping: allSightings) { $0.team! }
+        let allTeams = filteredEvents.flatMap { $0.sightings }.compactMap { $0.team }
+        let grouped = Dictionary(grouping: allTeams) { $0 }
         return grouped
             .map { ($0.key, $0.value.count) }
             .sorted { a, b in a.count > b.count || (a.count == b.count && a.team.name < b.team.name) }
     }
 
     var leagueTotals: [(sport: String, count: Int)] {
-        let allTeams = events.flatMap { $0.sightings.compactMap { $0.team } }
+        let allTeams = filteredEvents.flatMap { $0.sightings.compactMap { $0.team } }
         let grouped = Dictionary(grouping: allTeams) { $0.sport.uppercased() }
         return grouped
             .map { ($0.key, $0.value.count) }
             .sorted { $0.count > $1.count }
     }
 
+    var watchLocationTotals: (stadium: Int, tv: Int) {
+        var stadium = 0
+        var tv = 0
+        for event in filteredEvents {
+            let count = event.sightings.count
+            switch event.watchLocation {
+            case .stadium, .none:
+                stadium += count
+            case .tv:
+                tv += count
+            }
+        }
+        return (stadium, tv)
+    }
+
+    var venueTotals: [(venue: String, count: Int)] {
+        let grouped = Dictionary(grouping: filteredEvents.compactMap { $0.venue }) { $0 }
+        return grouped
+            .map { ($0.key, $0.value.count) }
+            .sorted { $0.1 > $1.1 }
+            .prefix(10)
+            .map { (venue: $0.0, count: $0.1) }
+    }
+
     var topPlayers: [(name: String, team: Team, playerNumber: String?, count: Int)] {
-        let withPlayer = events.flatMap { $0.sightings }.filter { $0.isPlayerSighting }
+        let withPlayer = filteredEvents.flatMap { $0.sightings }.filter { $0.isPlayerSighting }
         let grouped = Dictionary(grouping: withPlayer) { "\($0.team?.name ?? ""):\($0.displayName)" }
         return grouped
             .compactMap { (key, values) -> (name: String, team: Team, playerNumber: String?, count: Int)? in
@@ -47,9 +85,21 @@ struct StatsView: View {
         let teams = teamTotals
         let leagues = leagueTotals
         let players = topPlayers
+        let watchLocations = watchLocationTotals
+        let venues = venueTotals
 
         ScrollView {
             VStack(spacing: 20) {
+                if !availableYears.isEmpty {
+                    Picker("Year", selection: $selectedYear) {
+                        Text("All Time").tag(Optional<Int>.none)
+                        ForEach(availableYears, id: \.self) { year in
+                            Text("\(year)").tag(Optional<Int>.some(year))
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                }
+
                 if games == 0 {
                     emptyState
                         .transition(.opacity)
@@ -62,6 +112,11 @@ struct StatsView: View {
                         .transition(.opacity.combined(with: .scale(scale: 0.95)))
                     topPlayersCard(players: players)
                         .transition(.opacity.combined(with: .scale(scale: 0.95)))
+                    StatsTrendChart(events: filteredEvents, granularity: $trendGranularity)
+                    StatsWatchLocationCard(stadiumCount: watchLocations.stadium, tvCount: watchLocations.tv)
+                    StatsVenueCard(venues: venues)
+                    StatsStreakCard(events: filteredEvents)
+                    StatsMilestonesCard(events: filteredEvents)
                 }
             }
             .padding()
