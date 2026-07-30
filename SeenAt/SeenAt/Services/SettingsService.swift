@@ -44,6 +44,7 @@ enum SettingsService {
         dependencies: any SettingsServiceDependencies = DefaultSettingsServiceDependencies()
     ) -> Bool {
         guard let sightings = try? dependencies.fetchSightings(from: context) else {
+            DiagnosticsService.shared.log(category: "Settings", level: .error, message: "Failed to fetch sightings for deletion")
             return false
         }
         for sighting in sightings {
@@ -53,6 +54,7 @@ enum SettingsService {
         if !saved {
             dependencies.rollback(context: context)
         }
+        DiagnosticsService.shared.log(category: "Settings", level: .info, message: "Deleted all sightings: \(saved)")
         return saved
     }
 
@@ -66,6 +68,7 @@ enum SettingsService {
             events = try dependencies.fetchEvents(from: context)
             sightings = try dependencies.fetchSightings(from: context)
         } catch {
+            DiagnosticsService.shared.log(category: "Settings", level: .error, message: "Failed to fetch data for reset: \(error.localizedDescription)")
             return false
         }
 
@@ -79,11 +82,13 @@ enum SettingsService {
         let saved = dependencies.save(context: context, message: "Failed to reset all data")
         if !saved {
             dependencies.rollback(context: context)
+            DiagnosticsService.shared.log(category: "Settings", level: .error, message: "Reset all data failed")
             return false
         }
 
         await dependencies.endAllActivities()
         dependencies.clearPhotoCache()
+        DiagnosticsService.shared.log(category: "Settings", level: .info, message: "All data reset completed")
         return true
     }
 }

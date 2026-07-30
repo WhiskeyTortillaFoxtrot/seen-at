@@ -17,6 +17,8 @@ struct SettingsView: View {
     @State private var showingResetAlert = false
     @State private var showingDeleteError = false
     @State private var showingResetError = false
+    @State private var showShareSheet = false
+    @State private var diagnosticsReport = ""
 
     var body: some View {
         Form {
@@ -83,6 +85,19 @@ struct SettingsView: View {
                 Text("Could not reset data. Please try again.")
             }
 
+            Section("Diagnostics") {
+                Button {
+                    diagnosticsReport = DiagnosticsService.shared.generateReport(context: context)
+                    showShareSheet = true
+                } label: {
+                    Label("Share Diagnostics", systemImage: "square.and.arrow.up")
+                }
+                .sheet(isPresented: $showShareSheet) {
+                    ShareLink(item: diagnosticsReport, preview: SharePreview("SeenAt Diagnostics"))
+                }
+                .accessibilityHint("Shares a diagnostics report for troubleshooting")
+            }
+
             Section("About") {
                 Button("Show Onboarding") {
                     hasSeenOnboarding = false
@@ -105,6 +120,7 @@ struct SettingsView: View {
             }
         }
         .navigationTitle("Settings")
+
     }
 
     private func deleteAllSightings() {

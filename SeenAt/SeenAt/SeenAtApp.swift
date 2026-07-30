@@ -35,6 +35,7 @@ struct SeenAtApp: App {
     @State private var deepLinkError: DeepLinkError?
     @State private var splashState = SplashState()
     @State private var storeState = StoreState()
+    @Environment(\.scenePhase) private var scenePhase
 
     /// All backup/restore work runs synchronously on `@MainActor` because
     /// SwiftData's `ModelContainer` must be created on the main actor, and the
@@ -98,6 +99,20 @@ struct SeenAtApp: App {
                     )
                 }
                 .modelContainer(container)
+                .onChange(of: scenePhase) { _, newPhase in
+                    switch newPhase {
+                    case .active:
+                        DiagnosticsService.shared.appDidBecomeActive()
+                        DiagnosticsService.shared.log(category: "App", level: .info, message: "App became active")
+                    case .background:
+                        DiagnosticsService.shared.appDidBackground()
+                        DiagnosticsService.shared.log(category: "App", level: .info, message: "App entered background")
+                    case .inactive:
+                        break
+                    @unknown default:
+                        break
+                    }
+                }
             } else {
                 StoreErrorView(state: storeState)
             }

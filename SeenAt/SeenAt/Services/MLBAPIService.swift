@@ -11,9 +11,11 @@ enum MLBAPIService: LeagueAPIService {
         let dateString = dateFormatter.string(from: date)
 
         if let cached = APICacheService.getCachedGames(league: "mlb", date: date) {
+            DiagnosticsService.shared.log(category: "MLB", level: .debug, message: "Cache hit for \(dateString)")
             return cached
         }
 
+        DiagnosticsService.shared.log(category: "MLB", level: .info, message: "Fetching games for \(dateString)")
         let url = URL(string: "https://statsapi.mlb.com/api/v1/schedule?date=\(dateString)&sportId=1")!
         do {
             let (data, _) = try await session.data(from: url)
@@ -21,11 +23,14 @@ enum MLBAPIService: LeagueAPIService {
             let response = try decoder.decode(ScheduleResponse.self, from: data)
             let games = response.dates.first?.games.map { $0.toLeagueGame } ?? []
             APICacheService.setCachedGames(games, league: "mlb", date: date)
+            DiagnosticsService.shared.log(category: "MLB", level: .info, message: "Fetched \(games.count) games")
             return games
         } catch {
             if let cached = APICacheService.getCachedGames(league: "mlb", date: date) {
+                DiagnosticsService.shared.log(category: "MLB", level: .warning, message: "Fetch failed, using cache: \(error.localizedDescription)")
                 return cached
             }
+            DiagnosticsService.shared.log(category: "MLB", level: .error, message: "Fetch failed, no cache: \(error.localizedDescription)")
             throw error
         }
     }

@@ -18,9 +18,11 @@ struct EventActionHandler {
         )
         context.insert(sighting)
         guard context.saveAndLog("Failed to save incrementPlayer sighting") else {
+            DiagnosticsService.shared.log(category: "Action", level: .error, message: "Failed to increment sighting for \(name) in event: \(event.title)")
             context.delete(sighting)
             return
         }
+        DiagnosticsService.shared.log(category: "Action", level: .debug, message: "Sighting incremented for \(name) in event: \(event.title)")
         lastIncrementTimes[key] = now
     }
 
@@ -31,9 +33,11 @@ struct EventActionHandler {
             context.delete(sighting)
         }
         guard context.saveAndLog("Failed to save deletePlayer deletion") else {
+            DiagnosticsService.shared.log(category: "Action", level: .error, message: "Failed to delete sighting for \(name) in event: \(event.title)")
             context.rollback()
             return false
         }
+        DiagnosticsService.shared.log(category: "Action", level: .debug, message: "Sighting deleted for \(name) in event: \(event.title)")
         return true
     }
 

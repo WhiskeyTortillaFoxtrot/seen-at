@@ -130,6 +130,7 @@ enum StoreBackupService {
         targetSchemaVersion: String,
         fileManager: FileManager = .default
     ) throws -> UUID? {
+        DiagnosticsService.shared.log(category: "Backup", level: .info, message: "Preparing migration for schema version \(targetSchemaVersion)")
         try recoverInterruptedRestores(
             storeURL: storeURL,
             applicationSupportURL: applicationSupportURL,
@@ -365,6 +366,7 @@ enum StoreBackupService {
         backupID: UUID,
         fileManager: FileManager = .default
     ) throws {
+        DiagnosticsService.shared.log(category: "Backup", level: .info, message: "Restoring backup (backupID: \(backupID.uuidString.prefix(8))...)")
         let backupDirectory = applicationSupportURL.appendingPathComponent(backupDirectoryName)
         if isSymbolicLink(at: backupDirectory) ||
             (fileManager.fileExists(atPath: backupDirectory.path) && !isRealDirectory(at: backupDirectory)) {
@@ -498,6 +500,7 @@ enum StoreBackupService {
         applicationSupportURL: URL,
         fileManager: FileManager = .default
     ) throws {
+        DiagnosticsService.shared.log(category: "Backup", level: .info, message: "Post-launch cleanup")
         guard fileManager.fileExists(atPath: applicationSupportURL.path) else { return }
         let entries = try fileManager.contentsOfDirectory(at: applicationSupportURL, includingPropertiesForKeys: nil)
         for entry in entries where entry.lastPathComponent.hasPrefix(failedStoreDirectoryPrefix) {
@@ -516,6 +519,7 @@ enum StoreBackupService {
         applicationSupportURL: URL,
         fileManager: FileManager = .default
     ) throws {
+        DiagnosticsService.shared.log(category: "Backup", level: .info, message: "Completing migration attempt")
         do {
             try clearMigrationAttempt(at: applicationSupportURL, fileManager: fileManager)
         } catch {
@@ -530,6 +534,7 @@ enum StoreBackupService {
         applicationSupportURL: URL,
         fileManager: FileManager = .default
     ) throws {
+        DiagnosticsService.shared.log(category: "Backup", level: .info, message: "Resetting store data")
         let baseURL = storeURL.deletingPathExtension()
         let sidecars = [
             baseURL.appendingPathExtension("\(storeURL.pathExtension)-wal"),
