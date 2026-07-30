@@ -7,6 +7,7 @@ struct StatsView: View {
     @State private var showPieChart = false
     @State private var selectedYear: Int? = nil
     @State private var trendGranularity: TrendGranularity = .perMonth
+    @ScaledMetric(relativeTo: .largeTitle) private var heroStatSize: CGFloat = 48
 
     private var availableYears: [Int] {
         let calendar = Calendar.current
@@ -138,7 +139,7 @@ struct StatsView: View {
         HStack(spacing: 24) {
             VStack(spacing: 4) {
                 Text("\(games)")
-                    .font(.urbanist(size: 48, weight: .bold))
+                    .font(.urbanist(size: heroStatSize, weight: .bold))
                     .foregroundStyle(.white)
                 Text("Games Tracked")
                     .font(.urbanist(.subheadline))
@@ -152,7 +153,7 @@ struct StatsView: View {
 
             VStack(spacing: 4) {
                 Text("\(sightings)")
-                    .font(.urbanist(size: 48, weight: .bold))
+                    .font(.urbanist(size: heroStatSize, weight: .bold))
                     .foregroundStyle(.white)
                 Text("Jerseys Seen")
                     .font(.urbanist(.subheadline))
@@ -242,6 +243,7 @@ struct StatsView: View {
                         .fill(player.team.primaryColor)
                         .frame(width: 4)
                         .clipShape(RoundedRectangle(cornerRadius: 2))
+                        .accessibilityHidden(true)
 
                     HStack(spacing: 8) {
                         Text("\(index + 1).")

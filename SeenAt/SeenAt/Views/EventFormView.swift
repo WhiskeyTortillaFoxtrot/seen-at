@@ -146,6 +146,7 @@ struct EventFormView: View {
                                 Circle()
                                     .fill(team.primaryColor)
                                     .frame(width: 12, height: 12)
+                                    .accessibilityHidden(true)
                                 Text(team.name)
                             }
                             .tag(team as Team?)
@@ -160,6 +161,7 @@ struct EventFormView: View {
                                 Circle()
                                     .fill(team.primaryColor)
                                     .frame(width: 12, height: 12)
+                                    .accessibilityHidden(true)
                                 Text(team.name)
                             }
                             .tag(team as Team?)

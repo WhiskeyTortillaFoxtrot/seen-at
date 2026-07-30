@@ -72,6 +72,10 @@ struct TeamPieChart: View {
             }
             .frame(height: 220)
             .chartAngleSelection(value: $selectedAngle)
+            .accessibilityLabel("Team breakdown chart")
+            .accessibilityValue(coloredBreakdown
+                .map { "\($0.team.name): \($0.count) sightings" }
+                .joined(separator: ", "))
             .onChange(of: selectedAngle) { _, newAngle in
                 guard let angle = newAngle, let tapped = team(at: angle) else { return }
                 selectedTeamId = tapped.id == selectedTeamId ? nil : tapped.id
@@ -83,6 +87,7 @@ struct TeamPieChart: View {
                     Circle()
                         .fill(item.color)
                         .frame(width: 10, height: 10)
+                        .accessibilityHidden(true)
                     Text(item.team.name)
                         .font(.urbanist(.subheadline, weight: .medium))
                     Spacer()

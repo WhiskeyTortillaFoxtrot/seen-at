@@ -259,6 +259,7 @@ struct EventRow: View {
                 .fill(leadingColor)
                 .frame(width: 4)
                 .clipShape(RoundedRectangle(cornerRadius: 2))
+                .accessibilityHidden(true)
 
             VStack(spacing: 0) {
                 Spacer()
@@ -302,6 +303,7 @@ struct EventRow: View {
                                     .fill(team.primaryColor)
                                     .frame(width: 16, height: 16)
                                     .overlay(Circle().stroke(.background, lineWidth: 2))
+                                    .accessibilityHidden(true)
                             }
                         }
                         if breakdown.count > 5 {

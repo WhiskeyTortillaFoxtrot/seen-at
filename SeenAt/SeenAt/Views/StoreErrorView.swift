@@ -4,6 +4,7 @@ struct StoreErrorView: View {
     let state: StoreState
     @State private var showResetConfirmation = false
     @State private var resetComplete = false
+    @ScaledMetric(relativeTo: .largeTitle) private var iconSize: CGFloat = 48
 
     var body: some View {
         ZStack {
@@ -30,7 +31,7 @@ struct StoreErrorView: View {
             Spacer()
 
             Image(systemName: "exclamationmark.triangle.fill")
-                .font(.system(size: 48))
+                .font(.system(size: iconSize))
                 .foregroundStyle(.yellow)
 
             Text("Something Went Wrong")
@@ -109,7 +110,7 @@ struct StoreErrorView: View {
             Spacer()
 
             Image(systemName: "checkmark.circle.fill")
-                .font(.system(size: 48))
+                .font(.system(size: iconSize))
                 .foregroundStyle(.green)
 
             Text("Reset Complete")

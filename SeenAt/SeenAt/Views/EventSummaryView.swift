@@ -21,6 +21,7 @@ struct EventSummaryView: View {
     @State private var deleteErrorHaptic = 0
     @State private var photoSightings: [JerseySighting] = []
     @State private var currentDate = Date.now
+    @ScaledMetric(relativeTo: .largeTitle) private var heroCountSize: CGFloat = 64
 
     private var isPreview: Bool {
         EventPreviewPolicy.isReadOnly(event, now: currentDate)
@@ -163,7 +164,7 @@ struct EventSummaryView: View {
         VStack(spacing: 8) {
             let countOutline = topTeamColors.first?.opacity(0.5) ?? .black.opacity(0.15)
             Text("\(event.totalCount)")
-                .font(.urbanist(size: 64, weight: .bold))
+                .font(.urbanist(size: heroCountSize, weight: .bold))
                 .foregroundStyle(.white)
                 .shadow(color: countOutline, radius: 2, x: 1, y: 1)
 
@@ -274,6 +275,7 @@ struct EventSummaryView: View {
                                             Circle()
                                                 .fill(team.primaryColor)
                                                 .frame(width: 8, height: 8)
+                                                .accessibilityHidden(true)
 
                                             Text(name)
                                                 .font(.urbanist(.subheadline))
@@ -295,6 +297,7 @@ struct EventSummaryView: View {
                                                          .foregroundStyle(team.primaryColor)
                                                  }
                                                  .buttonStyle(.plain)
+                                                 .accessibilityLabel("Add \(name)")
                                                  .disabled(EventActionHandler.disabledForDebounce(team: team, name: name, lastIncrementTimes: lastIncrementTimes))
                                              }
                                          }
@@ -341,6 +344,7 @@ struct EventSummaryView: View {
                         .fill(team.primaryColor)
                         .frame(width: 4)
                         .clipShape(RoundedRectangle(cornerRadius: 2))
+                        .accessibilityHidden(true)
 
                     HStack {
                         Text(team.abbreviation)
