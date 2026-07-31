@@ -46,7 +46,7 @@ kauffman-stadium, **Kauffman Stadium** [Photo](https://commons.wikimedia.org/wik
 ## L
 loandepot-park, **loanDepot park** [Photo](https://commons.wikimedia.org/wiki/File:Marlins_First_Pitch_at_Marlins_Park,_April_4,_2012.jpg) by Roberto Coquis on Wikimedia Commons, [CC BY 2.0](https://creativecommons.org/licenses/by/2.0/)
 lynn-family-stadium, **Lynn Family Stadium** [Photo](https://commons.wikimedia.org/wiki/File:Lynn_Family_Stadium_-_March_2021.jpg) by BlueShirtz on Wikimedia Commons, [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/)
-lumene-field, **Lumen Field** [Photo](https://commons.wikimedia.org/wiki/File:Lumen_Field_north_side_at_dusk.jpg) by SounderBruce on Wikimedia Commons, [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/)
+lumen-field, **Lumen Field** [Photo](https://commons.wikimedia.org/wiki/File:Lumen_Field_north_side_at_dusk.jpg) by SounderBruce on Wikimedia Commons, [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/)
 
 ## M
 minute-maid-park, **Minute Maid Park** [Photo](https://commons.wikimedia.org/wiki/File:Minute_Maid_Park_-_Houston,_Texas_-_DSC01317.JPG) by Daderot on Wikimedia Commons, [CC0](http://creativecommons.org/publicdomain/zero/1.0/deed.en)

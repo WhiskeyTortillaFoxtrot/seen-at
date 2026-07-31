@@ -37,6 +37,8 @@ final class VenueImageServiceTests: XCTestCase {
         )
     }
 
+    /// Regression guard: `&` in venue name must normalize to `and` so that
+    /// "Inter&Co Stadium" resolves to "interandco-stadium.jpg".
     func testHasImageFindsWrappedVenueWithAmpersand() {
         XCTAssertTrue(VenueImageService.hasImage(for: "Inter&Co Stadium"))
     }
