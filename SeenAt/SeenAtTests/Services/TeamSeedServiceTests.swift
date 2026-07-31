@@ -30,7 +30,7 @@ final class TeamSeedServiceTests: XCTestCase {
         await TeamSeedService.seedIfNeeded(modelContext: context)
 
         let afterCount = try? context.fetchCount(FetchDescriptor<Team>())
-        XCTAssertEqual(afterCount, 160)
+        XCTAssertEqual(afterCount, 176)
     }
 
     func testDoesNotReseed() async {
@@ -41,12 +41,12 @@ final class TeamSeedServiceTests: XCTestCase {
         try? context.save()
 
         let countAfterManual = try? context.fetchCount(FetchDescriptor<Team>())
-        XCTAssertEqual(countAfterManual, 161)
+        XCTAssertEqual(countAfterManual, 177)
 
         await TeamSeedService.seedIfNeeded(modelContext: context)
 
         let countAfterSecondSeed = try? context.fetchCount(FetchDescriptor<Team>())
-        XCTAssertEqual(countAfterSecondSeed, 161)
+        XCTAssertEqual(countAfterSecondSeed, 177)
     }
 
     func testSeededTeamsAreBuiltIn() async {
@@ -54,7 +54,7 @@ final class TeamSeedServiceTests: XCTestCase {
 
         let predicate = #Predicate<Team> { $0.isBuiltIn == true }
         let builtInCount = try? context.fetchCount(FetchDescriptor<Team>(predicate: predicate))
-        XCTAssertEqual(builtInCount, 160)
+        XCTAssertEqual(builtInCount, 176)
     }
 
     func testSeededTeamsHaveCorrectNames() async {
@@ -74,19 +74,19 @@ final class TeamSeedServiceTests: XCTestCase {
         await TeamSeedService.seedIfNeeded(modelContext: context)
 
         let count = try? context.fetchCount(FetchDescriptor<Team>())
-        XCTAssertEqual(count, 160)
+        XCTAssertEqual(count, 176)
     }
 
     func testDoesNotReseedWhenCurrentVersion() async {
         await TeamSeedService.seedIfNeeded(modelContext: context)
 
         let beforeReseed = try? context.fetchCount(FetchDescriptor<Team>())
-        XCTAssertEqual(beforeReseed, 160)
+        XCTAssertEqual(beforeReseed, 176)
 
         await TeamSeedService.seedIfNeeded(modelContext: context)
 
         let afterReseed = try? context.fetchCount(FetchDescriptor<Team>())
-        XCTAssertEqual(afterReseed, 160)
+        XCTAssertEqual(afterReseed, 176)
     }
 
     func testMigratesRenamedTeams() async {
@@ -117,7 +117,7 @@ final class TeamSeedServiceTests: XCTestCase {
         await TeamSeedService.seedIfNeeded(modelContext: context)
 
         let countAfterSeed = try? context.fetchCount(FetchDescriptor<Team>())
-        XCTAssertEqual(countAfterSeed, 160)
+        XCTAssertEqual(countAfterSeed, 176)
 
         UserDefaults.standard.removeObject(forKey: "hasSeededTeams")
         UserDefaults.standard.removeObject(forKey: "seedVersion")
@@ -125,7 +125,7 @@ final class TeamSeedServiceTests: XCTestCase {
         await TeamSeedService.seedIfNeeded(modelContext: context)
 
         let countAfterReset = try? context.fetchCount(FetchDescriptor<Team>())
-        XCTAssertEqual(countAfterReset, 160, "Re-seeding after reset should still produce 160 teams")
+        XCTAssertEqual(countAfterReset, 176, "Re-seeding after reset should still produce 176 teams")
         let storedVersion = UserDefaults.standard.integer(forKey: "seedVersion")
         XCTAssertGreaterThan(storedVersion, 0, "seedVersion should be set again after re-seeding")
     }
@@ -138,5 +138,17 @@ final class TeamSeedServiceTests: XCTestCase {
         XCTAssertEqual(mlsTeams?.count, 30)
         XCTAssertTrue(mlsTeams?.contains(where: { $0.name == "LA Galaxy" }) == true)
         XCTAssertTrue(mlsTeams?.contains(where: { $0.name == "Seattle Sounders FC" }) == true)
+    }
+
+    func testSeedsNWSLTeams() async {
+        await TeamSeedService.seedIfNeeded(modelContext: context)
+
+        let predicate = #Predicate<Team> { $0.sport == "nwsl" }
+        let nwslTeams = try? context.fetch(FetchDescriptor<Team>(predicate: predicate))
+        XCTAssertEqual(nwslTeams?.count, 16)
+        XCTAssertTrue(nwslTeams?.contains(where: { $0.name == "Gotham FC" }) == true)
+        XCTAssertTrue(nwslTeams?.contains(where: { $0.name == "Washington Spirit" }) == true)
+        XCTAssertTrue(nwslTeams?.contains(where: { $0.name == "Kansas City Current" }) == true)
+        XCTAssertTrue(nwslTeams?.contains(where: { $0.abbreviation == "KC" }) == true)
     }
 }

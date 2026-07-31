@@ -6,7 +6,7 @@ SeenAt lets you log jerseys you spot at live sporting events, track which teams 
 
 ## Features
 
-- Create events for MLB, NBA, NFL, NHL, LOVB, and MLS games
+- Create events for MLB, NBA, NFL, NHL, LOVB, MLS, and NWSL games
 - Log jersey sightings with team, player name, number, and photo
 - Live Activities (Dynamic Island + Lock Screen) for in-game tracking
 - Choose between **At Stadium** or **On TV** watch location
@@ -15,7 +15,7 @@ SeenAt lets you log jerseys you spot at live sporting events, track which teams 
 - Photo gallery with player captions
 - **Search** games by team or player name
 - Deep linking via `seenat://` URL scheme
-- 158 built-in teams across 6 leagues
+- 176 built-in teams across 7 leagues
 - CSV data export
 
 ## Supported Leagues
@@ -28,6 +28,7 @@ SeenAt lets you log jerseys you spot at live sporting events, track which teams 
 | NHL | [api-web.nhle.com](https://api-web.nhle.com) | 32 |
 | LOVB | Manual entry | 6 |
 | MLS | Manual entry | 28 |
+| NWSL | [ESPN API](https://site.api.espn.com) | 16 |
 
 ## Screenshots
 
@@ -78,7 +79,7 @@ Build and run from Xcode on a simulator or device.
 SeenAt/
   Models/        — Event, Team, JerseySighting, LeagueGame, SchemaMigration, SeenAtActivityAttributes
   Services/      — API services, LiveActivityManager, TeamSeedService, ExportService, VenueImageService, ...
-    TeamSeeds/   — Team seed data per league (MLB, NBA, NFL, NHL, LOVB, MLS)
+    TeamSeeds/   — Team seed data per league (MLB, NBA, NFL, NHL, LOVB, MLS, NWSL)
   Resources/
     VenueImages/ — Venue photos (see Venue Images section below)
   Views/         — HomeView, LiveTrackingView, EventSummaryView, StatsView, SettingsView, SearchView, ...
@@ -123,6 +124,7 @@ Run `scripts/resize-venue-images.sh` after adding new images to keep bundle size
 | NHL | `api-web.nhle.com/v1/schedule/YYYY-MM-DD` | None |
 | LOVB | Manual entry only | — |
 | MLS | Manual entry only | — |
+| NWSL | `site.api.espn.com/apis/site/v2/sports/soccer/usa.nwsl/scoreboard` | None |
 
 ## License
 

@@ -233,4 +233,51 @@ final class ESPNServiceTests: XCTestCase {
         XCTAssertEqual(games2.count, 1)
         XCTAssertEqual(games2.first?.id, "nba-401234567")
     }
+
+    func testFetchNWSLGamesMapsLeagueToNwsl() async throws {
+        let json = """
+        {
+            "events": [
+                {
+                    "id": "401854066",
+                    "name": "Thorns vs Summit FC",
+                    "date": "2026-07-18T23:00:00Z",
+                    "competitions": [
+                        {
+                            "venue": { "fullName": "Centennial Stadium" },
+                            "competitors": [
+                                { "homeAway": "away", "team": { "name": "Portland Thorns FC" } },
+                                { "homeAway": "home", "team": { "name": "Denver Summit FC" } }
+                            ]
+                        }
+                    ],
+                    "links": [
+                        { "web": { "href": "https://www.espn.com/soccer/nwsl/story/_/id/401854066" } }
+                    ]
+                }
+            ]
+        }
+        """
+
+        MockURLProtocol.requestHandler = { request in
+            let response = HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+            return (response, json.data(using: .utf8)!)
+        }
+
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [MockURLProtocol.self]
+        let mockSession = URLSession(configuration: config)
+
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyyMMdd"
+        let date = dateFormatter.date(from: "20260718")!
+
+        let games = try await ESPNService.fetchGames(on: date, sportPath: "soccer/usa.nwsl", session: mockSession)
+        XCTAssertEqual(games.count, 1)
+        XCTAssertEqual(games[0].league, "nwsl")
+        XCTAssertEqual(games[0].id, "nwsl-401854066")
+        XCTAssertEqual(games[0].awayTeam, "Portland Thorns FC")
+        XCTAssertEqual(games[0].homeTeam, "Denver Summit FC")
+        XCTAssertEqual(games[0].venueName, "Centennial Stadium")
+    }
 }

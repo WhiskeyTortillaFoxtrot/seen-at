@@ -161,6 +161,14 @@ enum VenueDirectory {
         "Alliant Energy Center": VenueInfo(name: "Alliant Energy Center", address: "1919 Alliant Energy Center Way, Madison, WI 53713", latitude: 43.0417, longitude: -89.3936),
         "Baxter Arena": VenueInfo(name: "Baxter Arena", address: "2425 S 67th St, Omaha, NE 68182", latitude: 41.2187, longitude: -96.0151),
         "Lifetime Activities Center": VenueInfo(name: "Lifetime Activities Center", address: "6150 S 300 W, Salt Lake City, UT 84107", latitude: 40.6374, longitude: -111.8917),
+
+        // NWSL
+        "Centreville Bank Stadium": VenueInfo(name: "Centreville Bank Stadium", address: "200 Taft Street, Pawtucket, RI 02860", latitude: 41.8688, longitude: -71.3826),
+        "Northwestern Medicine Field at Martin Stadium": VenueInfo(name: "Northwestern Medicine Field at Martin Stadium", address: "2253 Campus Dr, Evanston, IL 60208", latitude: 42.0565, longitude: -87.6760),
+        "Centennial Stadium": VenueInfo(name: "Centennial Stadium", address: "13740 E Fremont Ave, Centennial, CO 80112", latitude: 39.6136, longitude: -104.9625),
+        "CPKC Stadium": VenueInfo(name: "CPKC Stadium", address: "1460 E Front St, Kansas City, MO 64120", latitude: 39.1203, longitude: -94.5663),
+        "WakeMed Soccer Park": VenueInfo(name: "WakeMed Soccer Park", address: "201 Soccer Park Dr, Cary, NC 27511", latitude: 35.7863, longitude: -78.7551),
+        "Lynn Family Stadium": VenueInfo(name: "Lynn Family Stadium", address: "350 Adams St, Louisville, KY 40206", latitude: 38.2594, longitude: -85.7319),
     ]
 
     static func info(for venueName: String) -> VenueInfo? {
@@ -311,6 +319,24 @@ enum VenueDirectory {
         case "LOVB Madison": "Alliant Energy Center"
         case "LOVB Nebraska": "Baxter Arena"
         case "LOVB Salt Lake": "Lifetime Activities Center"
+
+        // NWSL
+        case "Angel City FC": "BMO Stadium"
+        case "Bay FC": "PayPal Park"
+        case "Boston Legacy FC": "Gillette Stadium"
+        case "Chicago Stars FC": "Northwestern Medicine Field at Martin Stadium"
+        case "Denver Summit FC": "Centennial Stadium"
+        case "Houston Dash": "Shell Energy Stadium"
+        case "Kansas City Current": "CPKC Stadium"
+        case "Gotham FC": "Red Bull Arena"
+        case "North Carolina Courage": "WakeMed Soccer Park"
+        case "Orlando Pride": "Inter&Co Stadium"
+        case "Portland Thorns FC": "Providence Park"
+        case "Racing Louisville FC": "Lynn Family Stadium"
+        case "San Diego Wave FC": "Snapdragon Stadium"
+        case "Seattle Reign FC": "Lumen Field"
+        case "Utah Royals": "America First Field"
+        case "Washington Spirit": "Audi Field"
 
         // MLS
         case "Atlanta United FC": "Mercedes-Benz Stadium"

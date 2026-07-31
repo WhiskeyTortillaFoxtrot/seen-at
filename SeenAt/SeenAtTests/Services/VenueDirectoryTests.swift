@@ -21,7 +21,7 @@ final class VenueDirectoryTests: XCTestCase {
     }
 
     func testAllVenuesPresent() {
-        XCTAssertEqual(VenueDirectory.all.count, 141)
+        XCTAssertEqual(VenueDirectory.all.count, 147)
     }
 
     func testHomeVenueMLB() {
@@ -52,6 +52,17 @@ final class VenueDirectoryTests: XCTestCase {
     func testHomeVenueMLS() {
         let venue = VenueDirectory.homeVenue(for: "Seattle Sounders FC")
         XCTAssertEqual(venue, "Lumen Field")
+    }
+
+    func testHomeVenueNWSL() {
+        XCTAssertEqual(VenueDirectory.homeVenue(for: "Kansas City Current"), "CPKC Stadium")
+        XCTAssertEqual(VenueDirectory.homeVenue(for: "North Carolina Courage"), "WakeMed Soccer Park")
+        XCTAssertEqual(VenueDirectory.homeVenue(for: "Racing Louisville FC"), "Lynn Family Stadium")
+        XCTAssertEqual(VenueDirectory.homeVenue(for: "Denver Summit FC"), "Centennial Stadium")
+        XCTAssertEqual(VenueDirectory.homeVenue(for: "Chicago Stars FC"), "Northwestern Medicine Field at Martin Stadium")
+        XCTAssertEqual(VenueDirectory.homeVenue(for: "Boston Legacy FC"), "Gillette Stadium")
+        XCTAssertEqual(VenueDirectory.homeVenue(for: "Angel City FC"), "BMO Stadium")
+        XCTAssertEqual(VenueDirectory.homeVenue(for: "San Diego Wave FC"), "Snapdragon Stadium")
     }
 
     func testHomeVenueSharedNBANHL() {

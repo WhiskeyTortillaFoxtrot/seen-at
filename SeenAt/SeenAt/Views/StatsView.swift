@@ -235,6 +235,7 @@ struct StatsView: View {
         case "NHL": return .red
         case "MLS": return .purple
         case "LOVB": return .gray
+        case "NWSL": return .teal
         default: return .gray
         }
     }

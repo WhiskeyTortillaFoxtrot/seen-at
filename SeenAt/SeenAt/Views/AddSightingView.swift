@@ -30,6 +30,7 @@ struct AddSightingView: View {
     private let allLeagues: [(id: String, label: String)] = [
         ("mlb", "MLB"), ("nba", "NBA"), ("nfl", "NFL"),
         ("nhl", "NHL"), ("lovb", "LOVB"), ("mls", "MLS"),
+        ("nwsl", "NWSL"),
     ]
 
     private var eventGameTeams: [Team] {
