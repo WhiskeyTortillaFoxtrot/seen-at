@@ -17,6 +17,10 @@ struct LiveTrackingView: View {
     @ScaledMetric(relativeTo: .largeTitle) private var heroCountSize: CGFloat = 72
     @State private var shareContent: ShareContent?
 
+    private var currentWatchLocation: WatchLocation {
+        event.watchLocation ?? .stadium
+    }
+
     private var relevantTeams: [Team] {
         let names = [event.homeTeam, event.awayTeam].compactMap { $0 }
         guard !names.isEmpty else { return [] }
@@ -128,17 +132,21 @@ struct LiveTrackingView: View {
                 .foregroundStyle(.white)
                 .shadow(radius: 1)
 
-            if let venue = event.venue {
-                if event.watchLocation == .tv {
-                    Label("Watching on TV · \(venue)", systemImage: "tv")
-                        .font(.urbanist(.subheadline))
-                        .foregroundStyle(.white.opacity(0.7))
+            HStack(spacing: 6) {
+                if let venue = event.venue {
+                    if event.watchLocation == .tv {
+                        Label("Watching on TV · \(venue)", systemImage: "tv")
+                    } else {
+                        Label(venue, systemImage: "mappin")
+                    }
                 } else {
-                    Text(venue)
-                        .font(.urbanist(.subheadline))
-                        .foregroundStyle(.white.opacity(0.7))
+                    Label(event.watchLocation == .tv ? "On TV" : "At the Stadium", systemImage: event.watchLocation == .tv ? "tv" : "mappin")
                 }
+
+                locationMenu
             }
+            .font(.urbanist(.subheadline))
+            .foregroundStyle(.white.opacity(0.7))
 
             Text("\(event.totalCount)")
                 .font(.urbanist(size: heroCountSize, weight: .bold))
@@ -178,6 +186,33 @@ struct LiveTrackingView: View {
                         .overlay(Color.black.opacity(0.3))
                 }
             }
+        }
+    }
+
+    private var locationMenu: some View {
+        Menu {
+            Button {
+                updateWatchLocation(.stadium)
+            } label: {
+                Label("At the Stadium", systemImage: currentWatchLocation == .stadium ? "checkmark" : "mappin")
+            }
+            Button {
+                updateWatchLocation(.tv)
+            } label: {
+                Label("On TV", systemImage: currentWatchLocation == .tv ? "checkmark" : "tv")
+            }
+        } label: {
+            Image(systemName: "pencil.circle.fill")
+                .accessibilityLabel("Change watch location")
+                .accessibilityValue(currentWatchLocation == .tv ? "On TV" : "At the Stadium")
+        }
+    }
+
+    private func updateWatchLocation(_ location: WatchLocation) {
+        let previousLocation = event.watchLocation
+        event.watchLocation = location
+        if !context.saveAndLog("Failed to update watch location") {
+            event.watchLocation = previousLocation
         }
     }
 

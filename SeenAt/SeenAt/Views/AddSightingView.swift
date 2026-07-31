@@ -69,6 +69,13 @@ struct AddSightingView: View {
             .map { OtherLeague(id: $0.id, label: $0.label) }
     }
 
+    private var availableLeagues: [OtherLeague] {
+        allLeagues.compactMap { league in
+            guard allTeams.contains(where: { $0.sport == league.id }) else { return nil }
+            return OtherLeague(id: league.id, label: league.label)
+        }
+    }
+
     var body: some View {
         Form {
             Section("Team") {
@@ -177,8 +184,10 @@ struct AddSightingView: View {
                     }
                 }
             } else {
-                ForEach(sortedTeams(allTeams, searchText: "", awayTeam: event.awayTeam, homeTeam: event.homeTeam, favoriteTeamNames: favoriteTeamNames)) { team in
-                    teamButton(team)
+                ForEach(availableLeagues) { league in
+                    Button(league.label) {
+                        selectedOtherLeague = league
+                    }
                 }
             }
         } label: {
