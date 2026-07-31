@@ -95,7 +95,7 @@ struct StatsView: View {
                     Picker("Year", selection: $selectedYear) {
                         Text("All Time").tag(Optional<Int>.none)
                         ForEach(availableYears, id: \.self) { year in
-                            Text("\(year)").tag(Optional<Int>.some(year))
+                            Text(String(year)).tag(Optional<Int>.some(year))
                         }
                     }
                     .pickerStyle(.segmented)
