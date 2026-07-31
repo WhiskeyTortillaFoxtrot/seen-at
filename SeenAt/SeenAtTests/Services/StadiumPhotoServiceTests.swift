@@ -44,6 +44,9 @@ final class StadiumPhotoServiceTests: XCTestCase {
         XCTAssertNotNil(image)
     }
 
+    /// Tests a subset of NWSL venues — the full list is covered by
+    /// VenueImageServiceTests.testHasImageFindsNWSLVenues since
+    /// StadiumPhotoService is a thin passthrough to VenueImageService.
     func testImageFoundForNWSLStadiums() {
         let venues = [
             "BMO Stadium",
