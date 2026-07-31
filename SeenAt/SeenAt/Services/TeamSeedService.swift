@@ -4,7 +4,7 @@ import SwiftData
 enum TeamSeedService {
     private static let hasSeededKey = "hasSeededTeams"
     private static let seedVersionKey = "seedVersion"
-    private static let currentSeedVersion = 1
+    private static let currentSeedVersion = 2
 
     @MainActor
     static func seedIfNeeded(modelContext: ModelContext) async {
@@ -26,6 +26,7 @@ enum TeamSeedService {
             ("nhl", NHLTeams.all),
             ("lovb", LOVBTeams.all),
             ("mls", MLSTeams.all),
+            ("nwsl", NWSLTeams.all),
         ]
 
         for (_, teams) in leagueTeams {

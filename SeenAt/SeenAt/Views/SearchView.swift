@@ -26,6 +26,7 @@ struct SearchView: View {
     private let leagues: [(id: String, label: String)] = [
         ("mlb", "MLB"), ("nba", "NBA"), ("nfl", "NFL"),
         ("nhl", "NHL"), ("lovb", "LOVB"), ("mls", "MLS"),
+        ("nwsl", "NWSL"),
     ]
 
     var body: some View {

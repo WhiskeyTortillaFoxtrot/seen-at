@@ -30,6 +30,7 @@ struct SettingsView: View {
                     Text("NHL").tag("nhl")
                     Text("LOVB").tag("lovb")
                     Text("MLS").tag("mls")
+                    Text("NWSL").tag("nwsl")
                 }
                 .pickerStyle(.menu)
 

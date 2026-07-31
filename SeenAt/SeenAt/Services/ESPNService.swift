@@ -7,9 +7,21 @@ enum ESPNService {
         return f
     }()
 
+    static func league(for sportPath: String) -> String {
+        if sportPath.contains("nba") {
+            return "nba"
+        } else if sportPath.contains("nfl") {
+            return "nfl"
+        } else if sportPath.contains("nwsl") {
+            return "nwsl"
+        } else {
+            return sportPath
+        }
+    }
+
     static func fetchGames(on date: Date, sportPath: String, session: URLSession = APICacheService.session) async throws -> [LeagueGame] {
         let dateString = dateFormatter.string(from: date)
-        let league = sportPath.contains("nba") ? "nba" : sportPath.contains("nfl") ? "nfl" : sportPath
+        let league = Self.league(for: sportPath)
 
         if let cached = APICacheService.getCachedGames(league: league, date: date) {
             DiagnosticsService.shared.log(category: "ESPN", level: .debug, message: "Cache hit for \(league) \(dateString)")
@@ -49,14 +61,7 @@ struct ESPNEvent: Codable, Identifiable {
     let links: [ESPNLink]?
 
     func toLeagueGame(sportPath: String) -> LeagueGame {
-        let league: String
-        if sportPath.contains("nba") {
-            league = "nba"
-        } else if sportPath.contains("nfl") {
-            league = "nfl"
-        } else {
-            league = sportPath
-        }
+        let league = ESPNService.league(for: sportPath)
 
         let venueName = competitions.first?.venue?.fullName ?? ""
         let awayName = competitions.first?.competitors.first(where: { $0.homeAway == "away" })?.team.name ?? ""

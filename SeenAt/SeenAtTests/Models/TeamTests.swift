@@ -55,6 +55,10 @@ final class TeamTests: XCTestCase {
         XCTAssertEqual(Team.sportIcon(for: "mls"), "soccerball.inverse")
     }
 
+    func testSportIconNWSL() {
+        XCTAssertEqual(Team.sportIcon(for: "nwsl"), "soccerball.inverse")
+    }
+
     func testSportIconDefault() {
         XCTAssertEqual(Team.sportIcon(for: "unknown"), "questionmark.circle.fill")
     }
