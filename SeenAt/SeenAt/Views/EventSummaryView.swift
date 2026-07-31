@@ -23,6 +23,10 @@ struct EventSummaryView: View {
     @State private var currentDate = Date.now
     @ScaledMetric(relativeTo: .largeTitle) private var heroCountSize: CGFloat = 64
 
+    private var currentWatchLocation: WatchLocation {
+        event.watchLocation ?? .stadium
+    }
+
     private var isPreview: Bool {
         EventPreviewPolicy.isReadOnly(event, now: currentDate)
     }
@@ -197,6 +201,18 @@ struct EventSummaryView: View {
                     }
                     .buttonStyle(.plain)
                 }
+            } else if event.watchLocation == .tv {
+                Label("On TV", systemImage: "tv")
+                    .font(.urbanist(.caption))
+                    .foregroundStyle(.white.opacity(0.8))
+            } else {
+                Label("At the Stadium", systemImage: "mappin")
+                    .font(.urbanist(.caption))
+                    .foregroundStyle(.white.opacity(0.8))
+            }
+
+            if !isPreview {
+                locationMenu
             }
 
             if let url = event.gameUrl, let link = URL(string: url) {
@@ -226,6 +242,35 @@ struct EventSummaryView: View {
             }
         }
         .clipShape(RoundedRectangle(cornerRadius: 12))
+    }
+
+    private var locationMenu: some View {
+        Menu {
+            Button {
+                updateWatchLocation(.stadium)
+            } label: {
+                Label("At the Stadium", systemImage: currentWatchLocation == .stadium ? "checkmark" : "mappin")
+            }
+            Button {
+                updateWatchLocation(.tv)
+            } label: {
+                Label("On TV", systemImage: currentWatchLocation == .tv ? "checkmark" : "tv")
+            }
+        } label: {
+            Label("Change watch location", systemImage: "pencil.circle")
+                .font(.urbanist(.caption))
+                .foregroundStyle(.white.opacity(0.8))
+        }
+        .accessibilityLabel("Change watch location")
+        .accessibilityValue(currentWatchLocation == .tv ? "On TV" : "At the Stadium")
+    }
+
+    private func updateWatchLocation(_ location: WatchLocation) {
+        let previousLocation = event.watchLocation
+        event.watchLocation = location
+        if !context.saveAndLog("Failed to update watch location") {
+            event.watchLocation = previousLocation
+        }
     }
 
     private func teamBreakdownCard(teamBreakdown: [(team: Team, count: Int)], readOnly: Bool) -> some View {
