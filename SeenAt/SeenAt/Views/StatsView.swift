@@ -7,101 +7,32 @@ struct StatsView: View {
     @State private var showPieChart = false
     @State private var selectedYear: Int? = nil
     @State private var trendGranularity: TrendGranularity = .perMonth
+    @State private var viewModel = StatsViewModel()
     @ScaledMetric(relativeTo: .largeTitle) private var heroStatSize: CGFloat = 48
 
-    private var availableYears: [Int] {
-        let calendar = Calendar.current
-        let years = Set(events.compactMap { calendar.component(.year, from: $0.date) })
-        return years.sorted().reversed()
-    }
-
-    private var filteredEvents: [Event] {
-        guard let year = selectedYear else { return events }
-        let calendar = Calendar.current
-        return events.filter { calendar.component(.year, from: $0.date) == year }
-    }
-
-    var totalGames: Int { filteredEvents.count }
-
-    var totalSightings: Int {
-        filteredEvents.reduce(0) { $0 + $1.sightings.count }
-    }
-
-    var teamTotals: [(team: Team, count: Int)] {
-        let allTeams = filteredEvents.flatMap { $0.sightings }.compactMap { $0.team }
-        let grouped = Dictionary(grouping: allTeams) { $0 }
-        return grouped
-            .map { ($0.key, $0.value.count) }
-            .sorted { a, b in a.count > b.count || (a.count == b.count && a.team.name < b.team.name) }
-    }
-
-    var leagueTotals: [(sport: String, count: Int)] {
-        let allTeams = filteredEvents.flatMap { $0.sightings.compactMap { $0.team } }
-        let grouped = Dictionary(grouping: allTeams) { $0.sport.uppercased() }
-        return grouped
-            .map { ($0.key, $0.value.count) }
-            .sorted { $0.count > $1.count }
-    }
-
-    var watchLocationTotals: (stadium: Int, tv: Int) {
-        var stadium = 0
-        var tv = 0
-        for event in filteredEvents {
-            let count = event.sightings.count
-            switch event.watchLocation {
-            case .stadium, .none:
-                stadium += count
-            case .tv:
-                tv += count
-            }
-        }
-        return (stadium, tv)
-    }
-
-    var venueTotals: [(venue: String, count: Int)] {
-        let grouped = Dictionary(grouping: filteredEvents.compactMap { $0.venue }) { $0 }
-        return grouped
-            .map { ($0.key, $0.value.count) }
-            .sorted { $0.1 > $1.1 }
-            .prefix(10)
-            .map { (venue: $0.0, count: $0.1) }
-    }
-
-    var topPlayers: [(name: String, team: Team, playerNumber: String?, count: Int)] {
-        let withPlayer = filteredEvents.flatMap { $0.sightings }.filter { $0.isPlayerSighting }
-        let grouped = Dictionary(grouping: withPlayer) { "\($0.team?.name ?? ""):\($0.displayName)" }
-        return grouped
-            .compactMap { (key, values) -> (name: String, team: Team, playerNumber: String?, count: Int)? in
-                guard let first = values.first, let team = first.team else { return nil }
-                return (first.displayName, team, first.playerNumber, values.count)
-            }
-            .sorted { a, b in a.count > b.count || (a.count == b.count && a.name < b.name) }
-            .prefix(5)
-            .map { $0 }
-    }
-
     var body: some View {
-        let games = totalGames
-        let sightings = totalSightings
-        let teams = teamTotals
-        let leagues = leagueTotals
-        let players = topPlayers
-        let watchLocations = watchLocationTotals
-        let venues = venueTotals
+        let cacheKey = StatsCacheKey(events: events, selectedYear: selectedYear)
+        let games = viewModel.totalGames
+        let sightings = viewModel.totalSightings
+        let teams = viewModel.teamTotals
+        let leagues = viewModel.leagueTotals
+        let players = viewModel.topPlayers
+        let watchLocations = viewModel.watchLocationTotals
+        let venues = viewModel.venueTotals
 
         ScrollView {
             VStack(spacing: 20) {
-                if !availableYears.isEmpty {
+                if !viewModel.availableYears.isEmpty {
                     Picker("Year", selection: $selectedYear) {
                         Text("All Time").tag(Optional<Int>.none)
-                        ForEach(availableYears, id: \.self) { year in
+                        ForEach(viewModel.availableYears, id: \.self) { year in
                             Text(String(year)).tag(Optional<Int>.some(year))
                         }
                     }
                     .pickerStyle(.segmented)
                 }
 
-                if games == 0 {
+                if viewModel.hasLoaded && games == 0 {
                     emptyState
                         .transition(.opacity)
                 } else {
@@ -113,11 +44,11 @@ struct StatsView: View {
                         .transition(.opacity.combined(with: .scale(scale: 0.95)))
                     topPlayersCard(players: players)
                         .transition(.opacity.combined(with: .scale(scale: 0.95)))
-                    StatsTrendChart(events: filteredEvents, granularity: $trendGranularity)
+                    StatsTrendChart(events: viewModel.filteredEvents, granularity: $trendGranularity)
                     StatsWatchLocationCard(stadiumCount: watchLocations.stadium, tvCount: watchLocations.tv)
                     StatsVenueCard(venues: venues)
-                    StatsStreakCard(events: filteredEvents)
-                    StatsMilestonesCard(events: filteredEvents)
+                    StatsStreakCard(events: viewModel.filteredEvents)
+                    StatsMilestonesCard(events: viewModel.filteredEvents)
                 }
             }
             .padding()
@@ -125,6 +56,14 @@ struct StatsView: View {
         }
         .navigationTitle("Stats")
         .navigationBarTitleDisplayMode(.inline)
+        .task(id: cacheKey) {
+            viewModel.update(key: cacheKey, events: events)
+        }
+        .onChange(of: viewModel.availableYears) { _, availableYears in
+            if let selectedYear, !availableYears.contains(selectedYear) {
+                self.selectedYear = nil
+            }
+        }
     }
 
     private var emptyState: some View {
@@ -237,7 +176,7 @@ struct StatsView: View {
             Text("Top Players")
                 .font(.urbanist(.headline))
 
-            ForEach(Array(players.enumerated()), id: \.element.name) { index, player in
+            ForEach(Array(players.enumerated()), id: \.offset) { index, player in
                 HStack(spacing: 0) {
                     Rectangle()
                         .fill(player.team.primaryColor)
@@ -278,7 +217,7 @@ struct StatsView: View {
                     .padding(.leading, 8)
                 }
 
-                if player.name != players.last?.name {
+                if player.team.name != players.last?.team.name || player.name != players.last?.name {
                     Divider()
                 }
             }
