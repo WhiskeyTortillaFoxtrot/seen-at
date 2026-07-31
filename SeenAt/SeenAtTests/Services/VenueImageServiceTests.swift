@@ -37,7 +37,34 @@ final class VenueImageServiceTests: XCTestCase {
         )
     }
 
-    func testHasImageFindsBundledVenueImage() {
-        XCTAssertTrue(VenueImageService.hasImage(for: "Yankee Stadium"))
+    func testHasImageFindsWrappedVenueWithAmpersand() {
+        XCTAssertTrue(VenueImageService.hasImage(for: "Inter&Co Stadium"))
+    }
+
+    func testHasImageFindsNWSLVenues() {
+        let venues = [
+            "BMO Stadium",
+            "PayPal Park",
+            "Gillette Stadium",
+            "Northwestern Medicine Field at Martin Stadium",
+            "Shell Energy Stadium",
+            "CPKC Stadium",
+            "Red Bull Arena",
+            "WakeMed Soccer Park",
+            "Inter&Co Stadium",
+            "Providence Park",
+            "Lynn Family Stadium",
+            "Snapdragon Stadium",
+            "Lumen Field",
+            "America First Field",
+            "Audi Field",
+        ]
+        for venue in venues {
+            XCTAssertTrue(VenueImageService.hasImage(for: venue), "Missing image for \(venue)")
+        }
+    }
+
+    func testHasImageForUnknownVenue() {
+        XCTAssertFalse(VenueImageService.hasImage(for: "Nonexistent Stadium"))
     }
 }

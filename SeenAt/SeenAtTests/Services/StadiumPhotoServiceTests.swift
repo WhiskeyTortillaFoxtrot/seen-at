@@ -43,4 +43,20 @@ final class StadiumPhotoServiceTests: XCTestCase {
         let image = StadiumPhotoService.image(for: "Fenway (Park)")
         XCTAssertNotNil(image)
     }
+
+    func testImageFoundForNWSLStadiums() {
+        let venues = [
+            "BMO Stadium",
+            "CPKC Stadium",
+            "Snapdragon Stadium",
+            "Providence Park",
+            "Lynn Family Stadium",
+            "Audi Field",
+            "Red Bull Arena",
+            "WakeMed Soccer Park",
+        ]
+        for venue in venues {
+            XCTAssertNotNil(StadiumPhotoService.image(for: venue), "Missing image for \(venue)")
+        }
+    }
 }
