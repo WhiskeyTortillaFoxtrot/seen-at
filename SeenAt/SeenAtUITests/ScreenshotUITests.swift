@@ -28,7 +28,10 @@ final class ScreenshotUITests: XCTestCase {
         }
 
         let gamesNavigationBar = app.navigationBars["SeenAt"]
-        guard gamesNavigationBar.waitForExistence(timeout: 15) else {
+        let todayBtn = app.buttons.matching(NSPredicate(format: "label CONTAINS 'Cardinals'" )).firstMatch
+        guard gamesNavigationBar.waitForExistence(timeout: 15),
+              todayBtn.waitForExistence(timeout: 15),
+              waitUntilHittable(todayBtn, timeout: 15) else {
             XCTFail("Games screen did not load")
             return
         }
@@ -37,7 +40,6 @@ final class ScreenshotUITests: XCTestCase {
         capture("HomeView")
 
         // 2. Navigate to LiveTrackingView via first Today event
-        let todayBtn = app.buttons.matching(NSPredicate(format: "label CONTAINS 'Cardinals'")).firstMatch
         let liveTrackingTitle = app.staticTexts["St. Louis Cardinals @ Chicago Cubs"]
         guard todayBtn.waitForExistence(timeout: 15),
               tapAndWaitFor(todayBtn, destination: liveTrackingTitle) else {
@@ -59,16 +61,13 @@ final class ScreenshotUITests: XCTestCase {
             XCTFail("Seeded Giants event did not become tappable")
             return
         }
-        guard app.staticTexts["Los Angeles Dodgers"].waitForExistence(timeout: 15) else {
+        guard app.staticTexts["Los Angeles Dodgers"].waitForExistence(timeout: 15),
+              app.staticTexts["By Team"].waitForExistence(timeout: 15),
+              app.staticTexts["By Player"].waitForExistence(timeout: 15) else {
             XCTFail("Event Summary screen did not load")
             return
         }
         capture("EventSummaryView")
-        let summaryBack = app.navigationBars.buttons["SeenAt"]
-        guard tapWhenHittable(summaryBack), gamesNavigationBar.waitForExistence(timeout: 10) else {
-            XCTFail("Could not return from Event Summary screen")
-            return
-        }
 
         // 5. Stats tab
         let statsTab = app.tabBars.buttons["Stats"]
@@ -95,7 +94,7 @@ final class ScreenshotUITests: XCTestCase {
             return
         }
         guard app.navigationBars["Favorite Teams"].waitForExistence(timeout: 10),
-              app.staticTexts["Arizona Diamondbacks"].waitForExistence(timeout: 15) else {
+              app.staticTexts["LOVB Atlanta"].waitForExistence(timeout: 15) else {
             XCTFail("Favorite Teams screen did not load")
             return
         }
@@ -103,10 +102,15 @@ final class ScreenshotUITests: XCTestCase {
     }
 
     private func tapWhenHittable(_ element: XCUIElement, timeout: TimeInterval = 10) -> Bool {
+        guard waitUntilHittable(element, timeout: timeout) else { return false }
+        element.tap()
+        return true
+    }
+
+    private func waitUntilHittable(_ element: XCUIElement, timeout: TimeInterval = 10) -> Bool {
         let deadline = Date().addingTimeInterval(timeout)
         while Date() < deadline {
             if element.exists && element.isHittable {
-                element.tap()
                 return true
             }
             RunLoop.current.run(until: Date().addingTimeInterval(0.25))
@@ -119,13 +123,17 @@ final class ScreenshotUITests: XCTestCase {
         destination: XCUIElement,
         timeout: TimeInterval = 15
     ) -> Bool {
+        guard waitUntilHittable(trigger, timeout: timeout) else { return false }
+        trigger.tap()
+        var retryCount = 0
         let deadline = Date().addingTimeInterval(timeout)
         while Date() < deadline {
             if destination.exists {
                 return true
             }
-            if trigger.exists && trigger.isHittable {
+            if retryCount == 0, trigger.exists && trigger.isHittable {
                 trigger.tap()
+                retryCount = 1
             }
             RunLoop.current.run(until: Date().addingTimeInterval(0.5))
         }

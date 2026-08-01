@@ -48,10 +48,14 @@ struct SeenAtApp: App {
         #if DEBUG
         if ProcessInfo.processInfo.arguments.contains("--resetData") {
             let storeURL = StoreBackupService.defaultStoreURL()
-            try? StoreBackupService.resetStoreData(
-                storeURL: storeURL,
-                applicationSupportURL: StoreBackupService.applicationSupportURL(for: storeURL)
-            )
+            do {
+                try StoreBackupService.resetStoreData(
+                    storeURL: storeURL,
+                    applicationSupportURL: StoreBackupService.applicationSupportURL(for: storeURL)
+                )
+            } catch {
+                fatalError("Screenshot reset failed: \(error.localizedDescription)")
+            }
             UserDefaults.standard.removeObject(forKey: "hasSeededTeams")
             UserDefaults.standard.removeObject(forKey: "seedVersion")
             UserDefaults.standard.set(
