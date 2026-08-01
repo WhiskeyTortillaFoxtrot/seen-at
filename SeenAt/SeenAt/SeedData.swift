@@ -73,6 +73,17 @@ enum SeedData {
         addSighting(context: context, team: team("Chicago Blackhawks"), firstName: "Toews", number: "19", event: e5)
         addSighting(context: context, team: team("Chicago Blackhawks"), number: "50", event: e5)
 
+        // Event 6 — Yesterday, Giants @ Dodgers at Dodger Stadium (stadium)
+        let e6 = Event(awayTeam: "San Francisco Giants", homeTeam: "Los Angeles Dodgers", date: date(yesterday, hour: 18), venue: "Dodger Stadium", watchLocation: .stadium)
+        e6.id = UUID(uuidString: "66666666-6666-6666-6666-666666666666")!
+        context.insert(e6)
+
+        addSighting(context: context, team: team("Los Angeles Dodgers"), firstName: "Ohtani", number: "17", event: e6)
+        addSighting(context: context, team: team("San Francisco Giants"), firstName: "Posey", number: "28", event: e6)
+        addSighting(context: context, team: team("Los Angeles Dodgers"), firstName: "Betts", number: "50", event: e6)
+        addSighting(context: context, team: team("San Francisco Giants"), number: "9", event: e6)
+        addSighting(context: context, team: team("Los Angeles Dodgers"), firstName: "Freeman", number: "5", event: e6)
+
         context.saveAndLog("Failed to save seed data")
     }
 

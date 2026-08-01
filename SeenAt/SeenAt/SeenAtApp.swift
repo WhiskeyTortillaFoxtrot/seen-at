@@ -52,6 +52,13 @@ struct SeenAtApp: App {
                 storeURL: storeURL,
                 applicationSupportURL: StoreBackupService.applicationSupportURL(for: storeURL)
             )
+            UserDefaults.standard.removeObject(forKey: "hasSeededTeams")
+            UserDefaults.standard.removeObject(forKey: "seedVersion")
+            UserDefaults.standard.set(
+                "Chicago Cubs,Los Angeles Dodgers,St. Louis Cardinals",
+                forKey: "favoriteTeams"
+            )
+            UserDefaults.standard.set(true, forKey: "hasSeenOnboarding")
         }
         #endif
         let result = StoreLauncher.launch { config in
