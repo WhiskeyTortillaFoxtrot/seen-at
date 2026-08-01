@@ -32,6 +32,8 @@ SeenAt lets you log jerseys you spot at live sporting events, track which teams 
 
 ## Screenshots
 
+The gallery covers the main game tracking, stats, settings, and favorite-team flows.
+
 <div align="center">
   <img src="screenshots/HomeView.png" width="250" alt="HomeView">
   <img src="screenshots/LiveTrackingView.png" width="250" alt="LiveTrackingView">

@@ -45,6 +45,15 @@ struct SeenAtApp: App {
     /// hatch is pre-warming the backup on a background thread during a push
     /// notification handler or app extension.
     init() {
+        #if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("--resetData") {
+            let storeURL = StoreBackupService.defaultStoreURL()
+            try? StoreBackupService.resetStoreData(
+                storeURL: storeURL,
+                applicationSupportURL: StoreBackupService.applicationSupportURL(for: storeURL)
+            )
+        }
+        #endif
         let result = StoreLauncher.launch { config in
             try ModelContainer(
                 for: Team.self, Event.self, JerseySighting.self,
