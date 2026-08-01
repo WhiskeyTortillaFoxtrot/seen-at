@@ -87,7 +87,9 @@ struct StoreErrorView: View {
         case .restoredMigrationFinalization:
             "A migration backup was restored and reopened, but safety cleanup could not be completed. Your restored data is preserved."
         case .recoveryRequired:
-            "Migration recovery could not be completed safely. Your data has been preserved. Close and reopen the app after addressing the recovery state."
+            "Migration recovery could not be completed safely. Your data has been preserved. You can reset all data below, or close and reopen the app to retry."
+        case .corruptedRecovery:
+            "A previous update was interrupted and recovery could not be completed. Your data may still be preserved, but the app cannot open it. You can reset all data below to start fresh."
         case .restoreFailed:
             "Your data could not be loaded. It has been preserved on your device."
         case .storeLoad:
@@ -97,9 +99,9 @@ struct StoreErrorView: View {
 
     var allowsReset: Bool {
         switch state.failureReason {
-        case .migrationFinalization, .restoredMigrationFinalization, .recoveryRequired:
+        case .migrationFinalization, .restoredMigrationFinalization:
             false
-        case .restoreFailed, .storeLoad:
+        case .recoveryRequired, .corruptedRecovery, .restoreFailed, .storeLoad:
             true
         }
     }

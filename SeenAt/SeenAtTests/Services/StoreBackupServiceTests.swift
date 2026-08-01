@@ -1084,6 +1084,218 @@ final class StoreBackupServiceTests: XCTestCase {
         )
     }
 
+    func testFreshBackupValidationFailureRetriesThenSucceeds() throws {
+        try write("first", to: storeURL)
+        var validationAttempts = 0
+        let backupID = try XCTUnwrap(try StoreBackupService.prepareForMigration(
+            storeURL: storeURL,
+            applicationSupportURL: applicationSupportURL,
+            targetSchemaVersion: "2.0.0",
+            backupValidation: { _, _, _, _ in
+                validationAttempts += 1
+                if validationAttempts == 1 {
+                    try? self.write("first-mutated", to: self.storeURL)
+                    return .checksumMismatch("store/default.store")
+                }
+                return nil
+            }
+        ))
+
+        XCTAssertEqual(validationAttempts, 2, "The backup should be retried once after a validation failure")
+        let current = applicationSupportURL
+            .appendingPathComponent(StoreBackupService.backupDirectoryName)
+            .appendingPathComponent("current")
+        let publishedStoreURL = current.appendingPathComponent("store/default.store")
+        XCTAssertTrue(FileManager.default.fileExists(atPath: publishedStoreURL.path))
+        XCTAssertEqual(
+            try Data(contentsOf: publishedStoreURL),
+            Data("first-mutated".utf8),
+            "The retried backup must re-copy the live store rather than reuse the stale staging backup"
+        )
+        let manifest = try XCTUnwrap(try StoreBackupService.loadManifest(at: current))
+        XCTAssertEqual(manifest.backupID, backupID)
+
+        let stagingLeftovers = try FileManager.default.contentsOfDirectory(
+            at: applicationSupportURL.appendingPathComponent(StoreBackupService.backupDirectoryName),
+            includingPropertiesForKeys: nil
+        ).filter { $0.lastPathComponent.hasPrefix("staging-") }
+        XCTAssertTrue(stagingLeftovers.isEmpty, "No staging directories should remain after promotion")
+    }
+
+    func testBackupFailureKeepsExistingCurrentBackup() throws {
+        try write("previous", to: storeURL)
+        _ = try StoreBackupService.prepareForMigration(
+            storeURL: storeURL,
+            applicationSupportURL: applicationSupportURL,
+            targetSchemaVersion: "2.0.0"
+        )
+        try StoreBackupService.completeMigrationAttempt(applicationSupportURL: applicationSupportURL)
+        let current = applicationSupportURL
+            .appendingPathComponent(StoreBackupService.backupDirectoryName)
+            .appendingPathComponent("current")
+        let previousManifest = try XCTUnwrap(try StoreBackupService.loadManifest(at: current))
+        let previousStoreData = try Data(contentsOf: current.appendingPathComponent("store/default.store"))
+
+        let backupID = try StoreBackupService.prepareForMigration(
+            storeURL: storeURL,
+            applicationSupportURL: applicationSupportURL,
+            targetSchemaVersion: "3.0.0",
+            backupValidation: { _, _, _, _ in .checksumMismatch("store/default.store") }
+        )
+
+        XCTAssertNil(backupID, "Launch must proceed without a backup when the fresh backup cannot be validated")
+        let manifest = try XCTUnwrap(try StoreBackupService.loadManifest(at: current))
+        XCTAssertEqual(
+            manifest.backupID,
+            previousManifest.backupID,
+            "A failed fresh backup must not destroy the last good current backup"
+        )
+        XCTAssertEqual(manifest.targetSchemaVersion, "2.0.0")
+        XCTAssertEqual(
+            try Data(contentsOf: current.appendingPathComponent("store/default.store")),
+            previousStoreData,
+            "The last good current backup must remain byte-for-byte intact"
+        )
+    }
+
+    func testFreshBackupValidationFailureProceedsWithoutBackup() throws {
+        try write("first", to: storeURL)
+        let backupID = try StoreBackupService.prepareForMigration(
+            storeURL: storeURL,
+            applicationSupportURL: applicationSupportURL,
+            targetSchemaVersion: "2.0.0",
+            backupValidation: { _, _, _, _ in .checksumMismatch("store/default.store") }
+        )
+
+        XCTAssertNil(backupID, "Launch must proceed without a backup when the fresh backup cannot be validated")
+
+        let backupDirectory = applicationSupportURL
+            .appendingPathComponent(StoreBackupService.backupDirectoryName)
+        XCTAssertFalse(
+            FileManager.default.fileExists(atPath: backupDirectory.appendingPathComponent("current").path),
+            "No current backup should be published when validation keeps failing"
+        )
+        if FileManager.default.fileExists(atPath: backupDirectory.path) {
+            let leftovers = try FileManager.default.contentsOfDirectory(at: backupDirectory, includingPropertiesForKeys: nil)
+            XCTAssertTrue(
+                leftovers.filter { $0.lastPathComponent.hasPrefix("staging-") }.isEmpty,
+                "Staging directories must be cleaned up after a failed backup"
+            )
+        }
+        let attemptFile = applicationSupportURL
+            .appendingPathComponent(StoreBackupService.migrationAttemptFileName)
+        XCTAssertFalse(
+            FileManager.default.fileExists(atPath: attemptFile.path),
+            "No migration attempt should be recorded when the backup was not published"
+        )
+        XCTAssertEqual(try Data(contentsOf: storeURL), Data("first".utf8), "The live store must be untouched")
+    }
+
+    func testBackupValidationFailureReportsTamperingReason() throws {
+        try write("original", to: storeURL)
+        _ = try StoreBackupService.prepareForMigration(
+            storeURL: storeURL,
+            applicationSupportURL: applicationSupportURL,
+            targetSchemaVersion: "2.0.0"
+        )
+        let current = applicationSupportURL
+            .appendingPathComponent(StoreBackupService.backupDirectoryName)
+            .appendingPathComponent("current")
+        let manifest = try XCTUnwrap(try StoreBackupService.loadManifest(at: current))
+
+        XCTAssertNil(try StoreBackupService.backupValidationFailure(
+            at: current,
+            manifest: manifest,
+            storeURL: storeURL,
+            fileManager: .default
+        ))
+
+        try Data("tampered!".utf8).write(to: current.appendingPathComponent("store/default.store"))
+        let failure = try XCTUnwrap(try StoreBackupService.backupValidationFailure(
+            at: current,
+            manifest: manifest,
+            storeURL: storeURL,
+            fileManager: .default
+        ))
+        switch failure {
+        case .byteCountMismatch(let path, let expected, let actual):
+            XCTAssertEqual(path, "store/default.store")
+            XCTAssertEqual(expected, Int64(Data("original".utf8).count))
+            XCTAssertEqual(actual, Int64(Data("tampered!".utf8).count))
+        default:
+            XCTFail("Expected a byte count mismatch, got \(failure)")
+        }
+
+        try Data("ORIGINAL".utf8).write(to: current.appendingPathComponent("store/default.store"))
+        let sameLengthFailure = try XCTUnwrap(try StoreBackupService.backupValidationFailure(
+            at: current,
+            manifest: manifest,
+            storeURL: storeURL,
+            fileManager: .default
+        ))
+        switch sameLengthFailure {
+        case .checksumMismatch(let path):
+            XCTAssertEqual(path, "store/default.store")
+        default:
+            XCTFail("Expected a checksum mismatch, got \(sameLengthFailure)")
+        }
+    }
+
+    func testBackupValidationFailureIsReportedToCaller() throws {
+        try write("first", to: storeURL)
+        var reportedFailure: BackupValidationFailure?
+        let backupID = try StoreBackupService.prepareForMigration(
+            storeURL: storeURL,
+            applicationSupportURL: applicationSupportURL,
+            targetSchemaVersion: "2.0.0",
+            backupValidation: { _, _, _, _ in .checksumMismatch("store/default.store") },
+            onBackupValidationFailure: { reportedFailure = $0 }
+        )
+
+        XCTAssertNil(backupID, "Launch must proceed without a backup when the fresh backup cannot be validated")
+        XCTAssertEqual(
+            reportedFailure,
+            .checksumMismatch("store/default.store"),
+            "The caller must be told why no migration backup was created"
+        )
+    }
+
+    func testBackupValidationFailureReportsUnsafeFileTreeLocation() throws {
+        try write("original", to: storeURL)
+        _ = try StoreBackupService.prepareForMigration(
+            storeURL: storeURL,
+            applicationSupportURL: applicationSupportURL,
+            targetSchemaVersion: "2.0.0"
+        )
+        let current = applicationSupportURL
+            .appendingPathComponent(StoreBackupService.backupDirectoryName)
+            .appendingPathComponent("current")
+        let manifest = try XCTUnwrap(try StoreBackupService.loadManifest(at: current))
+        let storeDirectory = current.appendingPathComponent("store", isDirectory: true)
+
+        try FileManager.default.createSymbolicLink(
+            at: storeDirectory.appendingPathComponent("evil-link"),
+            withDestinationURL: storeURL
+        )
+
+        let failure = try XCTUnwrap(try StoreBackupService.backupValidationFailure(
+            at: current,
+            manifest: manifest,
+            storeURL: storeURL,
+            fileManager: .default
+        ))
+        switch failure {
+        case .unsafeFileTree(let root):
+            XCTAssertEqual(
+                root,
+                storeDirectory.path,
+                "The diagnostic must point at the offending subtree, not the backup root"
+            )
+        default:
+            XCTFail("Expected an unsafe file tree failure, got \(failure)")
+        }
+    }
+
     private func recoveryQuarantineExists() throws -> Bool {
         guard FileManager.default.fileExists(atPath: applicationSupportURL.path) else { return false }
         return try FileManager.default.contentsOfDirectory(

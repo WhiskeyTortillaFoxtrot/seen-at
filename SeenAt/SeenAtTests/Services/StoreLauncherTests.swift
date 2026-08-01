@@ -48,14 +48,13 @@ final class StoreLauncherTests: XCTestCase {
         XCTAssertEqual(view.message, "Your data could not be loaded. It has been preserved on your device.")
     }
 
-    func testStoreErrorProtectsMigrationStatesFromReset() {
+    func testStoreErrorProtectsMigrationFinalizationFromReset() {
         let state = StoreState()
         let view = StoreErrorView(state: state)
 
         for failureReason in [
             StoreFailureReason.migrationFinalization,
-            .restoredMigrationFinalization,
-            .recoveryRequired
+            .restoredMigrationFinalization
         ] {
             state.failureReason = failureReason
             XCTAssertFalse(view.allowsReset)
