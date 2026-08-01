@@ -170,6 +170,14 @@ enum StoreBackupService {
 
     private static let maxBackupAttempts = 2
 
+    /// Prepares a migration backup, returning its rollback identifier when one is published.
+    ///
+    /// - Parameters:
+    ///   - backupValidation: Optional synchronous validator whose arguments are the staging
+    ///     directory, manifest, live store URL, and file manager, in that order.
+    ///   - onBackupValidationFailure: Called once with the final validation failure only when
+    ///     all backup attempts fail validation and migration proceeds without a backup. It is
+    ///     not called when an I/O error is thrown.
     static func prepareForMigration(
         storeURL: URL,
         applicationSupportURL: URL,
@@ -845,20 +853,21 @@ enum StoreBackupService {
         }
         let storeDirectory = backupDirectory.appendingPathComponent("store", isDirectory: true)
         let supportDirectory = backupDirectory.appendingPathComponent("support", isDirectory: true)
-        let actualPaths = Set(
-            filePaths(under: storeDirectory, relativeTo: backupDirectory, fileManager: fileManager)
-                + filePaths(under: supportDirectory, relativeTo: backupDirectory, fileManager: fileManager)
-        )
-        let expectedPaths = Set(artifactPaths)
         guard isSafeFileTree(at: storeDirectory, fileManager: fileManager) else {
             return .unsafeFileTree(storeDirectory.path)
         }
         guard isSafeFileTree(at: supportDirectory, fileManager: fileManager) else {
             return .unsafeFileTree(supportDirectory.path)
         }
+        // Check the backup root separately for root-level symlinks such as a symlinked manifest.
         guard isSafeFileTree(at: backupDirectory, fileManager: fileManager) else {
             return .unsafeFileTree(backupDirectory.path)
         }
+        let actualPaths = Set(
+            filePaths(under: storeDirectory, relativeTo: backupDirectory, fileManager: fileManager)
+                + filePaths(under: supportDirectory, relativeTo: backupDirectory, fileManager: fileManager)
+        )
+        let expectedPaths = Set(artifactPaths)
         guard actualPaths == expectedPaths else {
             let missing = expectedPaths.subtracting(actualPaths)
             let extra = actualPaths.subtracting(expectedPaths)
