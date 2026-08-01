@@ -22,14 +22,18 @@ struct StoreLauncher {
         let config = ModelConfiguration(url: storeURL)
 
         let rollbackID: UUID?
+        var backupValidationFailure: BackupValidationFailure?
         do {
             rollbackID = try StoreBackupService.prepareForMigration(
                 storeURL: storeURL,
                 applicationSupportURL: applicationSupportURL,
-                targetSchemaVersion: SeenAtMigrationPlan.currentVersion
+                targetSchemaVersion: SeenAtMigrationPlan.currentVersion,
+                onBackupValidationFailure: { backupValidationFailure = $0 }
             )
-            if rollbackID != nil {
-                DiagnosticsService.shared.log(category: "Store", level: .info, message: "Migration backup prepared with rollbackID: \(rollbackID!.uuidString.prefix(8))...")
+            if let rollbackID {
+                DiagnosticsService.shared.log(category: "Store", level: .info, message: "Migration backup prepared with rollbackID: \(rollbackID.uuidString.prefix(8))...")
+            } else if let backupValidationFailure {
+                DiagnosticsService.shared.log(category: "Store", level: .warning, message: "Migration backup could not be created and was skipped: \(backupValidationFailure.message)")
             } else {
                 DiagnosticsService.shared.log(category: "Store", level: .info, message: "No migration backup needed")
             }
@@ -42,9 +46,9 @@ struct StoreLauncher {
             case StoreBackupService.BackupError.migrationFinalization:
                 storeState.failureReason = .migrationFinalization
             case StoreBackupService.BackupError.recoveryRequired:
-                storeState.failureReason = .recoveryRequired
+                storeState.failureReason = .corruptedRecovery
             case StoreBackupService.BackupError.staleMigrationAttempt:
-                storeState.failureReason = .recoveryRequired
+                storeState.failureReason = .corruptedRecovery
             case StoreBackupService.BackupError.invalidBackup:
                 storeState.failureReason = .recoveryRequired
             default:

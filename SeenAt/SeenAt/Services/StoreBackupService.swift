@@ -87,6 +87,50 @@ extension StoreBackupManifest: Codable {
     }
 }
 
+enum BackupValidationFailure: Equatable {
+    case backupDirectoryMissingOrNotDirectory
+    case manifestMissingOrNotRegular(String)
+    case duplicateArtifactPaths
+    case artifactPathInvalid(String)
+    case manifestSourceMismatch
+    case missingArtifacts([String])
+    case extraArtifacts([String])
+    case unsafeFileTree(String)
+    case artifactMissing(String)
+    case artifactNotRegular(String)
+    case byteCountMismatch(path: String, expected: Int64, actual: Int64)
+    case checksumMismatch(String)
+
+    var message: String {
+        switch self {
+        case .backupDirectoryMissingOrNotDirectory:
+            return "Backup directory is missing or is not a real directory."
+        case .manifestMissingOrNotRegular(let path):
+            return "Manifest file is missing or is not a regular file at \(path)."
+        case .duplicateArtifactPaths:
+            return "Manifest contains duplicate artifact paths."
+        case .artifactPathInvalid(let path):
+            return "Manifest contains an invalid artifact path: \(path)"
+        case .manifestSourceMismatch:
+            return "Manifest source store path, file name, or store artifact is inconsistent with the live store."
+        case .missingArtifacts(let paths):
+            return "Backup is missing expected artifacts: \(paths.sorted())"
+        case .extraArtifacts(let paths):
+            return "Backup contains unexpected artifacts: \(paths.sorted())"
+        case .unsafeFileTree(let root):
+            return "Backup file tree is unsafe (e.g. contains a symlink) at \(root)."
+        case .artifactMissing(let path):
+            return "Expected artifact missing from backup: \(path)"
+        case .artifactNotRegular(let path):
+            return "Expected artifact is not a regular file: \(path)"
+        case .byteCountMismatch(let path, let expected, let actual):
+            return "Size mismatch for \(path): expected \(expected), got \(actual)."
+        case .checksumMismatch(let path):
+            return "Checksum mismatch for \(path)."
+        }
+    }
+}
+
 enum StoreBackupService {
     enum BackupError: LocalizedError {
         case invalidBackup(URL)
@@ -124,11 +168,15 @@ enum StoreBackupService {
         ModelConfiguration().url
     }
 
+    private static let maxBackupAttempts = 2
+
     static func prepareForMigration(
         storeURL: URL,
         applicationSupportURL: URL,
         targetSchemaVersion: String,
-        fileManager: FileManager = .default
+        fileManager: FileManager = .default,
+        backupValidation: ((URL, StoreBackupManifest, URL, FileManager) -> BackupValidationFailure?)? = nil,
+        onBackupValidationFailure: ((BackupValidationFailure) -> Void)? = nil
     ) throws -> UUID? {
         DiagnosticsService.shared.log(category: "Backup", level: .info, message: "Preparing migration for schema version \(targetSchemaVersion)")
         try recoverInterruptedRestores(
@@ -255,75 +303,102 @@ enum StoreBackupService {
         }
 
         try cleanupStagingDirectories(in: backupDirectory, fileManager: fileManager)
-        let stagingDirectory = backupDirectory.appendingPathComponent("staging-\(UUID().uuidString)", isDirectory: true)
-        try fileManager.createDirectory(at: stagingDirectory, withIntermediateDirectories: true)
-        try excludeFromBackup(at: backupDirectory, fileManager: fileManager)
-
-        var migrationAttemptWritten = false
-        do {
-            let storeDirectory = stagingDirectory.appendingPathComponent("store", isDirectory: true)
-            try fileManager.createDirectory(at: storeDirectory, withIntermediateDirectories: true)
-
-            var artifactPaths: [String] = []
-            for sourceURL in storeArtifactURLs(for: storeURL, fileManager: fileManager) {
-                let destinationURL = storeDirectory.appendingPathComponent(sourceURL.lastPathComponent)
-                try cloneOrCopyItem(from: sourceURL, to: destinationURL, fileManager: fileManager)
-                artifactPaths.append("store/\(sourceURL.lastPathComponent)")
-            }
-
-            for sourceURL in try supportDirectoryURLs(for: storeURL, fileManager: fileManager) {
-                let supportDirectory = stagingDirectory.appendingPathComponent("support", isDirectory: true)
-                try fileManager.createDirectory(at: supportDirectory, withIntermediateDirectories: true)
-                let destinationURL = supportDirectory.appendingPathComponent(sourceURL.lastPathComponent, isDirectory: true)
-                try cloneOrCopyItem(from: sourceURL, to: destinationURL, fileManager: fileManager)
-                artifactPaths.append(contentsOf: filePaths(
-                    under: destinationURL,
-                    relativeTo: stagingDirectory,
-                    fileManager: fileManager
-                ))
-            }
-
-            let artifacts = try artifactPaths.sorted().map {
-                try makeArtifact(relativePath: $0, backupDirectory: stagingDirectory, fileManager: fileManager)
-            }
-
-            let manifest = StoreBackupManifest(
-                backupID: UUID(),
-                sourceStorePath: storeURL.path,
-                storeFileName: storeURL.lastPathComponent,
-                targetSchemaVersion: targetSchemaVersion,
-                createdAt: .now,
-                artifacts: artifacts
-            )
-            try writeManifest(manifest, to: stagingDirectory, fileManager: fileManager)
-
-            guard isValidBackup(at: stagingDirectory, manifest: manifest, storeURL: storeURL, fileManager: fileManager) else {
-                throw BackupError.invalidBackup(stagingDirectory)
-            }
-
-            try writeMigrationAttempt(
-                StoreMigrationAttempt(
-                    backupID: manifest.backupID,
-                    sourceStorePath: storeURL.path,
-                    targetSchemaVersion: targetSchemaVersion,
-                    stagingDirectoryPath: stagingDirectory.path
-                ),
-                to: applicationSupportURL,
-                fileManager: fileManager
-            )
-            migrationAttemptWritten = true
-            try replaceCurrentBackup(
-                at: currentBackup,
-                with: stagingDirectory,
-                fileManager: fileManager
-            )
-            return manifest.backupID
-        } catch {
-            if !migrationAttemptWritten {
-                try? fileManager.removeItem(at: stagingDirectory)
-            }
-            throw error
+        let validate = backupValidation ?? { stagingDirectory, manifest, storeURL, fileManager in
+            backupValidationFailure(at: stagingDirectory, manifest: manifest, storeURL: storeURL, fileManager: fileManager)
         }
+        var lastValidationFailure: BackupValidationFailure?
+        for attempt in 0..<maxBackupAttempts {
+            let forceCopy = attempt > 0
+            let stagingDirectory = backupDirectory.appendingPathComponent("staging-\(UUID().uuidString)", isDirectory: true)
+            var migrationAttemptWritten = false
+            do {
+                try fileManager.createDirectory(at: stagingDirectory, withIntermediateDirectories: true)
+                try excludeFromBackup(at: backupDirectory, fileManager: fileManager)
+
+                let storeDirectory = stagingDirectory.appendingPathComponent("store", isDirectory: true)
+                try fileManager.createDirectory(at: storeDirectory, withIntermediateDirectories: true)
+
+                var artifactPaths: [String] = []
+                for sourceURL in storeArtifactURLs(for: storeURL, fileManager: fileManager) {
+                    let destinationURL = storeDirectory.appendingPathComponent(sourceURL.lastPathComponent)
+                    try cloneOrCopyItem(from: sourceURL, to: destinationURL, fileManager: fileManager, forceCopy: forceCopy)
+                    artifactPaths.append("store/\(sourceURL.lastPathComponent)")
+                }
+
+                for sourceURL in try supportDirectoryURLs(for: storeURL, fileManager: fileManager) {
+                    let supportDirectory = stagingDirectory.appendingPathComponent("support", isDirectory: true)
+                    try fileManager.createDirectory(at: supportDirectory, withIntermediateDirectories: true)
+                    let destinationURL = supportDirectory.appendingPathComponent(sourceURL.lastPathComponent, isDirectory: true)
+                    try cloneOrCopyItem(from: sourceURL, to: destinationURL, fileManager: fileManager, forceCopy: forceCopy)
+                    artifactPaths.append(contentsOf: filePaths(
+                        under: destinationURL,
+                        relativeTo: stagingDirectory,
+                        fileManager: fileManager
+                    ))
+                }
+
+                let artifacts = try artifactPaths.sorted().map {
+                    try makeArtifact(relativePath: $0, backupDirectory: stagingDirectory, fileManager: fileManager)
+                }
+
+                let manifest = StoreBackupManifest(
+                    backupID: UUID(),
+                    sourceStorePath: storeURL.path,
+                    storeFileName: storeURL.lastPathComponent,
+                    targetSchemaVersion: targetSchemaVersion,
+                    createdAt: .now,
+                    artifacts: artifacts
+                )
+                try writeManifest(manifest, to: stagingDirectory, fileManager: fileManager)
+
+                if let failure = validate(stagingDirectory, manifest, storeURL, fileManager) {
+                    lastValidationFailure = failure
+                    let willRetry = attempt < maxBackupAttempts - 1
+                    DiagnosticsService.shared.log(
+                        category: "Backup",
+                        level: .warning,
+                        message: willRetry
+                            ? "Staging backup validation failed; will retry with a real copy: \(failure.message)"
+                            : "Staging backup validation failed on final attempt: \(failure.message)"
+                    )
+                    try? fileManager.removeItem(at: stagingDirectory)
+                    continue
+                }
+
+                try writeMigrationAttempt(
+                    StoreMigrationAttempt(
+                        backupID: manifest.backupID,
+                        sourceStorePath: storeURL.path,
+                        targetSchemaVersion: targetSchemaVersion,
+                        stagingDirectoryPath: stagingDirectory.path
+                    ),
+                    to: applicationSupportURL,
+                    fileManager: fileManager
+                )
+                migrationAttemptWritten = true
+                try replaceCurrentBackup(
+                    at: currentBackup,
+                    with: stagingDirectory,
+                    fileManager: fileManager
+                )
+                return manifest.backupID
+            } catch {
+                if !migrationAttemptWritten {
+                    try? fileManager.removeItem(at: stagingDirectory)
+                }
+                throw error
+            }
+        }
+
+        if let lastValidationFailure {
+            onBackupValidationFailure?(lastValidationFailure)
+        }
+        DiagnosticsService.shared.log(
+            category: "Backup",
+            level: .error,
+            message: "Staging backup validation failed after \(maxBackupAttempts) attempts; proceeding without a migration backup. Last failure: \(lastValidationFailure?.message ?? "unknown")"
+        )
+        return nil
     }
 
     static func applicationSupportURL(for storeURL: URL) -> URL {
@@ -704,10 +779,32 @@ enum StoreBackupService {
         fileManager: FileManager,
         verifyChecksums: Bool = true
     ) -> Bool {
+        backupValidationFailure(
+            at: backupDirectory,
+            manifest: manifest,
+            storeURL: storeURL,
+            fileManager: fileManager,
+            verifyChecksums: verifyChecksums
+        ) == nil
+    }
+
+    /// Returns a description of the first validation failure for `backupDirectory`, or
+    /// `nil` when the backup (and its manifest) are structurally and content-consistent.
+    /// Mirrors `isValidBackup` exactly; the only addition is the ability to report *why*
+    /// a backup failed rather than a bare `false`.
+    static func backupValidationFailure(
+        at backupDirectory: URL,
+        manifest: StoreBackupManifest,
+        storeURL: URL,
+        fileManager: FileManager,
+        verifyChecksums: Bool = true
+    ) -> BackupValidationFailure? {
         let manifestURL = backupDirectory.appendingPathComponent("manifest.json")
-        guard isRealDirectory(at: backupDirectory),
-              isRegularFile(at: manifestURL) else {
-            return false
+        guard isRealDirectory(at: backupDirectory) else {
+            return .backupDirectoryMissingOrNotDirectory
+        }
+        guard isRegularFile(at: manifestURL) else {
+            return .manifestMissingOrNotRegular(manifestURL.path)
         }
         let storeBaseName = storeURL.deletingPathExtension().lastPathComponent
         let allowedStoreNames = Set([
@@ -716,64 +813,86 @@ enum StoreBackupService {
             "\(storeBaseName).\(storeURL.pathExtension)-shm",
         ])
         let artifactPaths = manifest.artifacts.map(\.path)
-        guard Set(artifactPaths).count == artifactPaths.count,
-              manifest.artifacts.allSatisfy({ artifact in
-                  guard artifact.path == artifact.path.split(separator: "/").map(String.init).joined(separator: "/"),
-                        !artifact.path.hasPrefix("/"),
-                        !artifact.path.hasSuffix("/") else {
-                      return false
-                  }
-                  let components = artifact.path.split(separator: "/").map(String.init)
-                  guard !components.contains(where: { $0 == "." || $0 == ".." }),
-                        components.first == "store" || components.first == "support" else {
-                      return false
-                  }
-                  if components.first == "store" {
-                      return components.count == 2 && allowedStoreNames.contains(components[1])
-                  }
-                  return components.count >= 3 && supportDirectoryNames(for: storeURL).contains(components[1])
-              }) else {
-            return false
+        guard Set(artifactPaths).count == artifactPaths.count else {
+            return .duplicateArtifactPaths
+        }
+        for artifact in manifest.artifacts {
+            let components = artifact.path.split(separator: "/").map(String.init)
+            let pathIsCanonical = artifact.path == components.joined(separator: "/")
+            let hasNoDotSegments = !components.contains { $0 == "." || $0 == ".." }
+            let hasValidPrefix = components.first == "store" || components.first == "support"
+            let structureOK: Bool
+            if components.first == "store" {
+                structureOK = components.count == 2 && allowedStoreNames.contains(components[1])
+            } else if components.first == "support" {
+                structureOK = components.count >= 3 && supportDirectoryNames(for: storeURL).contains(components[1])
+            } else {
+                structureOK = false
+            }
+            guard pathIsCanonical,
+                  !artifact.path.hasPrefix("/"),
+                  !artifact.path.hasSuffix("/"),
+                  hasNoDotSegments,
+                  hasValidPrefix,
+                  structureOK else {
+                return .artifactPathInvalid(artifact.path)
+            }
         }
         guard manifest.sourceStorePath == storeURL.path,
               manifest.storeFileName == storeURL.lastPathComponent,
               manifest.artifacts.contains(where: { $0.path == "store/\(manifest.storeFileName)" }) else {
-            return false
+            return .manifestSourceMismatch
         }
+        let storeDirectory = backupDirectory.appendingPathComponent("store", isDirectory: true)
+        let supportDirectory = backupDirectory.appendingPathComponent("support", isDirectory: true)
         let actualPaths = Set(
-            filePaths(
-                under: backupDirectory.appendingPathComponent("store", isDirectory: true),
-                relativeTo: backupDirectory,
-                fileManager: fileManager
-            ) + filePaths(
-                under: backupDirectory.appendingPathComponent("support", isDirectory: true),
-                relativeTo: backupDirectory,
-                fileManager: fileManager
-            )
+            filePaths(under: storeDirectory, relativeTo: backupDirectory, fileManager: fileManager)
+                + filePaths(under: supportDirectory, relativeTo: backupDirectory, fileManager: fileManager)
         )
-        guard isSafeFileTree(at: backupDirectory.appendingPathComponent("store", isDirectory: true), fileManager: fileManager),
-              isSafeFileTree(at: backupDirectory.appendingPathComponent("support", isDirectory: true), fileManager: fileManager),
-              isSafeFileTree(at: backupDirectory, fileManager: fileManager),
-              actualPaths == Set(artifactPaths) else {
-            return false
+        let expectedPaths = Set(artifactPaths)
+        guard isSafeFileTree(at: storeDirectory, fileManager: fileManager) else {
+            return .unsafeFileTree(storeDirectory.path)
         }
-        return manifest.artifacts.allSatisfy { artifact in
+        guard isSafeFileTree(at: supportDirectory, fileManager: fileManager) else {
+            return .unsafeFileTree(supportDirectory.path)
+        }
+        guard isSafeFileTree(at: backupDirectory, fileManager: fileManager) else {
+            return .unsafeFileTree(backupDirectory.path)
+        }
+        guard actualPaths == expectedPaths else {
+            let missing = expectedPaths.subtracting(actualPaths)
+            let extra = actualPaths.subtracting(expectedPaths)
+            if !missing.isEmpty {
+                return .missingArtifacts(Array(missing))
+            }
+            return .extraArtifacts(Array(extra))
+        }
+        for artifact in manifest.artifacts {
             let url = backupDirectory.appendingPathComponent(artifact.path)
             guard fileManager.fileExists(atPath: url.path),
                   (try? url.resourceValues(forKeys: [.isRegularFileKey, .isSymbolicLinkKey]).isRegularFile) == true,
-                  (try? url.resourceValues(forKeys: [.isRegularFileKey, .isSymbolicLinkKey]).isSymbolicLink) == false,
-                  let attributes = try? fileManager.attributesOfItem(atPath: url.path),
-                  let byteCount = (attributes[.size] as? NSNumber)?.int64Value,
-                  byteCount == artifact.byteCount else {
-                return false
+                  (try? url.resourceValues(forKeys: [.isRegularFileKey, .isSymbolicLinkKey]).isSymbolicLink) == false else {
+                return .artifactMissing(artifact.path)
             }
-            guard verifyChecksums else { return true }
-            guard let data = try? Data(contentsOf: url, options: .mappedIfSafe) else { return false }
+            guard let attributes = try? fileManager.attributesOfItem(atPath: url.path),
+                  let byteCount = (attributes[.size] as? NSNumber)?.int64Value else {
+                return .artifactMissing(artifact.path)
+            }
+            guard byteCount == artifact.byteCount else {
+                return .byteCountMismatch(path: artifact.path, expected: artifact.byteCount, actual: byteCount)
+            }
+            guard verifyChecksums else { continue }
+            guard let data = try? Data(contentsOf: url, options: .mappedIfSafe) else {
+                return .checksumMismatch(artifact.path)
+            }
             let digest = SHA256.hash(data: data)
                 .map { String(format: "%02x", $0) }
                 .joined()
-            return digest == artifact.sha256
+            guard digest == artifact.sha256 else {
+                return .checksumMismatch(artifact.path)
+            }
         }
+        return nil
     }
 
     private static func destinationURL(for relativePath: String, storeURL: URL) -> URL {
@@ -1138,8 +1257,8 @@ enum StoreBackupService {
         try fileManager.removeItem(at: url)
     }
 
-    private static func cloneOrCopyItem(from source: URL, to destination: URL, fileManager: FileManager) throws {
-        if isSymbolicLink(at: source) || isSymbolicLink(at: source.deletingLastPathComponent()) {
+    private static func cloneOrCopyItem(from source: URL, to destination: URL, fileManager: FileManager, forceCopy: Bool = false) throws {
+        if forceCopy || isSymbolicLink(at: source) || isSymbolicLink(at: source.deletingLastPathComponent()) {
             try fileManager.copyItem(at: source, to: destination)
             return
         }

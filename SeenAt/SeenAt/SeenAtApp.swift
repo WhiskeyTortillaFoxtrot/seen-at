@@ -8,6 +8,7 @@ enum StoreFailureReason {
     case migrationFinalization
     case restoredMigrationFinalization
     case recoveryRequired
+    case corruptedRecovery
 }
 
 private enum DeepLinkError: Identifiable {
