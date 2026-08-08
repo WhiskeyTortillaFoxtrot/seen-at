@@ -52,6 +52,7 @@ struct GlassCard<Content: View>: View {
 
     var body: some View {
         content
+            .frame(maxWidth: .infinity, alignment: .leading)
             .padding()
             .liquidGlass(in: RoundedRectangle(cornerRadius: 20, style: .continuous))
     }
@@ -60,6 +61,12 @@ struct GlassCard<Content: View>: View {
 extension View {
     func liquidGlass<S: Shape>(in shape: S, interactive: Bool = false) -> some View {
         modifier(LiquidGlassModifier(shape: shape, interactive: interactive))
+    }
+
+    func groupedGlassCard() -> some View {
+        frame(maxWidth: .infinity, alignment: .leading)
+            .padding()
+            .liquidGlass(in: RoundedRectangle(cornerRadius: 20, style: .continuous))
     }
 }
 
