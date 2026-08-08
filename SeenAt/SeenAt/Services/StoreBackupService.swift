@@ -201,8 +201,7 @@ enum StoreBackupService {
                 guard isRegularFile(at: storeURL) else {
                     throw BackupError.staleMigrationAttempt(storeURL)
                 }
-        try validateStoreArtifacts(storeURL: storeURL, fileManager: fileManager)
-        try checkDiskSpace(for: storeURL, fileManager: fileManager)
+                try validateStoreArtifacts(storeURL: storeURL, fileManager: fileManager)
                 _ = try supportDirectoryURLs(for: storeURL, fileManager: fileManager)
                 try completeMigrationAttempt(applicationSupportURL: applicationSupportURL, fileManager: fileManager)
             } else if !targetMatches {
@@ -303,8 +302,14 @@ enum StoreBackupService {
         }
 
         try cleanupStagingDirectories(in: backupDirectory, fileManager: fileManager)
-        let validate = backupValidation ?? { stagingDirectory, manifest, storeURL, fileManager in
-            backupValidationFailure(at: stagingDirectory, manifest: manifest, storeURL: storeURL, fileManager: fileManager)
+        try checkDiskSpace(for: storeURL, fileManager: fileManager)
+        let validate = backupValidation ?? { stagingDirectory, manifest, sourceStoreURL, sourceFileManager in
+            backupValidationFailure(
+                at: stagingDirectory,
+                manifest: manifest,
+                storeURL: sourceStoreURL,
+                fileManager: sourceFileManager
+            )
         }
         var lastValidationFailure: BackupValidationFailure?
         for attempt in 0..<maxBackupAttempts {
@@ -806,12 +811,6 @@ enum StoreBackupService {
         guard isRegularFile(at: manifestURL) else {
             return .manifestMissingOrNotRegular(manifestURL.path)
         }
-        let storeBaseName = storeURL.deletingPathExtension().lastPathComponent
-        let allowedStoreNames = Set([
-            storeURL.lastPathComponent,
-            "\(storeBaseName).\(storeURL.pathExtension)-wal",
-            "\(storeBaseName).\(storeURL.pathExtension)-shm",
-        ])
         let artifactPaths = manifest.artifacts.map(\.path)
         guard Set(artifactPaths).count == artifactPaths.count else {
             return .duplicateArtifactPaths
@@ -823,7 +822,7 @@ enum StoreBackupService {
             let hasValidPrefix = components.first == "store" || components.first == "support"
             let structureOK: Bool
             if components.first == "store" {
-                structureOK = components.count == 2 && allowedStoreNames.contains(components[1])
+                structureOK = components.count == 2 && isAllowedStoreArtifactName(components[1], storeURL: storeURL)
             } else if components.first == "support" {
                 structureOK = components.count >= 3 && supportDirectoryNames(for: storeURL).contains(components[1])
             } else {
@@ -845,20 +844,22 @@ enum StoreBackupService {
         }
         let storeDirectory = backupDirectory.appendingPathComponent("store", isDirectory: true)
         let supportDirectory = backupDirectory.appendingPathComponent("support", isDirectory: true)
-        let actualPaths = Set(
-            filePaths(under: storeDirectory, relativeTo: backupDirectory, fileManager: fileManager)
-                + filePaths(under: supportDirectory, relativeTo: backupDirectory, fileManager: fileManager)
-        )
-        let expectedPaths = Set(artifactPaths)
         guard isSafeFileTree(at: storeDirectory, fileManager: fileManager) else {
             return .unsafeFileTree(storeDirectory.path)
         }
         guard isSafeFileTree(at: supportDirectory, fileManager: fileManager) else {
             return .unsafeFileTree(supportDirectory.path)
         }
-        guard isSafeFileTree(at: backupDirectory, fileManager: fileManager) else {
+        // Store and support were already traversed above. Only inspect the backup root's
+        // immediate children here to catch root-level symlinks without walking those trees again.
+        guard isSafeBackupRoot(at: backupDirectory, fileManager: fileManager) else {
             return .unsafeFileTree(backupDirectory.path)
         }
+        let actualPaths = Set(
+            filePaths(under: storeDirectory, relativeTo: backupDirectory, fileManager: fileManager)
+                + filePaths(under: supportDirectory, relativeTo: backupDirectory, fileManager: fileManager)
+        )
+        let expectedPaths = Set(artifactPaths)
         guard actualPaths == expectedPaths else {
             let missing = expectedPaths.subtracting(actualPaths)
             let extra = actualPaths.subtracting(expectedPaths)
@@ -893,6 +894,43 @@ enum StoreBackupService {
             }
         }
         return nil
+    }
+
+    private static func isAllowedStoreArtifactName(_ name: String, storeURL: URL) -> Bool {
+        let storeBaseName = storeURL.deletingPathExtension().lastPathComponent
+        return name == storeURL.lastPathComponent
+            || name == "\(storeBaseName).\(storeURL.pathExtension)-wal"
+            || name == "\(storeBaseName).\(storeURL.pathExtension)-shm"
+    }
+
+    private static func isSafeBackupRoot(at directory: URL, fileManager: FileManager) -> Bool {
+        guard isRealDirectory(at: directory),
+              let entries = try? fileManager.contentsOfDirectory(
+                  at: directory,
+                  includingPropertiesForKeys: [.isDirectoryKey, .isRegularFileKey, .isSymbolicLinkKey]
+              ) else {
+            return false
+        }
+
+        let restoreJournalURL = directory.appendingPathComponent("restore-journal.json")
+        let isRestoreDirectory = directory.lastPathComponent.hasPrefix("restore-")
+            && fileManager.fileExists(atPath: restoreJournalURL.path)
+
+        return entries.allSatisfy { entry in
+            guard !isSymbolicLink(at: entry) else { return false }
+            switch entry.lastPathComponent {
+            case "manifest.json":
+                return isRegularFile(at: entry)
+            case "store", "support":
+                return isRealDirectory(at: entry)
+            case "restore-journal.json":
+                return isRestoreDirectory && isRegularFile(at: entry)
+            case "quarantine", "replaced":
+                return isRestoreDirectory && isSafeFileTree(at: entry, fileManager: fileManager)
+            default:
+                return false
+            }
+        }
     }
 
     private static func destinationURL(for relativePath: String, storeURL: URL) -> URL {
@@ -1278,7 +1316,7 @@ enum StoreBackupService {
             let attributes = try fileManager.attributesOfItem(atPath: url.path)
             requiredBytes += (attributes[.size] as? NSNumber)?.int64Value ?? 0
         }
-        for supportURL in (try? supportDirectoryURLs(for: storeURL, fileManager: fileManager)) ?? [] {
+        for supportURL in try supportDirectoryURLs(for: storeURL, fileManager: fileManager) {
             requiredBytes += directorySize(supportURL, fileManager: fileManager)
         }
         requiredBytes *= 2

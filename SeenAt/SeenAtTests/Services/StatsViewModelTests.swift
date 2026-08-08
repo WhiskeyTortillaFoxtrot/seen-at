@@ -156,6 +156,6 @@ final class StatsViewModelTests: XCTestCase {
     }
 
     private func date(year: Int) -> Date {
-        Calendar.current.date(from: DateComponents(year: year, month: 6, day: 15))!
+        Calendar.current.date(from: DateComponents(year: year, month: 6, day: 15)) ?? .distantPast
     }
 }

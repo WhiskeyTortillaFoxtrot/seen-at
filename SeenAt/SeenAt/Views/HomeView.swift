@@ -25,7 +25,7 @@ struct HomeView: View {
     }
 
     private var startOfTomorrow: Date {
-        Calendar.current.date(byAdding: .day, value: 1, to: startOfToday)!
+        Calendar.current.date(byAdding: .day, value: 1, to: startOfToday) ?? startOfToday
     }
 
     private var upcomingEvents: [Event] { dateSections.upcoming }
@@ -52,6 +52,8 @@ struct HomeView: View {
                                 EventRow(event: event)
                             }
                             .buttonStyle(.plain)
+                            .listRowBackground(Color.clear)
+                            .listRowSeparatorTint(.white.opacity(0.16))
                         }
                         .onDelete(perform: deleteEvents(in: todayEvents))
                     }
@@ -60,9 +62,11 @@ struct HomeView: View {
                 if !pastEvents.isEmpty {
                     Section("Recent") {
                         ForEach(pastEvents) { event in
-                            NavigationLink(value: event) {
-                                EventRow(event: event)
-                            }
+                        NavigationLink(value: event) {
+                            EventRow(event: event)
+                        }
+                        .listRowBackground(Color.clear)
+                        .listRowSeparatorTint(.white.opacity(0.16))
                         }
                         .onDelete(perform: deleteEvents(in: pastEvents))
 
@@ -70,8 +74,13 @@ struct HomeView: View {
                             GameHistoryView()
                         } label: {
                             Label("See All Games", systemImage: "list.bullet")
+                                .padding(.vertical, 6)
+                                .padding(.horizontal, 10)
+                                 .liquidGlass(in: RoundedRectangle(cornerRadius: 12, style: .continuous), interactive: true)
                         }
                         .accessibilityHint("Shows your complete history of past games")
+                        .listRowBackground(Color.clear)
+                        .listRowSeparatorTint(.white.opacity(0.16))
                     }
                 }
 
@@ -84,15 +93,20 @@ struct HomeView: View {
                                 EventRow(event: event)
                             }
                             .buttonStyle(.plain)
+                            .listRowBackground(Color.clear)
+                            .listRowSeparatorTint(.white.opacity(0.16))
                         }
                         .onDelete(perform: deleteEvents(in: upcomingEvents))
                     }
                 }
             }
+            .scrollContentBackground(.hidden)
+            .listStyle(.plain)
         }
         .sensoryFeedback(.success, trigger: deleteEventHaptic)
         .sensoryFeedback(.warning, trigger: deleteErrorHaptic)
         .navigationTitle("SeenAt")
+        .toolbarBackground(.hidden, for: .navigationBar)
         .navigationDestination(for: Event.self) { event in
             EventSummaryView(event: event)
         }
@@ -125,7 +139,7 @@ struct HomeView: View {
             }
         }
         .alert("Delete Failed", isPresented: $showingDeleteError) {
-            Button("OK") { deleteErrorHaptic += 1 }
+            Button("OK") {}
         } message: {
             Text("Could not delete the game. Please try again.")
         }
@@ -150,6 +164,7 @@ struct HomeView: View {
                 eventToTrack = nil
             }
         }
+        .background { StadiumBackdrop(usesDailyImage: true) }
     }
 
     private var suggestionCard: some View {
@@ -178,6 +193,9 @@ struct HomeView: View {
             .padding(.vertical, 4)
         }
         .foregroundStyle(.primary)
+        .liquidGlass(in: RoundedRectangle(cornerRadius: 18, style: .continuous), interactive: true)
+        .listRowBackground(Color.clear)
+        .listRowSeparatorTint(.white.opacity(0.16))
         .accessibilityHint("Opens a form to add a new game")
     }
 
@@ -193,6 +211,7 @@ struct HomeView: View {
             }
             if !context.saveAndLog("Failed to delete events") {
                 context.rollback()
+                deleteErrorHaptic += 1
                 showingDeleteError = true
             } else {
                 for eventID in eventIDs {
@@ -275,8 +294,12 @@ struct EventRow: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(awayTeamName)
                     .font(.urbanist(.headline))
+                    .lineLimit(2)
+                    .layoutPriority(1)
                 Text(homeTeamName)
                     .font(.urbanist(.headline))
+                    .lineLimit(2)
+                    .layoutPriority(1)
 
                 if let venue = event.venue {
                     HStack(spacing: 2) {
@@ -284,6 +307,7 @@ struct EventRow: View {
                             .font(.urbanist(.caption))
                         Text(venue)
                             .font(.urbanist(.caption))
+                            .lineLimit(1)
                     }
                     .foregroundStyle(.secondary)
                 }
@@ -319,5 +343,7 @@ struct EventRow: View {
         .padding(.vertical, 8)
         .padding(.horizontal)
         .frame(minHeight: 72)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .liquidGlass(in: RoundedRectangle(cornerRadius: 18, style: .continuous), interactive: true)
     }
 }

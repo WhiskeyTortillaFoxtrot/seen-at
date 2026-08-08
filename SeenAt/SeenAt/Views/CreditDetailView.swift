@@ -7,8 +7,11 @@ struct CreditDetailView: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(spacing: 16) {
+            ZStack {
+                StadiumBackdrop(usesDailyImage: true)
+
+                ScrollView {
+                    VStack(spacing: 16) {
                     if let image = VenueImageService.image(for: entry.identifier) {
                         image
                             .resizable()
@@ -41,11 +44,13 @@ struct CreditDetailView: View {
                                 .padding(.horizontal)
                         }
                     }
+                    }
+                    .padding(.vertical)
                 }
-                .padding(.vertical)
             }
             .navigationTitle("Photo Credit")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(.hidden, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Done") { dismiss() }

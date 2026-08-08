@@ -61,36 +61,41 @@ struct EventSummaryView: View {
         let topColors = teamBreakdown.prefix(2).map { $0.team.primaryColor }
         let topTeamColors = topColors.isEmpty ? [Color.accentColor] : topColors
 
-        ScrollView {
-            VStack(spacing: 20) {
-                totalCountCard(topTeamColors: topTeamColors)
+        ZStack {
+            StadiumBackdrop(venue: event.venue, usesDailyImage: true)
 
-                if !isPreview {
-                    addSightingButton
+            ScrollView {
+                VStack(spacing: 20) {
+                    totalCountCard(topTeamColors: topTeamColors)
+
+                    if !isPreview {
+                        addSightingButton
+                    }
+
+                    if !isPreview, Calendar.current.isDateInToday(event.date) {
+                        liveTrackingButton
+                    }
+
+                    if !teamBreakdown.isEmpty {
+                        teamBreakdownCard(teamBreakdown: teamBreakdown, readOnly: isPreview)
+                    }
+
+                    if !playerBreakdown.isEmpty {
+                        playerBreakdownCard(playerBreakdown: playerBreakdown)
+                    }
+
+                    if event.watchLocation != .tv {
+                        photoGallery
+                    }
+
+                    shareButton
                 }
-
-                if !isPreview, Calendar.current.isDateInToday(event.date) {
-                    liveTrackingButton
-                }
-
-                if !teamBreakdown.isEmpty {
-                    teamBreakdownCard(teamBreakdown: teamBreakdown, readOnly: isPreview)
-                }
-
-                if !playerBreakdown.isEmpty {
-                    playerBreakdownCard(playerBreakdown: playerBreakdown)
-                }
-
-                if event.watchLocation != .tv {
-                    photoGallery
-                }
-
-                shareButton
+                .padding()
             }
-            .padding()
         }
         .navigationTitle(isPreview ? "Game Preview" : "Summary")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackground(.hidden, for: .navigationBar)
         .toolbar {
             if !isPreview {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -225,23 +230,7 @@ struct EventSummaryView: View {
         }
         .frame(maxWidth: .infinity)
         .padding()
-        .background {
-            ZStack {
-                if event.watchLocation != .tv, let venue = event.venue, let photo = StadiumPhotoService.image(for: venue) {
-                    photo
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                    Color.black.opacity(0.5)
-                } else {
-                    LinearGradient(
-                        colors: topTeamColors.map { $0.opacity(0.5) },
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                }
-            }
-        }
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .liquidGlass(in: RoundedRectangle(cornerRadius: 20, style: .continuous))
     }
 
     private var locationMenu: some View {
@@ -373,8 +362,7 @@ struct EventSummaryView: View {
             }
         }
         .padding()
-        .background(.background, in: RoundedRectangle(cornerRadius: 12))
-        .shadow(color: .black.opacity(0.05), radius: 4, y: 2)
+        .liquidGlass(in: RoundedRectangle(cornerRadius: 20, style: .continuous))
     }
 
     @ViewBuilder
@@ -410,8 +398,7 @@ struct EventSummaryView: View {
             }
         }
         .padding()
-        .background(.background, in: RoundedRectangle(cornerRadius: 12))
-        .shadow(color: .black.opacity(0.05), radius: 4, y: 2)
+        .liquidGlass(in: RoundedRectangle(cornerRadius: 20, style: .continuous))
     }
 
     @ViewBuilder
@@ -446,8 +433,7 @@ struct EventSummaryView: View {
             }
         }
         .padding()
-        .background(.background, in: RoundedRectangle(cornerRadius: 12))
-        .shadow(color: .black.opacity(0.05), radius: 4, y: 2)
+        .liquidGlass(in: RoundedRectangle(cornerRadius: 20, style: .continuous))
     }
 
     private func openInMaps(venue: String) {

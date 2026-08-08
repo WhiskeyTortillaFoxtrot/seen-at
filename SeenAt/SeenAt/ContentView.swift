@@ -28,7 +28,7 @@ struct ContentView: View {
     let onDeepLinkError: (() -> Void)?
 
     @Environment(\.modelContext) private var context
-    @AppStorage("defaultSport") private var defaultSport: String = "mlb"
+    @AppStorage(AppPreferences.defaultSportKey) private var defaultSport: String = "mlb"
     @State private var selectedTab = 0
     @State private var eventToTrack: Event?
 
@@ -66,6 +66,9 @@ struct ContentView: View {
             }
             .tag(3)
         }
+        .toolbarBackground(.ultraThinMaterial, for: .tabBar)
+        .toolbarBackground(.visible, for: .tabBar)
+        .toolbarColorScheme(.dark, for: .tabBar)
         .task(id: deepLinkEventID) {
             guard let id = deepLinkEventID else { return }
             do {

@@ -35,6 +35,10 @@ struct CreditsView: View {
                 }
             }
         }
+        .scrollContentBackground(.hidden)
+        .listRowBackground(GlassListRowBackground())
         .navigationTitle("Credits")
+        .toolbarBackground(.hidden, for: .navigationBar)
+        .background { StadiumBackdrop(usesDailyImage: true) }
     }
 }

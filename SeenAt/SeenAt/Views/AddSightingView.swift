@@ -11,7 +11,7 @@ struct AddSightingView: View {
 
     @Query(sort: \Team.name) private var allTeams: [Team]
 
-    @AppStorage("favoriteTeams") private var favoriteTeamsString: String = ""
+    @AppStorage(AppPreferences.favoriteTeamsKey) private var favoriteTeamsString: String = ""
     private var favoriteTeamNames: [String] {
         favoriteTeamsString.split(separator: ",").map(String.init).filter { !$0.isEmpty }
     }
@@ -82,6 +82,7 @@ struct AddSightingView: View {
             Section("Team") {
                 teamMenu
             }
+            .listRowBackground(GlassListRowBackground())
 
             Section("Player (Optional)") {
                 HStack {
@@ -100,6 +101,7 @@ struct AddSightingView: View {
                         if new.count > 10 { playerNumber = String(new.prefix(10)) }
                     }
             }
+            .listRowBackground(GlassListRowBackground())
 
             if event.watchLocation != .tv {
                 Section("Photo (Optional)") {
@@ -115,6 +117,7 @@ struct AddSightingView: View {
                         }
                     }
                 }
+                .listRowBackground(GlassListRowBackground())
             }
 
             Button("Add Sighting") {
@@ -124,9 +127,13 @@ struct AddSightingView: View {
             .frame(maxWidth: .infinity)
             .disabled(selectedTeam == nil)
             .sensoryFeedback(.success, trigger: didSaveSighting)
+            .listRowBackground(GlassListRowBackground())
         }
         .navigationTitle("Add Sighting")
         .navigationBarTitleDisplayMode(.inline)
+        .scrollContentBackground(.hidden)
+        .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
+        .background { StadiumBackdrop(usesDailyImage: true) }
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
                 Button("Cancel") { dismiss() }
@@ -312,6 +319,9 @@ private struct OtherLeaguePicker: View {
                 }
                 .foregroundStyle(.primary)
             }
+            .scrollContentBackground(.hidden)
+            .listRowBackground(GlassListRowBackground())
+            .background { StadiumBackdrop(usesDailyImage: true) }
             .navigationTitle(league.label)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

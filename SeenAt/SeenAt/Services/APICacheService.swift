@@ -18,7 +18,11 @@ enum APICacheService {
         let timestamp: Date
     }
 
+    // The cache is accessed by concurrent API tasks; both the dictionary and
+    // its date formatter must be protected independently.
     nonisolated(unsafe) private static var cache: [String: CacheEntry] = [:]
+    private static let cacheLock = NSLock()
+    private static let cacheDateLock = NSLock()
 
     private static let cacheDateFormatter: DateFormatter = {
         let f = DateFormatter()
@@ -27,24 +31,34 @@ enum APICacheService {
     }()
 
     static func cacheKey(league: String, date: Date) -> String {
-        "\(league)-\(cacheDateFormatter.string(from: date))"
+        let dateString = cacheDateLock.withLock {
+            cacheDateFormatter.string(from: date)
+        }
+        return "\(league)-\(dateString)"
     }
 
     static func getCachedGames(league: String, date: Date) -> [LeagueGame]? {
         let key = cacheKey(league: league, date: date)
-        guard let entry = cache[key] else { return nil }
-        guard Date().timeIntervalSince(entry.timestamp) < cacheTTL else {
-            cache.removeValue(forKey: key)
-            return nil
+        return cacheLock.withLock {
+            guard let entry = cache[key] else { return nil }
+            guard Date().timeIntervalSince(entry.timestamp) < cacheTTL else {
+                cache.removeValue(forKey: key)
+                return nil
+            }
+            return entry.games
         }
-        return entry.games
     }
 
     static func setCachedGames(_ games: [LeagueGame], league: String, date: Date) {
-        cache[cacheKey(league: league, date: date)] = CacheEntry(games: games, timestamp: Date())
+        let key = cacheKey(league: league, date: date)
+        cacheLock.withLock {
+            cache[key] = CacheEntry(games: games, timestamp: Date())
+        }
     }
 
     static func clearCache() {
-        cache.removeAll()
+        cacheLock.withLock {
+            cache.removeAll()
+        }
     }
 }

@@ -154,6 +154,8 @@ struct SearchView: View {
                             }
                         }
                     }
+                    .scrollContentBackground(.hidden)
+                    .listRowBackground(GlassListRowBackground())
                 }
             } else {
                 Spacer()
@@ -166,6 +168,8 @@ struct SearchView: View {
             }
         }
         .navigationTitle("Search")
+        .toolbarBackground(.hidden, for: .navigationBar)
+        .background { StadiumBackdrop(usesDailyImage: true) }
     }
 
     private var resultsDescription: Text {

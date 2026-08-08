@@ -108,8 +108,7 @@ final class DiagnosticsService: @unchecked Sendable {
         report += "Entity Counts: \(eventCount) Events, \(teamCount) Teams, \(sightingCount) Sightings\n"
 
         report += "\nUserDefaults:\n"
-        // Keep in sync with @AppStorage / UserDefaults keys used in the app.
-        let knownKeys: Set<String> = ["hasSeenOnboarding", "favoriteTeams", "defaultSport", "hasSeededTeams", "seedVersion"]
+        let knownKeys = AppPreferences.resettableKeys
         for key in knownKeys.sorted() {
             let value = UserDefaults.standard.object(forKey: key) ?? "<not set>"
             report += "  \(key) = \(value)\n"
@@ -127,11 +126,11 @@ final class DiagnosticsService: @unchecked Sendable {
     }
 
     @MainActor
-    func exportURL(context: ModelContext) -> URL {
+    func exportURL(context: ModelContext) throws -> URL {
         let report = generateReport(context: context)
         let tempDir = FileManager.default.temporaryDirectory
         let url = tempDir.appendingPathComponent("SeenAt-Diagnostics-\(exportDateFormatter.string(from: Date())).txt")
-        try? report.write(to: url, atomically: true, encoding: .utf8)
+        try report.write(to: url, atomically: true, encoding: .utf8)
         return url
     }
 

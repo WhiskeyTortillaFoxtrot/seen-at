@@ -237,9 +237,9 @@ final class SearchViewTests: XCTestCase {
         XCTAssertEqual(filtered.first?.venue, "Yankee Stadium")
     }
 
-    func testFilterByDateRange() {
-        let oldDate = Calendar.current.date(byAdding: .day, value: -10, to: Date())!
-        let midDate = Calendar.current.date(byAdding: .day, value: -5, to: Date())!
+    func testFilterByDateRange() throws {
+        let oldDate = try XCTUnwrap(Calendar.current.date(byAdding: .day, value: -10, to: Date()))
+        let midDate = try XCTUnwrap(Calendar.current.date(byAdding: .day, value: -5, to: Date()))
         let recentDate = Date()
         let oldEvent = TestDataFactory.makeEvent(title: "Old", date: oldDate)
         let midEvent = TestDataFactory.makeEvent(title: "Mid", date: midDate)
@@ -249,8 +249,8 @@ final class SearchViewTests: XCTestCase {
         context.insert(recentEvent)
         try? context.save()
 
-        let start = Calendar.current.date(byAdding: .day, value: -7, to: Date())!
-        let end = Calendar.current.date(byAdding: .day, value: -1, to: Date())!
+        let start = try XCTUnwrap(Calendar.current.date(byAdding: .day, value: -7, to: Date()))
+        let end = try XCTUnwrap(Calendar.current.date(byAdding: .day, value: -1, to: Date()))
         let allEvents = (try? context.fetch(FetchDescriptor<Event>())) ?? []
         let filtered = allEvents.filter { $0.date >= start && $0.date <= end }
 

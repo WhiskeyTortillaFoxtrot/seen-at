@@ -25,9 +25,9 @@ final class StatsViewTests: XCTestCase {
 
     func testStreaksConsecutiveDaily() {
         let calendar = Calendar.current
-        let baseDate = calendar.date(from: DateComponents(year: 2025, month: 1, day: 1))!
+        let baseDate = requireDate(calendar.date(from: DateComponents(year: 2025, month: 1, day: 1)))
         let events = (0..<5).map { offset in
-            TestDataFactory.makeEvent(date: calendar.date(byAdding: .day, value: offset, to: baseDate)!)
+            TestDataFactory.makeEvent(date: requireDate(calendar.date(byAdding: .day, value: offset, to: baseDate)))
         }
 
         let daily = computeStreaks(events: events, maxGapDays: 1)
@@ -38,12 +38,12 @@ final class StatsViewTests: XCTestCase {
 
     func testStreaksBrokenDaily() {
         let calendar = Calendar.current
-        let baseDate = calendar.date(from: DateComponents(year: 2025, month: 1, day: 1))!
+        let baseDate = requireDate(calendar.date(from: DateComponents(year: 2025, month: 1, day: 1)))
         let events = [
             TestDataFactory.makeEvent(date: baseDate),
-            TestDataFactory.makeEvent(date: calendar.date(byAdding: .day, value: 1, to: baseDate)!),
-            TestDataFactory.makeEvent(date: calendar.date(byAdding: .day, value: 5, to: baseDate)!),
-            TestDataFactory.makeEvent(date: calendar.date(byAdding: .day, value: 6, to: baseDate)!),
+            TestDataFactory.makeEvent(date: requireDate(calendar.date(byAdding: .day, value: 1, to: baseDate))),
+            TestDataFactory.makeEvent(date: requireDate(calendar.date(byAdding: .day, value: 5, to: baseDate))),
+            TestDataFactory.makeEvent(date: requireDate(calendar.date(byAdding: .day, value: 6, to: baseDate))),
         ]
 
         let daily = computeStreaks(events: events, maxGapDays: 1)
@@ -54,12 +54,12 @@ final class StatsViewTests: XCTestCase {
 
     func testStreaksWeeklyGap() {
         let calendar = Calendar.current
-        let baseDate = calendar.date(from: DateComponents(year: 2025, month: 1, day: 1))!
+        let baseDate = requireDate(calendar.date(from: DateComponents(year: 2025, month: 1, day: 1)))
         let events = [
             TestDataFactory.makeEvent(date: baseDate),
-            TestDataFactory.makeEvent(date: calendar.date(byAdding: .day, value: 3, to: baseDate)!),
-            TestDataFactory.makeEvent(date: calendar.date(byAdding: .day, value: 8, to: baseDate)!),
-            TestDataFactory.makeEvent(date: calendar.date(byAdding: .day, value: 12, to: baseDate)!),
+            TestDataFactory.makeEvent(date: requireDate(calendar.date(byAdding: .day, value: 3, to: baseDate))),
+            TestDataFactory.makeEvent(date: requireDate(calendar.date(byAdding: .day, value: 8, to: baseDate))),
+            TestDataFactory.makeEvent(date: requireDate(calendar.date(byAdding: .day, value: 12, to: baseDate))),
         ]
 
         let weekly = computeStreaks(events: events, maxGapDays: 7)
@@ -70,11 +70,11 @@ final class StatsViewTests: XCTestCase {
 
     func testStreaksWeeklyBroken() {
         let calendar = Calendar.current
-        let baseDate = calendar.date(from: DateComponents(year: 2025, month: 1, day: 1))!
+        let baseDate = requireDate(calendar.date(from: DateComponents(year: 2025, month: 1, day: 1)))
         let events = [
             TestDataFactory.makeEvent(date: baseDate),
-            TestDataFactory.makeEvent(date: calendar.date(byAdding: .day, value: 5, to: baseDate)!),
-            TestDataFactory.makeEvent(date: calendar.date(byAdding: .day, value: 20, to: baseDate)!),
+            TestDataFactory.makeEvent(date: requireDate(calendar.date(byAdding: .day, value: 5, to: baseDate))),
+            TestDataFactory.makeEvent(date: requireDate(calendar.date(byAdding: .day, value: 20, to: baseDate))),
         ]
 
         let weekly = computeStreaks(events: events, maxGapDays: 7)
@@ -85,13 +85,13 @@ final class StatsViewTests: XCTestCase {
 
     func testStreaksCurrentIsTrailingRun() {
         let calendar = Calendar.current
-        let baseDate = calendar.date(from: DateComponents(year: 2025, month: 1, day: 1))!
+        let baseDate = requireDate(calendar.date(from: DateComponents(year: 2025, month: 1, day: 1)))
         let events = [
             TestDataFactory.makeEvent(date: baseDate),
-            TestDataFactory.makeEvent(date: calendar.date(byAdding: .day, value: 1, to: baseDate)!),
-            TestDataFactory.makeEvent(date: calendar.date(byAdding: .day, value: 2, to: baseDate)!),
-            TestDataFactory.makeEvent(date: calendar.date(byAdding: .day, value: 10, to: baseDate)!),
-            TestDataFactory.makeEvent(date: calendar.date(byAdding: .day, value: 11, to: baseDate)!),
+            TestDataFactory.makeEvent(date: requireDate(calendar.date(byAdding: .day, value: 1, to: baseDate))),
+            TestDataFactory.makeEvent(date: requireDate(calendar.date(byAdding: .day, value: 2, to: baseDate))),
+            TestDataFactory.makeEvent(date: requireDate(calendar.date(byAdding: .day, value: 10, to: baseDate))),
+            TestDataFactory.makeEvent(date: requireDate(calendar.date(byAdding: .day, value: 11, to: baseDate))),
         ]
 
         let daily = computeStreaks(events: events, maxGapDays: 1)
@@ -189,7 +189,7 @@ final class StatsViewTests: XCTestCase {
 
     func testVenueTotalsOrdering() {
         let calendar = Calendar.current
-        let baseDate = calendar.date(from: DateComponents(year: 2025, month: 1, day: 1))!
+        let baseDate = requireDate(calendar.date(from: DateComponents(year: 2025, month: 1, day: 1)))
 
         let event1 = TestDataFactory.makeEvent(date: baseDate, venue: "Stadium A")
         let event2 = TestDataFactory.makeEvent(date: baseDate, venue: "Stadium B")
@@ -214,7 +214,7 @@ final class StatsViewTests: XCTestCase {
 
     func testVenueTotalsNilVenueExcluded() {
         let calendar = Calendar.current
-        let baseDate = calendar.date(from: DateComponents(year: 2025, month: 1, day: 1))!
+        let baseDate = requireDate(calendar.date(from: DateComponents(year: 2025, month: 1, day: 1)))
 
         let event1 = TestDataFactory.makeEvent(date: baseDate, venue: "Stadium A")
         let event2 = TestDataFactory.makeEvent(date: baseDate, venue: nil)
@@ -233,7 +233,7 @@ final class StatsViewTests: XCTestCase {
 
     func testMilestoneNextJerseyMilestone() {
         let calendar = Calendar.current
-        let baseDate = calendar.date(from: DateComponents(year: 2025, month: 1, day: 1))!
+        let baseDate = requireDate(calendar.date(from: DateComponents(year: 2025, month: 1, day: 1)))
 
         let team = TestDataFactory.makeTeam()
         let event = TestDataFactory.makeEvent(date: baseDate)
@@ -248,10 +248,10 @@ final class StatsViewTests: XCTestCase {
 
     func testMilestoneNextGameMilestone() {
         let calendar = Calendar.current
-        let baseDate = calendar.date(from: DateComponents(year: 2025, month: 1, day: 1))!
+        let baseDate = requireDate(calendar.date(from: DateComponents(year: 2025, month: 1, day: 1)))
 
         let events = (0..<23).map { offset in
-            TestDataFactory.makeEvent(date: calendar.date(byAdding: .day, value: offset, to: baseDate)!)
+            TestDataFactory.makeEvent(date: requireDate(calendar.date(byAdding: .day, value: offset, to: baseDate)))
         }
 
         let gameCount = totalGames(for: events)
@@ -262,7 +262,7 @@ final class StatsViewTests: XCTestCase {
 
     func testMilestoneAchievedJerseyMilestone() {
         let calendar = Calendar.current
-        let baseDate = calendar.date(from: DateComponents(year: 2025, month: 1, day: 1))!
+        let baseDate = requireDate(calendar.date(from: DateComponents(year: 2025, month: 1, day: 1)))
 
         let team = TestDataFactory.makeTeam()
         let event = TestDataFactory.makeEvent(date: baseDate)
@@ -277,10 +277,10 @@ final class StatsViewTests: XCTestCase {
 
     func testMilestoneAchievedGameMilestone() {
         let calendar = Calendar.current
-        let baseDate = calendar.date(from: DateComponents(year: 2025, month: 1, day: 1))!
+        let baseDate = requireDate(calendar.date(from: DateComponents(year: 2025, month: 1, day: 1)))
 
         let events = (0..<10).map { offset in
-            TestDataFactory.makeEvent(date: calendar.date(byAdding: .day, value: offset, to: baseDate)!)
+            TestDataFactory.makeEvent(date: requireDate(calendar.date(byAdding: .day, value: offset, to: baseDate)))
         }
 
         let milestones = achievedMilestones(for: events).filter { $0.type == .games }
@@ -290,7 +290,7 @@ final class StatsViewTests: XCTestCase {
 
     func testMilestoneNoMilestonesYet() {
         let calendar = Calendar.current
-        let baseDate = calendar.date(from: DateComponents(year: 2025, month: 1, day: 1))!
+        let baseDate = requireDate(calendar.date(from: DateComponents(year: 2025, month: 1, day: 1)))
 
         let team = TestDataFactory.makeTeam()
         let event = TestDataFactory.makeEvent(date: baseDate)
@@ -310,14 +310,14 @@ final class StatsViewTests: XCTestCase {
 
     func testMilestoneJerseyThresholdNotDoubleCounted() {
         let calendar = Calendar.current
-        let baseDate = calendar.date(from: DateComponents(year: 2025, month: 1, day: 1))!
+        let baseDate = requireDate(calendar.date(from: DateComponents(year: 2025, month: 1, day: 1)))
 
         let team = TestDataFactory.makeTeam()
         let event1 = TestDataFactory.makeEvent(date: baseDate)
         let s1 = (0..<48).map { _ in TestDataFactory.makeSighting(team: team, event: event1) }
         event1.sightings = s1
 
-        let event2 = TestDataFactory.makeEvent(date: calendar.date(byAdding: .day, value: 1, to: baseDate)!)
+        let event2 = TestDataFactory.makeEvent(date: requireDate(calendar.date(byAdding: .day, value: 1, to: baseDate)))
         let s2 = (0..<5).map { _ in TestDataFactory.makeSighting(team: team, event: event2) }
         event2.sightings = s2
 
@@ -331,12 +331,12 @@ final class StatsViewTests: XCTestCase {
 
     func testTrendPerGameAggregation() {
         let calendar = Calendar.current
-        let baseDate = calendar.date(from: DateComponents(year: 2025, month: 1, day: 1))!
+        let baseDate = requireDate(calendar.date(from: DateComponents(year: 2025, month: 1, day: 1)))
 
         let team = TestDataFactory.makeTeam()
         let event1 = TestDataFactory.makeEvent(date: baseDate)
-        let event2 = TestDataFactory.makeEvent(date: calendar.date(byAdding: .day, value: 2, to: baseDate)!)
-        let event3 = TestDataFactory.makeEvent(date: calendar.date(byAdding: .day, value: 5, to: baseDate)!)
+        let event2 = TestDataFactory.makeEvent(date: requireDate(calendar.date(byAdding: .day, value: 2, to: baseDate)))
+        let event3 = TestDataFactory.makeEvent(date: requireDate(calendar.date(byAdding: .day, value: 5, to: baseDate)))
 
         let s1 = (0..<3).map { _ in TestDataFactory.makeSighting(team: team, event: event1) }
         event1.sightings = s1
@@ -359,12 +359,12 @@ final class StatsViewTests: XCTestCase {
 
     func testTrendPerMonthAggregation() {
         let calendar = Calendar.current
-        let janDate = calendar.date(from: DateComponents(year: 2025, month: 1, day: 15))!
-        let febDate = calendar.date(from: DateComponents(year: 2025, month: 2, day: 10))!
+        let janDate = requireDate(calendar.date(from: DateComponents(year: 2025, month: 1, day: 15)))
+        let febDate = requireDate(calendar.date(from: DateComponents(year: 2025, month: 2, day: 10)))
 
         let team = TestDataFactory.makeTeam()
         let event1 = TestDataFactory.makeEvent(date: janDate)
-        let event2 = TestDataFactory.makeEvent(date: calendar.date(byAdding: .day, value: 5, to: janDate)!)
+        let event2 = TestDataFactory.makeEvent(date: requireDate(calendar.date(byAdding: .day, value: 5, to: janDate)))
         let event3 = TestDataFactory.makeEvent(date: febDate)
 
         let s1 = (0..<3).map { _ in TestDataFactory.makeSighting(team: team, event: event1) }
@@ -392,13 +392,13 @@ final class StatsViewTests: XCTestCase {
 
     func testTrendPerYearAggregation() {
         let calendar = Calendar.current
-        let date2024 = calendar.date(from: DateComponents(year: 2024, month: 6, day: 15))!
-        let date2025 = calendar.date(from: DateComponents(year: 2025, month: 3, day: 10))!
+        let date2024 = requireDate(calendar.date(from: DateComponents(year: 2024, month: 6, day: 15)))
+        let date2025 = requireDate(calendar.date(from: DateComponents(year: 2025, month: 3, day: 10)))
 
         let team = TestDataFactory.makeTeam()
         let event1 = TestDataFactory.makeEvent(date: date2024)
         let event2 = TestDataFactory.makeEvent(date: date2025)
-        let event3 = TestDataFactory.makeEvent(date: calendar.date(byAdding: .month, value: 6, to: date2025)!)
+        let event3 = TestDataFactory.makeEvent(date: requireDate(calendar.date(byAdding: .month, value: 6, to: date2025)))
 
         let s1 = (0..<3).map { _ in TestDataFactory.makeSighting(team: team, event: event1) }
         event1.sightings = s1
@@ -428,9 +428,9 @@ final class StatsViewTests: XCTestCase {
 
     func testYearFiltering() {
         let calendar = Calendar.current
-        let date2024 = calendar.date(from: DateComponents(year: 2024, month: 6, day: 15))!
-        let date2025a = calendar.date(from: DateComponents(year: 2025, month: 3, day: 10))!
-        let date2025b = calendar.date(from: DateComponents(year: 2025, month: 9, day: 20))!
+        let date2024 = requireDate(calendar.date(from: DateComponents(year: 2024, month: 6, day: 15)))
+        let date2025a = requireDate(calendar.date(from: DateComponents(year: 2025, month: 3, day: 10)))
+        let date2025b = requireDate(calendar.date(from: DateComponents(year: 2025, month: 9, day: 20)))
 
         let team = TestDataFactory.makeTeam()
         let event1 = TestDataFactory.makeEvent(date: date2024)
@@ -456,8 +456,8 @@ final class StatsViewTests: XCTestCase {
 
     func testYearFilteringSightings() {
         let calendar = Calendar.current
-        let date2024 = calendar.date(from: DateComponents(year: 2024, month: 6, day: 15))!
-        let date2025 = calendar.date(from: DateComponents(year: 2025, month: 3, day: 10))!
+        let date2024 = requireDate(calendar.date(from: DateComponents(year: 2024, month: 6, day: 15)))
+        let date2025 = requireDate(calendar.date(from: DateComponents(year: 2025, month: 3, day: 10)))
 
         let team = TestDataFactory.makeTeam()
         let event1 = TestDataFactory.makeEvent(date: date2024)
@@ -478,5 +478,17 @@ final class StatsViewTests: XCTestCase {
 
         XCTAssertEqual(sightings2024, 5)
         XCTAssertEqual(sightings2025, 3)
+    }
+
+    private func requireDate(
+        _ date: Date?,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) -> Date {
+        guard let date else {
+            XCTFail("Expected a valid test date", file: file, line: line)
+            return .distantPast
+        }
+        return date
     }
 }

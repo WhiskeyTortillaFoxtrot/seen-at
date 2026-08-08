@@ -58,7 +58,11 @@ struct PhotoCreditsView: View {
                 }
             }
         }
+        .scrollContentBackground(.hidden)
+        .listRowBackground(GlassListRowBackground())
         .navigationTitle("Photo Credits")
+        .toolbarBackground(.hidden, for: .navigationBar)
+        .background { StadiumBackdrop(usesDailyImage: true) }
         .sheet(item: $selectedEntry) { entry in
             CreditDetailView(entry: entry)
         }

@@ -30,7 +30,7 @@ private enum DeepLinkError: Identifiable {
 struct SeenAtApp: App {
     let container: ModelContainer?
 
-    @AppStorage("hasSeenOnboarding") private var hasSeenOnboarding = false
+    @AppStorage(AppPreferences.hasSeenOnboardingKey) private var hasSeenOnboarding = false
 
     @State private var deepLinkEventID: UUID?
     @State private var deepLinkError: DeepLinkError?
@@ -46,6 +46,7 @@ struct SeenAtApp: App {
     /// notification handler or app extension.
     init() {
         #if DEBUG
+        var resetError: Error?
         if ProcessInfo.processInfo.arguments.contains("--resetData") {
             let storeURL = StoreBackupService.defaultStoreURL()
             do {
@@ -54,15 +55,23 @@ struct SeenAtApp: App {
                     applicationSupportURL: StoreBackupService.applicationSupportURL(for: storeURL)
                 )
             } catch {
-                fatalError("Screenshot reset failed: \(error.localizedDescription)")
+                resetError = error
             }
-            UserDefaults.standard.removeObject(forKey: "hasSeededTeams")
-            UserDefaults.standard.removeObject(forKey: "seedVersion")
-            UserDefaults.standard.set(
-                "Chicago Cubs,Los Angeles Dodgers,St. Louis Cardinals",
-                forKey: "favoriteTeams"
-            )
-            UserDefaults.standard.set(true, forKey: "hasSeenOnboarding")
+            if resetError == nil {
+                AppPreferences.resetForFreshStore()
+                UserDefaults.standard.set(
+                    "Chicago Cubs,Los Angeles Dodgers,St. Louis Cardinals",
+                    forKey: AppPreferences.favoriteTeamsKey
+                )
+                UserDefaults.standard.set(true, forKey: AppPreferences.hasSeenOnboardingKey)
+            }
+        }
+        if let resetError {
+            container = nil
+            storeState.error = resetError
+            storeState.storeURL = StoreBackupService.defaultStoreURL()
+            storeState.failureReason = .storeLoad
+            return
         }
         #endif
         let result = StoreLauncher.launch { config in
@@ -73,7 +82,9 @@ struct SeenAtApp: App {
             )
         }
         container = result.container
-        _storeState = State(wrappedValue: result.storeState)
+        storeState.error = result.storeState.error
+        storeState.storeURL = result.storeState.storeURL
+        storeState.failureReason = result.storeState.failureReason
 
         guard let c = container else { return }
         let state = splashState
@@ -101,6 +112,7 @@ struct SeenAtApp: App {
                     }
                 }
                 .animation(.easeOut(duration: 0.5), value: splashState.isVisible)
+                .preferredColorScheme(.dark)
                 .onOpenURL { url in
                     switch DeepLinkParser.parse(url) {
                     case .success(let eventID):

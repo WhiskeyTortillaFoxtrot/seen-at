@@ -2,13 +2,11 @@ import Foundation
 import SwiftData
 
 enum TeamSeedService {
-    private static let hasSeededKey = "hasSeededTeams"
-    private static let seedVersionKey = "seedVersion"
     private static let currentSeedVersion = 2
 
     @MainActor
     static func seedIfNeeded(modelContext: ModelContext) async {
-        let storedVersion = UserDefaults.standard.integer(forKey: seedVersionKey)
+        let storedVersion = UserDefaults.standard.integer(forKey: AppPreferences.seedVersionKey)
         guard storedVersion < currentSeedVersion else { return }
 
         let builtInPredicate = #Predicate<Team> { $0.isBuiltIn == true }
@@ -42,8 +40,7 @@ enum TeamSeedService {
             guard modelContext.saveAndLog("Failed to seed teams") else { return }
         }
 
-        UserDefaults.standard.set(true, forKey: hasSeededKey)
-        UserDefaults.standard.set(currentSeedVersion, forKey: seedVersionKey)
+        UserDefaults.standard.set(currentSeedVersion, forKey: AppPreferences.seedVersionKey)
     }
 
     @MainActor

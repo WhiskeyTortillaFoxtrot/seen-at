@@ -9,7 +9,6 @@ final class TeamSeedServiceTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
-        UserDefaults.standard.removeObject(forKey: "hasSeededTeams")
         UserDefaults.standard.removeObject(forKey: "seedVersion")
         container = TestModelContainer.create()
         context = container.mainContext
@@ -18,7 +17,6 @@ final class TeamSeedServiceTests: XCTestCase {
     override func tearDown() {
         container = nil
         context = nil
-        UserDefaults.standard.removeObject(forKey: "hasSeededTeams")
         UserDefaults.standard.removeObject(forKey: "seedVersion")
         super.tearDown()
     }
@@ -57,18 +55,17 @@ final class TeamSeedServiceTests: XCTestCase {
         XCTAssertEqual(builtInCount, 176)
     }
 
-    func testSeededTeamsHaveCorrectNames() async {
+    func testSeededTeamsHaveCorrectNames() async throws {
         await TeamSeedService.seedIfNeeded(modelContext: context)
 
         let descriptor = FetchDescriptor<Team>(sortBy: [SortDescriptor(\.name)])
-        let teams = try! context.fetch(descriptor)
+        let teams = try context.fetch(descriptor)
 
         XCTAssertEqual(teams.first?.name, "Anaheim Ducks")
         XCTAssertEqual(teams.last?.name, "Winnipeg Jets")
     }
 
     func testReseedsWhenSeedVersionIsOld() async {
-        UserDefaults.standard.set(true, forKey: "hasSeededTeams")
         UserDefaults.standard.set(0, forKey: "seedVersion")
 
         await TeamSeedService.seedIfNeeded(modelContext: context)
@@ -89,19 +86,18 @@ final class TeamSeedServiceTests: XCTestCase {
         XCTAssertEqual(afterReseed, 176)
     }
 
-    func testMigratesRenamedTeams() async {
+    func testMigratesRenamedTeams() async throws {
         let oldA = Team(name: "Oakland Athletics", abbreviation: "OAK", sport: "mlb", isBuiltIn: true, primaryColorHex: "#003831", secondaryColorHex: "#EFB21E")
         let oldU = Team(name: "Utah Hockey Club", abbreviation: "UTA", sport: "nhl", isBuiltIn: true, primaryColorHex: "#71AFE5", secondaryColorHex: "#111111")
         context.insert(oldA)
         context.insert(oldU)
         try? context.save()
 
-        UserDefaults.standard.set(true, forKey: "hasSeededTeams")
         UserDefaults.standard.set(0, forKey: "seedVersion")
 
         await TeamSeedService.seedIfNeeded(modelContext: context)
 
-        let teams = try! context.fetch(FetchDescriptor<Team>())
+        let teams = try context.fetch(FetchDescriptor<Team>())
         let athletics = teams.first { $0.name == "Athletics" }
         let mammoth = teams.first { $0.name == "Utah Mammoth" }
         XCTAssertNotNil(athletics, "Oakland Athletics should be renamed to Athletics")
@@ -119,7 +115,6 @@ final class TeamSeedServiceTests: XCTestCase {
         let countAfterSeed = try? context.fetchCount(FetchDescriptor<Team>())
         XCTAssertEqual(countAfterSeed, 176)
 
-        UserDefaults.standard.removeObject(forKey: "hasSeededTeams")
         UserDefaults.standard.removeObject(forKey: "seedVersion")
 
         await TeamSeedService.seedIfNeeded(modelContext: context)
