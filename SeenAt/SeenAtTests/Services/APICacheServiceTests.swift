@@ -89,4 +89,33 @@ final class APICacheServiceTests: XCTestCase {
     func testCacheTTLIsFiveMinutes() {
         XCTAssertEqual(APICacheService.cacheTTL, 300)
     }
+
+    func testConcurrentCacheAccessDoesNotCrash() async {
+        await withTaskGroup(of: Void.self) { group in
+            for index in 0..<100 {
+                group.addTask {
+                    await Task.detached {
+                        let date = Date(timeIntervalSince1970: TimeInterval(index) * 86_400)
+                        let games = [LeagueGame(
+                            id: "game-\(index)",
+                            awayTeam: "Away",
+                            homeTeam: "Home",
+                            venueName: "Venue",
+                            dateString: "2026-07-23",
+                            league: "mlb",
+                            url: nil,
+                            dayNight: nil
+                        )]
+                        APICacheService.setCachedGames(games, league: "mlb", date: date)
+                        _ = APICacheService.getCachedGames(league: "mlb", date: date)
+                    }.value
+                }
+            }
+        }
+
+        XCTAssertEqual(APICacheService.getCachedGames(
+            league: "mlb",
+            date: Date(timeIntervalSince1970: 50 * 86_400)
+        )?.first?.id, "game-50")
+    }
 }

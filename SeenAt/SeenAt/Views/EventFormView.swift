@@ -10,7 +10,7 @@ struct EventFormView: View {
         allTeams.filter { $0.sport == selectedLeague }
     }
 
-    @AppStorage("favoriteTeams") private var favoriteTeamsString: String = ""
+    @AppStorage(AppPreferences.favoriteTeamsKey) private var favoriteTeamsString: String = ""
     private var favoriteTeamNames: [String] {
         favoriteTeamsString.split(separator: ",").map(String.init).filter { !$0.isEmpty }
     }
@@ -59,6 +59,7 @@ struct EventFormView: View {
                     .onChange(of: date) { _, _ in fetchGames() }
                     .onChange(of: selectedLeague) { _, _ in fetchGames() }
             }
+            .listRowBackground(GlassListRowBackground())
 
             Section("Watch Location") {
                 Picker("", selection: $watchLocation) {
@@ -67,6 +68,7 @@ struct EventFormView: View {
                 }
                 .pickerStyle(.segmented)
             }
+            .listRowBackground(GlassListRowBackground())
 
             gamesSection
 
@@ -74,6 +76,9 @@ struct EventFormView: View {
         }
         .navigationTitle("New Game")
         .navigationBarTitleDisplayMode(.inline)
+        .scrollContentBackground(.hidden)
+        .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
+        .background { StadiumBackdrop(usesDailyImage: true) }
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
                 Button("Cancel") { dismiss() }
@@ -99,6 +104,7 @@ struct EventFormView: View {
             } header: {
                 Label("\(leagueLabel) Games", systemImage: sportIcon)
             }
+            .listRowBackground(GlassListRowBackground())
         } else if let error = errorMessage {
             Section {
                 VStack(spacing: 8) {
@@ -110,6 +116,7 @@ struct EventFormView: View {
             } header: {
                 Label("\(leagueLabel) Games", systemImage: sportIcon)
             }
+            .listRowBackground(GlassListRowBackground())
         } else if hasFetched && games.isEmpty {
             Section {
                 Text("No games scheduled for this date")
@@ -117,6 +124,7 @@ struct EventFormView: View {
             } header: {
                 Label("\(leagueLabel) Games", systemImage: sportIcon)
             }
+            .listRowBackground(GlassListRowBackground())
         } else if !games.isEmpty {
             Section {
                 ForEach(sortedGames(games, favoriteTeamNames: favoriteTeamNames)) { game in
@@ -133,6 +141,7 @@ struct EventFormView: View {
             } header: {
                 Label("\(leagueLabel) Games", systemImage: sportIcon)
             }
+            .listRowBackground(GlassListRowBackground())
         }
     }
 
@@ -197,6 +206,7 @@ struct EventFormView: View {
                 .disabled(manualTeamsDisabled)
             }
         }
+        .listRowBackground(GlassListRowBackground())
     }
 
     private var manualTeamsDisabled: Bool {

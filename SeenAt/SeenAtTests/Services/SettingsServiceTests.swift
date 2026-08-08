@@ -115,6 +115,13 @@ final class SettingsServiceTests: XCTestCase {
         let container = TestModelContainer.create()
         let context = container.mainContext
         let dependencies = MockSettingsServiceDependencies()
+        let previousPreferences = snapshotPreferences()
+        UserDefaults.standard.set("mlb", forKey: AppPreferences.defaultSportKey)
+        UserDefaults.standard.set("Chicago Cubs", forKey: AppPreferences.favoriteTeamsKey)
+        UserDefaults.standard.set(true, forKey: AppPreferences.hasSeenOnboardingKey)
+        UserDefaults.standard.set(2, forKey: AppPreferences.seedVersionKey)
+        UserDefaults.standard.set("Legacy Team", forKey: AppPreferences.legacyFavoriteTeamKey)
+        defer { restorePreferences(previousPreferences) }
         let event = TestDataFactory.makeEvent()
         let sighting = TestDataFactory.makeSighting(firstName: "Test", event: event)
         let orphanSighting = TestDataFactory.makeSighting(firstName: "Orphan")
@@ -134,6 +141,11 @@ final class SettingsServiceTests: XCTestCase {
         XCTAssertEqual(dependencies.saveCallCount, 1)
         XCTAssertTrue(try context.fetch(FetchDescriptor<Event>()).isEmpty)
         XCTAssertTrue(try context.fetch(FetchDescriptor<JerseySighting>()).isEmpty)
+        XCTAssertNil(UserDefaults.standard.object(forKey: AppPreferences.defaultSportKey))
+        XCTAssertNil(UserDefaults.standard.object(forKey: AppPreferences.favoriteTeamsKey))
+        XCTAssertNil(UserDefaults.standard.object(forKey: AppPreferences.hasSeenOnboardingKey))
+        XCTAssertNil(UserDefaults.standard.object(forKey: AppPreferences.seedVersionKey))
+        XCTAssertNil(UserDefaults.standard.object(forKey: AppPreferences.legacyFavoriteTeamKey))
     }
 
     func testResetAllDataReturnsFalseWhenFetchingEventsFailsWithoutSideEffects() async {
@@ -176,8 +188,26 @@ final class SettingsServiceTests: XCTestCase {
     func testResetAllDataSucceedsForEmptyStore() async {
         let container = TestModelContainer.create()
         let context = container.mainContext
+        let previousPreferences = snapshotPreferences()
+        defer { restorePreferences(previousPreferences) }
 
         let resetSucceeded = await SettingsService.resetAllData(context: context)
         XCTAssertTrue(resetSucceeded)
+    }
+
+    private func snapshotPreferences() -> [String: Any?] {
+        Dictionary(uniqueKeysWithValues: AppPreferences.resettableKeys.map { key in
+            (key, UserDefaults.standard.object(forKey: key))
+        })
+    }
+
+    private func restorePreferences(_ values: [String: Any?]) {
+        for (key, value) in values {
+            if let value {
+                UserDefaults.standard.set(value, forKey: key)
+            } else {
+                UserDefaults.standard.removeObject(forKey: key)
+            }
+        }
     }
 }

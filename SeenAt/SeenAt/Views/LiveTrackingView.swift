@@ -46,21 +46,28 @@ struct LiveTrackingView: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            headerSection
+        ZStack {
+            StadiumBackdrop(venue: event.venue, usesDailyImage: true)
 
-            if event.sightings.isEmpty {
-                emptyState
-            } else {
-                List {
-                    teamBreakdownSection
-                    recentSightingsSection
+            VStack(spacing: 0) {
+                headerSection
+
+                if event.sightings.isEmpty {
+                    emptyState
+                } else {
+                    List {
+                        teamBreakdownSection
+                        recentSightingsSection
+                    }
+                    .listStyle(.insetGrouped)
+                    .scrollContentBackground(.hidden)
+                    .listRowBackground(GlassListRowBackground())
                 }
-                .listStyle(.insetGrouped)
             }
         }
         .navigationTitle("Live Tracking")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackground(.hidden, for: .navigationBar)
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
                 Button {
@@ -174,19 +181,7 @@ struct LiveTrackingView: View {
         }
         .padding()
         .frame(maxWidth: .infinity)
-        .background {
-            ZStack {
-                if event.watchLocation != .tv, let venue = event.venue, let photo = StadiumPhotoService.image(for: venue) {
-                    photo
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                    Color.black.opacity(0.5)
-                } else {
-                    homeTeamSecondaryColor
-                        .overlay(Color.black.opacity(0.3))
-                }
-            }
-        }
+        .liquidGlass(in: RoundedRectangle(cornerRadius: 24, style: .continuous))
     }
 
     private var locationMenu: some View {
@@ -351,6 +346,8 @@ struct TeamBarRow: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(team.name)
                     .font(.urbanist(.subheadline, weight: .medium))
+                    .lineLimit(2)
+                    .layoutPriority(1)
 
                 GeometryReader { geo in
                     ZStack(alignment: .leading) {

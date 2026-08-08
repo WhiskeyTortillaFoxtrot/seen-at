@@ -11,7 +11,12 @@ struct EventDateSections {
 
     init(events: [Event], now: Date, calendar: Calendar) {
         let startOfToday = calendar.startOfDay(for: now)
-        let startOfTomorrow = calendar.date(byAdding: .day, value: 1, to: startOfToday)!
+        guard let startOfTomorrow = calendar.date(byAdding: .day, value: 1, to: startOfToday) else {
+            past = Self.sort(events.filter { $0.date < startOfToday }, ascending: false)
+            today = []
+            upcoming = []
+            return
+        }
 
         past = Self.sort(events.filter { $0.date < startOfToday }, ascending: false)
 

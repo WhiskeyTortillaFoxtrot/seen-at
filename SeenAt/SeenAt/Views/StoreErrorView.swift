@@ -141,8 +141,7 @@ struct StoreErrorView: View {
             return
         }
 
-        UserDefaults.standard.removeObject(forKey: "hasSeededTeams")
-        UserDefaults.standard.removeObject(forKey: "seedVersion")
+        AppPreferences.resetForFreshStore()
 
         await LiveActivityManager.endAll()
         PhotoCacheService.clear()

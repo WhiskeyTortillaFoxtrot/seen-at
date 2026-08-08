@@ -2,7 +2,7 @@ import SwiftUI
 import SwiftData
 
 struct FavoriteTeamsView: View {
-    @AppStorage("favoriteTeams") private var favoriteTeamsString: String = ""
+    @AppStorage(AppPreferences.favoriteTeamsKey) private var favoriteTeamsString: String = ""
 
     @Query(sort: \Team.name) private var allTeams: [Team]
 
@@ -64,8 +64,12 @@ struct FavoriteTeamsView: View {
                     .id(league)
                 }
             }
+            .scrollContentBackground(.hidden)
+            .listRowBackground(GlassListRowBackground())
         }
         .navigationTitle("Favorite Teams")
+        .toolbarBackground(.hidden, for: .navigationBar)
+        .background { StadiumBackdrop(usesDailyImage: true) }
         .onAppear(perform: migrateOldFavorite)
     }
 
@@ -81,11 +85,11 @@ struct FavoriteTeamsView: View {
 
     private func migrateOldFavorite() {
         guard favoriteTeamsString.isEmpty else { return }
-        guard let oldFavorite = UserDefaults.standard.string(forKey: "favoriteTeam"),
+        guard let oldFavorite = UserDefaults.standard.string(forKey: AppPreferences.legacyFavoriteTeamKey),
               !oldFavorite.isEmpty
         else { return }
         favoriteTeamsString = oldFavorite
-        UserDefaults.standard.removeObject(forKey: "favoriteTeam")
+        UserDefaults.standard.removeObject(forKey: AppPreferences.legacyFavoriteTeamKey)
     }
 
     private func label(for sport: String) -> String {

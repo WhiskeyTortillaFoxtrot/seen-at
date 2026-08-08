@@ -88,6 +88,7 @@ enum SettingsService {
 
         await dependencies.endAllActivities()
         dependencies.clearPhotoCache()
+        AppPreferences.resetForFreshStore()
         DiagnosticsService.shared.log(category: "Settings", level: .info, message: "All data reset completed")
         return true
     }

@@ -1244,20 +1244,39 @@ final class StoreBackupServiceTests: XCTestCase {
     func testBackupValidationFailureIsReportedToCaller() throws {
         try write("first", to: storeURL)
         var reportedFailure: BackupValidationFailure?
+        var callbackCount = 0
         let backupID = try StoreBackupService.prepareForMigration(
             storeURL: storeURL,
             applicationSupportURL: applicationSupportURL,
             targetSchemaVersion: "2.0.0",
             backupValidation: { _, _, _, _ in .checksumMismatch("store/default.store") },
-            onBackupValidationFailure: { reportedFailure = $0 }
+            onBackupValidationFailure: {
+                callbackCount += 1
+                reportedFailure = $0
+            }
         )
 
         XCTAssertNil(backupID, "Launch must proceed without a backup when the fresh backup cannot be validated")
+        XCTAssertEqual(callbackCount, 1, "The final validation failure should be reported exactly once")
         XCTAssertEqual(
             reportedFailure,
             .checksumMismatch("store/default.store"),
             "The caller must be told why no migration backup was created"
         )
+    }
+
+    func testBackupValidationFailureIsNotReportedWhenBackupSucceeds() throws {
+        try write("first", to: storeURL)
+        var callbackCount = 0
+        let backupID = try StoreBackupService.prepareForMigration(
+            storeURL: storeURL,
+            applicationSupportURL: applicationSupportURL,
+            targetSchemaVersion: "2.0.0",
+            onBackupValidationFailure: { _ in callbackCount += 1 }
+        )
+
+        XCTAssertNotNil(backupID)
+        XCTAssertEqual(callbackCount, 0, "Validation failure callbacks must not fire for a valid backup")
     }
 
     func testBackupValidationFailureReportsUnsafeFileTreeLocation() throws {

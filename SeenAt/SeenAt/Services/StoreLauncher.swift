@@ -46,10 +46,13 @@ struct StoreLauncher {
             case StoreBackupService.BackupError.migrationFinalization:
                 storeState.failureReason = .migrationFinalization
             case StoreBackupService.BackupError.recoveryRequired:
+                // Recovery quarantined live data but could not safely reopen it.
                 storeState.failureReason = .corruptedRecovery
             case StoreBackupService.BackupError.staleMigrationAttempt:
+                // An interrupted attempt points at state that may no longer match this store.
                 storeState.failureReason = .corruptedRecovery
             case StoreBackupService.BackupError.invalidBackup:
+                // The backup itself is invalid, but the live store remains available to reset.
                 storeState.failureReason = .recoveryRequired
             default:
                 storeState.failureReason = .storeLoad
@@ -157,10 +160,13 @@ struct StoreLauncher {
     @MainActor
     static func seedIfNeeded(in container: ModelContainer) async {
         await TeamSeedService.seedIfNeeded(modelContext: container.mainContext)
+        #if DEBUG
         if ProcessInfo.processInfo.arguments.contains("--seedData") {
-            SeedData.seedIfNeeded(in: container.mainContext)
-            DiagnosticsService.shared.log(category: "Store", level: .info, message: "Seed data inserted")
+            if await SeedData.seedIfNeeded(in: container.mainContext) {
+                DiagnosticsService.shared.log(category: "Store", level: .info, message: "Seed data inserted")
+            }
         }
+        #endif
         DiagnosticsService.shared.log(category: "Store", level: .info, message: "Team seeding completed")
     }
 
@@ -168,7 +174,10 @@ struct StoreLauncher {
     static func startLiveActivities(for container: ModelContainer) async {
         let cal = Calendar.current
         let startOfToday = cal.startOfDay(for: .now)
-        let startOfTomorrow = cal.date(byAdding: .day, value: 1, to: startOfToday)!
+        guard let startOfTomorrow = cal.date(byAdding: .day, value: 1, to: startOfToday) else {
+            DiagnosticsService.shared.log(category: "Store", level: .error, message: "Could not calculate tomorrow for Live Activity startup")
+            return
+        }
         let todayPredicate = #Predicate<Event> {
             $0.date >= startOfToday && $0.date < startOfTomorrow
         }

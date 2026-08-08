@@ -7,9 +7,9 @@ struct SettingsView: View {
 
     @Query(sort: \Team.name) private var allTeams: [Team]
 
-    @AppStorage("favoriteTeams") private var favoriteTeamsString: String = ""
-    @AppStorage("defaultSport") private var defaultSport: String = "mlb"
-    @AppStorage("hasSeenOnboarding") private var hasSeenOnboarding = false
+    @AppStorage(AppPreferences.favoriteTeamsKey) private var favoriteTeamsString: String = ""
+    @AppStorage(AppPreferences.defaultSportKey) private var defaultSport: String = "mlb"
+    @AppStorage(AppPreferences.hasSeenOnboardingKey) private var hasSeenOnboarding = false
 
     @State private var showingExporter = false
     @State private var exportCSV: String = ""
@@ -38,6 +38,7 @@ struct SettingsView: View {
                     FavoriteTeamsView()
                 }
             }
+            .listRowBackground(GlassListRowBackground())
 
             Section("Export") {
                 Button("Export All Data as CSV") {
@@ -47,6 +48,7 @@ struct SettingsView: View {
                 }
                 .accessibilityHint("Creates a CSV file with all your data")
             }
+            .listRowBackground(GlassListRowBackground())
             .fileExporter(
                 isPresented: $showingExporter,
                 document: CSVDocument(text: exportCSV),
@@ -65,6 +67,7 @@ struct SettingsView: View {
                 }
                 .accessibilityHint("Deletes all events and sightings permanently")
             }
+            .listRowBackground(GlassListRowBackground())
             .confirmationDialog("Delete All Sightings?", isPresented: $showingDeleteSightingsAlert) {
                 Button("Delete", role: .destructive) { deleteAllSightings() }
             } message: {
@@ -98,6 +101,7 @@ struct SettingsView: View {
                 }
                 .accessibilityHint("Shares a diagnostics report for troubleshooting")
             }
+            .listRowBackground(GlassListRowBackground())
 
             Section("About") {
                 Button("Show Onboarding") {
@@ -119,9 +123,12 @@ struct SettingsView: View {
                         .foregroundStyle(.secondary)
                 }
             }
+            .listRowBackground(GlassListRowBackground())
         }
         .navigationTitle("Settings")
-
+        .scrollContentBackground(.hidden)
+        .toolbarBackground(.hidden, for: .navigationBar)
+        .background { StadiumBackdrop(usesDailyImage: true) }
     }
 
     private func deleteAllSightings() {

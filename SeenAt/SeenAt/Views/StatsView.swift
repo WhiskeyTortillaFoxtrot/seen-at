@@ -56,6 +56,7 @@ struct StatsView: View {
         }
         .navigationTitle("Stats")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackground(.hidden, for: .navigationBar)
         .task(id: cacheKey) {
             viewModel.update(key: cacheKey, events: events)
         }
@@ -64,6 +65,7 @@ struct StatsView: View {
                 self.selectedYear = nil
             }
         }
+        .background { StadiumBackdrop(usesDailyImage: true) }
     }
 
     private var emptyState: some View {
@@ -131,8 +133,7 @@ struct StatsView: View {
             }
         }
         .padding()
-        .background(.background, in: RoundedRectangle(cornerRadius: 12))
-        .shadow(color: .black.opacity(0.05), radius: 4, y: 2)
+        .liquidGlass(in: RoundedRectangle(cornerRadius: 20, style: .continuous))
     }
 
     private func byLeagueCard(leagues: [(sport: String, count: Int)]) -> some View {
@@ -167,8 +168,7 @@ struct StatsView: View {
             }
         }
         .padding()
-        .background(.background, in: RoundedRectangle(cornerRadius: 12))
-        .shadow(color: .black.opacity(0.05), radius: 4, y: 2)
+        .liquidGlass(in: RoundedRectangle(cornerRadius: 20, style: .continuous))
     }
 
     private func topPlayersCard(players: [(name: String, team: Team, playerNumber: String?, count: Int)]) -> some View {
@@ -206,6 +206,8 @@ struct StatsView: View {
                         if !player.name.hasPrefix("#") {
                             Text(player.name)
                                 .font(.urbanist(.subheadline, weight: .medium))
+                                .lineLimit(1)
+                                .layoutPriority(1)
                         }
 
                         Spacer()
@@ -223,8 +225,7 @@ struct StatsView: View {
             }
         }
         .padding()
-        .background(.background, in: RoundedRectangle(cornerRadius: 12))
-        .shadow(color: .black.opacity(0.05), radius: 4, y: 2)
+        .liquidGlass(in: RoundedRectangle(cornerRadius: 20, style: .continuous))
     }
 
     private func sportColor(_ sport: String) -> Color {

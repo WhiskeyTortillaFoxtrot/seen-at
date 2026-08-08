@@ -25,9 +25,13 @@ struct GameHistoryView: View {
                     }
                 }
             }
+            .scrollContentBackground(.hidden)
+            .listRowBackground(Color.clear)
         }
         .navigationTitle("Game History")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackground(.hidden, for: .navigationBar)
+        .background { StadiumBackdrop(usesDailyImage: true) }
         .navigationDestination(for: Event.self) { event in
             EventSummaryView(event: event)
         }
