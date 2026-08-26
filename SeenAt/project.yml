@@ -15,6 +15,9 @@ targets:
     platform: iOS
     sources:
       - SeenAt
+    dependencies:
+      - target: SeenAtWidget
+        embed: true
     settings:
       base:
         INFOPLIST_FILE: SeenAt/Info.plist

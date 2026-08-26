@@ -15,6 +15,14 @@ enum AppPreferences {
         defaultSportKey,
     ]
 
+    /// Preferences explicitly approved for inclusion in a user-shareable diagnostics report.
+    /// Keep this separate from reset behavior so new preferences are private by default.
+    static let diagnosticsSafeKeys: Set<String> = [
+        seedVersionKey,
+        hasSeenOnboardingKey,
+        defaultSportKey,
+    ]
+
     static func resetForFreshStore() {
         // Keep this list aligned with app preferences and their @AppStorage declarations.
         for key in resettableKeys {
