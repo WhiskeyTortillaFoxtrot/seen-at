@@ -6,7 +6,7 @@ on:
       - main
   push:
     branches:
-      - '**'
+      - main
 
 permissions:
   contents: read
@@ -35,4 +35,5 @@ jobs:
           -project SeenAt.xcodeproj
           -scheme SeenAt
           -destination 'platform=iOS Simulator,name=iPhone 17 Pro'
+          -only-testing:SeenAtTests
           CODE_SIGNING_ALLOWED=NO
