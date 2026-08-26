@@ -170,6 +170,14 @@ enum StoreBackupService {
 
     private static let maxBackupAttempts = 2
 
+    /// Prepares a migration backup, returning its rollback identifier when one is published.
+    ///
+    /// - Parameters:
+    ///   - backupValidation: Optional synchronous validator whose arguments are the staging
+    ///     directory, manifest, live store URL, and file manager, in that order.
+    ///   - onBackupValidationFailure: Called once with the final validation failure only when
+    ///     all backup attempts fail validation and migration proceeds without a backup. It is
+    ///     not called when an I/O error is thrown.
     static func prepareForMigration(
         storeURL: URL,
         applicationSupportURL: URL,

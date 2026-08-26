@@ -55,13 +55,14 @@ struct LiveTrackingView: View {
                 if event.sightings.isEmpty {
                     emptyState
                 } else {
-                    List {
-                        teamBreakdownSection
-                        recentSightingsSection
+                    ScrollView {
+                        VStack(spacing: 16) {
+                            teamBreakdownSection
+                            recentSightingsSection
+                        }
+                        .padding(.horizontal)
+                        .padding(.vertical, 16)
                     }
-                    .listStyle(.insetGrouped)
-                    .scrollContentBackground(.hidden)
-                    .listRowBackground(GlassListRowBackground())
                 }
             }
         }
@@ -224,20 +225,22 @@ struct LiveTrackingView: View {
         let breakdown = event.teamBreakdown
         let total = event.totalCount
         if !breakdown.isEmpty {
-            Section {
-                ChartToggle(usePieChart: $showPieChart)
-                    .padding(.vertical, 4)
+            GlassCard {
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("By Team")
+                        .font(.urbanist(.headline))
 
-                if showPieChart {
-                    TeamPieChart(breakdown: breakdown)
-                } else {
-                    ForEach(breakdown, id: \.team.id) { team, count in
-                        TeamBarRow(team: team, count: count, total: total)
+                    ChartToggle(usePieChart: $showPieChart)
+                        .padding(.vertical, 4)
+
+                    if showPieChart {
+                        TeamPieChart(breakdown: breakdown)
+                    } else {
+                        ForEach(breakdown, id: \.team.id) { team, count in
+                            TeamBarRow(team: team, count: count, total: total)
+                        }
                     }
                 }
-            } header: {
-                Text("By Team")
-                    .font(.urbanist(.headline))
             }
         }
     }
@@ -246,82 +249,89 @@ struct LiveTrackingView: View {
     private var recentSightingsSection: some View {
         let recent = event.sightings.sorted { $0.timestamp > $1.timestamp }
         if !recent.isEmpty {
-            Section {
-                ForEach(recent.prefix(20)) { sighting in
-                    let hasPhoto = event.watchLocation != .tv && sighting.photoData != nil
-                    VStack(spacing: 0) {
-                        HStack(spacing: 0) {
-                            Rectangle()
-                                .fill(sighting.team?.primaryColor ?? .gray)
-                                .frame(width: 4)
-                                .accessibilityHidden(true)
+            GlassCard {
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Recent")
+                        .font(.urbanist(.headline))
 
-                            HStack {
-                                if let team = sighting.team {
-                                    Text(team.abbreviation)
-                                        .font(.urbanist(.subheadline, weight: .medium))
-                                }
-
-                                if hasPhoto, let data = sighting.photoData, let image = PhotoCacheService.image(for: "\(sighting.persistentModelID)", data: data) {
-                                    Image(uiImage: image)
-                                        .resizable()
-                                        .scaledToFill()
-                                        .frame(width: 36, height: 36)
-                                        .clipShape(RoundedRectangle(cornerRadius: 6))
-                                } else {
-                                    Image(systemName: "tshirt")
-                                        .font(.urbanist(.title3))
-                                        .foregroundStyle(.secondary)
-                                        .frame(width: 36, height: 36)
-                                }
-
-                                if !sighting.displayName.isEmpty {
-                                    Text(sighting.displayName)
-                                        .font(.urbanist(.subheadline))
-                                }
-
-                                Spacer()
-
-                                Text(sighting.timestamp, style: .time)
-                                    .font(.urbanist(.caption))
-                                    .foregroundStyle(.secondary)
+                    ForEach(Array(recent.prefix(20).enumerated()), id: \.offset) { index, sighting in
+                        let hasPhoto = event.watchLocation != .tv && sighting.photoData != nil
+                        VStack(spacing: 0) {
+                            if index > 0 {
+                                Divider()
+                                    .padding(.bottom, 12)
                             }
-                            .padding(.leading, 8)
-                        }
-                        .contentShape(Rectangle())
-                        .onTapGesture {
-                            if hasPhoto {
-                                withAnimation(.snappy) {
-                                    if expandedSighting == sighting {
-                                        expandedSighting = nil
+
+                            HStack(spacing: 0) {
+                                Rectangle()
+                                    .fill(sighting.team?.primaryColor ?? .gray)
+                                    .frame(width: 4)
+                                    .accessibilityHidden(true)
+
+                                HStack {
+                                    if let team = sighting.team {
+                                        Text(team.abbreviation)
+                                            .font(.urbanist(.subheadline, weight: .medium))
+                                    }
+
+                                    if hasPhoto, let data = sighting.photoData, let image = PhotoCacheService.image(for: "\(sighting.persistentModelID)", data: data) {
+                                        Image(uiImage: image)
+                                            .resizable()
+                                            .scaledToFill()
+                                            .frame(width: 36, height: 36)
+                                            .clipShape(RoundedRectangle(cornerRadius: 6))
                                     } else {
-                                        expandedSighting = sighting
+                                        Image(systemName: "tshirt")
+                                            .font(.urbanist(.title3))
+                                            .foregroundStyle(.secondary)
+                                            .frame(width: 36, height: 36)
+                                    }
+
+                                    if !sighting.displayName.isEmpty {
+                                        Text(sighting.displayName)
+                                            .font(.urbanist(.subheadline))
+                                    }
+
+                                    Spacer()
+
+                                    Text(sighting.timestamp, style: .time)
+                                        .font(.urbanist(.caption))
+                                        .foregroundStyle(.secondary)
+                                }
+                                .padding(.leading, 8)
+                            }
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                if hasPhoto {
+                                    withAnimation(.snappy) {
+                                        if expandedSighting == sighting {
+                                            expandedSighting = nil
+                                        } else {
+                                            expandedSighting = sighting
+                                        }
                                     }
                                 }
                             }
-                        }
-                        .accessibilityAddTraits(.isButton)
-                        .accessibilityHint("Tap to expand photo")
+                            .accessibilityAddTraits(.isButton)
+                            .accessibilityHint("Tap to expand photo")
 
-                        if expandedSighting == sighting, hasPhoto, let data = sighting.photoData, let image = PhotoCacheService.image(for: "\(sighting.persistentModelID)", data: data) {
-                            Image(uiImage: image)
-                                .resizable()
-                                .scaledToFit()
-                                .frame(maxHeight: 300)
-                                .clipShape(RoundedRectangle(cornerRadius: 10))
-                                .padding(.horizontal)
-                                .padding(.vertical, 8)
-                                .contentShape(Rectangle())
-                                .onTapGesture {
-                                    fullScreenSighting = sighting
-                                }
-                                .transition(.opacity.combined(with: .move(edge: .top)))
+                            if expandedSighting == sighting, hasPhoto, let data = sighting.photoData, let image = PhotoCacheService.image(for: "\(sighting.persistentModelID)", data: data) {
+                                Image(uiImage: image)
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(maxHeight: 300)
+                                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                                    .padding(.horizontal)
+                                    .padding(.vertical, 8)
+                                    .contentShape(Rectangle())
+                                    .onTapGesture {
+                                        fullScreenSighting = sighting
+                                    }
+                                    .transition(.opacity.combined(with: .move(edge: .top)))
+                            }
                         }
                     }
                 }
-            } header: {
-                Text("Recent")
-                    .font(.urbanist(.headline))
             }
         }
     }

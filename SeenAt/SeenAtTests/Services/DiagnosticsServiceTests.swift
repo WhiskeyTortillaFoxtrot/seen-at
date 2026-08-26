@@ -167,4 +167,34 @@ final class DiagnosticsServiceTests: XCTestCase {
         XCTAssertTrue(report.contains("Teams"))
         XCTAssertTrue(report.contains("Sightings"))
     }
+
+    func testReportIncludesOnlyExplicitlySafePreferences() {
+        let safeKey = AppPreferences.defaultSportKey
+        let privateKey = AppPreferences.favoriteTeamsKey
+        let defaults = UserDefaults.standard
+        let originalSafeValue = defaults.object(forKey: safeKey)
+        let originalPrivateValue = defaults.object(forKey: privateKey)
+        defer {
+            if let originalSafeValue {
+                defaults.set(originalSafeValue, forKey: safeKey)
+            } else {
+                defaults.removeObject(forKey: safeKey)
+            }
+            if let originalPrivateValue {
+                defaults.set(originalPrivateValue, forKey: privateKey)
+            } else {
+                defaults.removeObject(forKey: privateKey)
+            }
+        }
+
+        defaults.set("diagnostics-safe-sport", forKey: safeKey)
+        defaults.set("diagnostics-private-team", forKey: privateKey)
+
+        let report = DiagnosticsService.shared.generateReport(context: context)
+
+        XCTAssertTrue(report.contains("\(safeKey) = diagnostics-safe-sport"))
+        XCTAssertFalse(report.contains(privateKey))
+        XCTAssertFalse(report.contains("diagnostics-private-team"))
+        XCTAssertFalse(AppPreferences.diagnosticsSafeKeys.contains(privateKey))
+    }
 }

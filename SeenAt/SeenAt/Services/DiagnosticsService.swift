@@ -108,7 +108,7 @@ final class DiagnosticsService: @unchecked Sendable {
         report += "Entity Counts: \(eventCount) Events, \(teamCount) Teams, \(sightingCount) Sightings\n"
 
         report += "\nUserDefaults:\n"
-        let knownKeys = AppPreferences.resettableKeys
+        let knownKeys = AppPreferences.diagnosticsSafeKeys
         for key in knownKeys.sorted() {
             let value = UserDefaults.standard.object(forKey: key) ?? "<not set>"
             report += "  \(key) = \(value)\n"

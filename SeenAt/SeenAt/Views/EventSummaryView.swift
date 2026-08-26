@@ -361,8 +361,7 @@ struct EventSummaryView: View {
                 }
             }
         }
-        .padding()
-        .liquidGlass(in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .groupedGlassCard()
     }
 
     @ViewBuilder
@@ -397,8 +396,7 @@ struct EventSummaryView: View {
                 }
             }
         }
-        .padding()
-        .liquidGlass(in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .groupedGlassCard()
     }
 
     @ViewBuilder
@@ -432,8 +430,7 @@ struct EventSummaryView: View {
                 }
             }
         }
-        .padding()
-        .liquidGlass(in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .groupedGlassCard()
     }
 
     private func openInMaps(venue: String) {
