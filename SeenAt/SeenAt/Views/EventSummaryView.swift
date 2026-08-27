@@ -20,6 +20,7 @@ struct EventSummaryView: View {
     @State private var showingDeleteError = false
     @State private var deleteErrorHaptic = 0
     @State private var photoSightings: [JerseySighting] = []
+    @State private var selectedSighting: JerseySighting?
     @State private var currentDate = Date.now
     @ScaledMetric(relativeTo: .largeTitle) private var heroCountSize: CGFloat = 64
 
@@ -84,6 +85,10 @@ struct EventSummaryView: View {
                         playerBreakdownCard(playerBreakdown: playerBreakdown)
                     }
 
+                    if !event.sightings.isEmpty, !isPreview {
+                        sightingsCard
+                    }
+
                     if event.watchLocation != .tv {
                         photoGallery
                     }
@@ -115,6 +120,13 @@ struct EventSummaryView: View {
         .sheet(isPresented: $showingAddSighting) {
             NavigationStack {
                 AddSightingView(event: event)
+            }
+        }
+        .sheet(item: $selectedSighting) { sighting in
+            NavigationStack {
+                SightingEditorView(sighting: sighting) {
+                    photoSightings = event.sightings.filter { $0.photoData != nil }
+                }
             }
         }
         .sheet(item: $shareContent) { content in
@@ -400,6 +412,53 @@ struct EventSummaryView: View {
     }
 
     @ViewBuilder
+    private var sightingsCard: some View {
+        let sightings = event.sightings.sorted { $0.timestamp > $1.timestamp }
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Sightings")
+                .font(.urbanist(.headline))
+
+            ForEach(sightings, id: \.persistentModelID) { sighting in
+                Button {
+                    selectedSighting = sighting
+                } label: {
+                    HStack(spacing: 10) {
+                        Circle()
+                            .fill(sighting.team?.primaryColor ?? .gray)
+                            .frame(width: 10, height: 10)
+                            .accessibilityHidden(true)
+
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(sighting.displayName.isEmpty ? "Unnamed Sighting" : sighting.displayName)
+                                .font(.urbanist(.subheadline))
+                            Text(sighting.team?.name ?? "No team")
+                                .font(.urbanist(.caption))
+                                .foregroundStyle(.secondary)
+                        }
+
+                        Spacer()
+
+                        Text(sighting.timestamp, style: .time)
+                            .font(.urbanist(.caption))
+                            .foregroundStyle(.secondary)
+                        Image(systemName: "chevron.right")
+                            .font(.urbanist(.caption))
+                            .foregroundStyle(.tertiary)
+                    }
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Edit \(sighting.displayName.isEmpty ? "sighting" : sighting.displayName)")
+
+                if sighting.persistentModelID != sightings.last?.persistentModelID {
+                    Divider()
+                }
+            }
+        }
+        .groupedGlassCard()
+    }
+
+    @ViewBuilder
     private var photoGallery: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Photos")
@@ -414,13 +473,17 @@ struct EventSummaryView: View {
                 LazyVGrid(columns: [.init(.adaptive(minimum: 100), spacing: 8)], spacing: 8) {
                     ForEach(Array(photoSightings), id: \.persistentModelID) { sighting in
                         VStack(spacing: 4) {
-                            if let data = sighting.photoData, let image = PhotoCacheService.image(for: "\(sighting.persistentModelID)", data: data) {
-                                Image(uiImage: image)
-                                    .resizable()
-                                    .scaledToFill()
-                                    .frame(width: 100, height: 100)
-                                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                            Button { selectedSighting = sighting } label: {
+                                if let data = sighting.photoData, let image = PhotoCacheService.image(for: "\(sighting.persistentModelID)", data: data) {
+                                    Image(uiImage: image)
+                                        .resizable()
+                                        .scaledToFill()
+                                        .frame(width: 100, height: 100)
+                                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                                }
                             }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel("Edit \(sighting.displayName.isEmpty ? "sighting" : sighting.displayName)")
                             Text(sighting.displayName)
                                 .font(.urbanist(.caption2))
                                 .foregroundStyle(.secondary)
