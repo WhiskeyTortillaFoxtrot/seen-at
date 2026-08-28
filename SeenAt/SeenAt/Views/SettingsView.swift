@@ -27,6 +27,7 @@ struct SettingsView: View {
                 Picker("Default Sport", selection: $defaultSport) {
                     Text("MLB").tag("mlb")
                     Text("NBA").tag("nba")
+                    Text("WNBA").tag("wnba")
                     Text("NFL").tag("nfl")
                     Text("NHL").tag("nhl")
                     Text("LOVB").tag("lovb")

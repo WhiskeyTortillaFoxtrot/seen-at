@@ -73,6 +73,14 @@ enum VenueDirectory {
         "Delta Center": VenueInfo(name: "Delta Center", address: "301 S Temple, Salt Lake City, UT 84101", latitude: 40.7683, longitude: -111.9011),
         "Capital One Arena": VenueInfo(name: "Capital One Arena", address: "601 F St NW, Washington, DC 20004", latitude: 38.8980, longitude: -77.0209),
 
+        // WNBA
+        "Wintrust Arena": VenueInfo(name: "Wintrust Arena", address: "200 E Cermak Rd, Chicago, IL 60616", latitude: 41.8539, longitude: -87.6216),
+        "Mohegan Sun Arena": VenueInfo(name: "Mohegan Sun Arena", address: "1 Mohegan Sun Blvd, Uncasville, CT 06382", latitude: 41.4919, longitude: -72.0920),
+        "College Park Center": VenueInfo(name: "College Park Center", address: "600 S Center St, Arlington, TX 76019", latitude: 32.7310, longitude: -97.1075),
+        "Michelob ULTRA Arena": VenueInfo(name: "Michelob ULTRA Arena", address: "3780 Las Vegas Blvd S, Las Vegas, NV 89158", latitude: 36.1026, longitude: -115.1785),
+        "Coca-Cola Coliseum": VenueInfo(name: "Coca-Cola Coliseum", address: "45 Manitoba Dr, Toronto, ON M6K 3C3, Canada", latitude: 43.6332, longitude: -79.4155),
+        "Entertainment & Sports Arena": VenueInfo(name: "Entertainment & Sports Arena", address: "1100 Oak Dr SE, Washington, DC 20032", latitude: 38.8467, longitude: -76.9910),
+
         // NFL
         "State Farm Stadium": VenueInfo(name: "State Farm Stadium", address: "1 Cardinals Dr, Glendale, AZ 85305", latitude: 33.5276, longitude: -112.2626),
         "Mercedes-Benz Stadium": VenueInfo(name: "Mercedes-Benz Stadium", address: "1 AMB Dr NW, Atlanta, GA 30313", latitude: 33.7550, longitude: -84.4008),
@@ -243,6 +251,23 @@ enum VenueDirectory {
         case "Toronto Raptors": "Scotiabank Arena"
         case "Utah Jazz": "Delta Center"
         case "Washington Wizards": "Capital One Arena"
+
+        // WNBA
+        case "Atlanta Dream": "Gateway Center Arena"
+        case "Chicago Sky": "Wintrust Arena"
+        case "Connecticut Sun": "Mohegan Sun Arena"
+        case "Dallas Wings": "College Park Center"
+        case "Golden State Valkyries": "Chase Center"
+        case "Indiana Fever": "Gainbridge Fieldhouse"
+        case "Las Vegas Aces": "Michelob ULTRA Arena"
+        case "Los Angeles Sparks": "Crypto.com Arena"
+        case "Minnesota Lynx": "Target Center"
+        case "New York Liberty": "Barclays Center"
+        case "Phoenix Mercury": "Footprint Center"
+        case "Portland Fire": "Moda Center"
+        case "Seattle Storm": "Climate Pledge Arena"
+        case "Toronto Tempo": "Coca-Cola Coliseum"
+        case "Washington Mystics": "Entertainment & Sports Arena"
 
         // NFL
         case "Arizona Cardinals": "State Farm Stadium"

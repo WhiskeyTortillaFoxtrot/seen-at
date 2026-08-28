@@ -96,6 +96,7 @@ struct FavoriteTeamsView: View {
         switch sport {
         case "mlb": return "MLB"
         case "nba": return "NBA"
+        case "wnba": return "WNBA"
         case "nfl": return "NFL"
         case "nhl": return "NHL"
         case "lovb": return "LOVB"

@@ -28,7 +28,7 @@ final class TeamSeedServiceTests: XCTestCase {
         await TeamSeedService.seedIfNeeded(modelContext: context)
 
         let afterCount = try? context.fetchCount(FetchDescriptor<Team>())
-        XCTAssertEqual(afterCount, 176)
+        XCTAssertEqual(afterCount, 191)
     }
 
     func testDoesNotReseed() async {
@@ -39,12 +39,12 @@ final class TeamSeedServiceTests: XCTestCase {
         try? context.save()
 
         let countAfterManual = try? context.fetchCount(FetchDescriptor<Team>())
-        XCTAssertEqual(countAfterManual, 177)
+        XCTAssertEqual(countAfterManual, 192)
 
         await TeamSeedService.seedIfNeeded(modelContext: context)
 
         let countAfterSecondSeed = try? context.fetchCount(FetchDescriptor<Team>())
-        XCTAssertEqual(countAfterSecondSeed, 177)
+        XCTAssertEqual(countAfterSecondSeed, 192)
     }
 
     func testSeededTeamsAreBuiltIn() async {
@@ -52,7 +52,16 @@ final class TeamSeedServiceTests: XCTestCase {
 
         let predicate = #Predicate<Team> { $0.isBuiltIn == true }
         let builtInCount = try? context.fetchCount(FetchDescriptor<Team>(predicate: predicate))
-        XCTAssertEqual(builtInCount, 176)
+        XCTAssertEqual(builtInCount, 191)
+    }
+
+    func testSeedsAllCurrentWNBATeams() async throws {
+        await TeamSeedService.seedIfNeeded(modelContext: context)
+
+        let teams = try context.fetch(FetchDescriptor<Team>())
+        let wnbaTeams = teams.filter { $0.sport == "wnba" }
+        XCTAssertEqual(wnbaTeams.count, 15)
+        XCTAssertEqual(Set(wnbaTeams.map(\.name)), Set(WNBATeams.all.map(\.name)))
     }
 
     func testSeededTeamsHaveCorrectNames() async throws {
@@ -71,19 +80,19 @@ final class TeamSeedServiceTests: XCTestCase {
         await TeamSeedService.seedIfNeeded(modelContext: context)
 
         let count = try? context.fetchCount(FetchDescriptor<Team>())
-        XCTAssertEqual(count, 176)
+        XCTAssertEqual(count, 191)
     }
 
     func testDoesNotReseedWhenCurrentVersion() async {
         await TeamSeedService.seedIfNeeded(modelContext: context)
 
         let beforeReseed = try? context.fetchCount(FetchDescriptor<Team>())
-        XCTAssertEqual(beforeReseed, 176)
+        XCTAssertEqual(beforeReseed, 191)
 
         await TeamSeedService.seedIfNeeded(modelContext: context)
 
         let afterReseed = try? context.fetchCount(FetchDescriptor<Team>())
-        XCTAssertEqual(afterReseed, 176)
+        XCTAssertEqual(afterReseed, 191)
     }
 
     func testMigratesRenamedTeams() async throws {
@@ -113,14 +122,14 @@ final class TeamSeedServiceTests: XCTestCase {
         await TeamSeedService.seedIfNeeded(modelContext: context)
 
         let countAfterSeed = try? context.fetchCount(FetchDescriptor<Team>())
-        XCTAssertEqual(countAfterSeed, 176)
+        XCTAssertEqual(countAfterSeed, 191)
 
         UserDefaults.standard.removeObject(forKey: "seedVersion")
 
         await TeamSeedService.seedIfNeeded(modelContext: context)
 
         let countAfterReset = try? context.fetchCount(FetchDescriptor<Team>())
-        XCTAssertEqual(countAfterReset, 176, "Re-seeding after reset should still produce 176 teams")
+        XCTAssertEqual(countAfterReset, 191, "Re-seeding after reset should still produce all built-in teams")
         let storedVersion = UserDefaults.standard.integer(forKey: "seedVersion")
         XCTAssertGreaterThan(storedVersion, 0, "seedVersion should be set again after re-seeding")
     }

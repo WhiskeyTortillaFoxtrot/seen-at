@@ -24,7 +24,7 @@ struct SearchView: View {
     @State private var filters = SearchFilters()
 
     private let leagues: [(id: String, label: String)] = [
-        ("mlb", "MLB"), ("nba", "NBA"), ("nfl", "NFL"),
+        ("mlb", "MLB"), ("nba", "NBA"), ("wnba", "WNBA"), ("nfl", "NFL"),
         ("nhl", "NHL"), ("lovb", "LOVB"), ("mls", "MLS"),
         ("nwsl", "NWSL"),
     ]

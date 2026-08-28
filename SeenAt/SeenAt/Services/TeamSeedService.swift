@@ -2,7 +2,7 @@ import Foundation
 import SwiftData
 
 enum TeamSeedService {
-    private static let currentSeedVersion = 2
+    private static let currentSeedVersion = 3
 
     @MainActor
     static func seedIfNeeded(modelContext: ModelContext) async {
@@ -20,6 +20,7 @@ enum TeamSeedService {
         let leagueTeams: [(String, [Team])] = [
             ("mlb", MLBTeams.all),
             ("nba", NBATeams.all),
+            ("wnba", WNBATeams.all),
             ("nfl", NFLTeams.all),
             ("nhl", NHLTeams.all),
             ("lovb", LOVBTeams.all),
