@@ -126,6 +126,9 @@ struct EventSummaryView: View {
             NavigationStack {
                 SightingEditorView(sighting: sighting) {
                     photoSightings = event.sightings.filter { $0.photoData != nil }
+                    Task { @MainActor in
+                        await LiveActivityManager.updateIfActive(for: event, teams: relevantTeams)
+                    }
                 }
             }
         }

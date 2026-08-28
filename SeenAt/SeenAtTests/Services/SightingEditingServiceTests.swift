@@ -62,6 +62,25 @@ final class SightingEditingServiceTests: XCTestCase {
         XCTAssertNil(saved.photoData)
     }
 
+    func testUpdateInvalidatesEventTeamBreakdown() throws {
+        let sighting = TestDataFactory.makeSighting(team: homeTeam, event: event)
+        context.insert(sighting)
+        try context.save()
+
+        XCTAssertEqual(event.teamBreakdown.first?.team.id, homeTeam.id)
+        XCTAssertTrue(SightingEditingService.update(
+            sighting,
+            team: awayTeam,
+            firstName: nil,
+            lastName: nil,
+            playerNumber: nil,
+            photoData: nil,
+            context: context
+        ))
+
+        XCTAssertEqual(event.teamBreakdown.first?.team.id, awayTeam.id)
+    }
+
     func testDeleteRemovesOnlySelectedSighting() throws {
         let first = TestDataFactory.makeSighting(team: homeTeam, firstName: "John", lastName: "Doe", event: event)
         let second = TestDataFactory.makeSighting(team: homeTeam, firstName: "John", lastName: "Doe", event: event)

@@ -36,6 +36,10 @@ final class Event {
         return teamBreakdownCache
     }
 
+    func invalidateSightingCaches() {
+        lastCacheSightingCount = -1
+    }
+
     private func refreshCachesIfNeeded() {
         guard sightings.count != lastCacheSightingCount else { return }
         lastCacheSightingCount = sightings.count

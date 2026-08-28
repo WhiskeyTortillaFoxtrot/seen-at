@@ -39,6 +39,7 @@ enum SightingEditingService {
             return false
         }
 
+        event.invalidateSightingCaches()
         return true
     }
 
@@ -53,6 +54,7 @@ enum SightingEditingService {
         }
 
         PhotoCacheService.evict(sightingID: sightingID)
+        event.invalidateSightingCaches()
         return true
     }
 }

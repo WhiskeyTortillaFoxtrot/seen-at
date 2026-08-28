@@ -6,100 +6,52 @@ import OSLog
 struct AddSightingView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var context
-
     @Bindable var event: Event
-
     @Query(sort: \Team.name) private var allTeams: [Team]
-
     @AppStorage(AppPreferences.favoriteTeamsKey) private var favoriteTeamsString: String = ""
-    private var favoriteTeamNames: [String] {
-        favoriteTeamsString.split(separator: ",").map(String.init).filter { !$0.isEmpty }
-    }
 
     @State private var selectedTeam: Team?
-    @State private var playerFirstName: String = ""
-    @State private var playerLastName: String = ""
-    @State private var playerNumber: String = ""
+    @State private var playerFirstName = ""
+    @State private var playerLastName = ""
+    @State private var playerNumber = ""
     @State private var selectedPhotoItem: PhotosPickerItem?
     @State private var photoData: Data?
-    @State private var selectedOtherLeague: OtherLeague?
+    @State private var photoLoadTask: Task<Void, Never>?
+    @State private var photoLoadGeneration = 0
+    @State private var isPhotoLoading = false
+    @State private var selectedOtherLeague: SightingLeague?
     @State private var showingSaveError = false
     @State private var saveErrorHaptic = 0
     @State private var didSaveSighting = false
 
-    private let allLeagues: [(id: String, label: String)] = [
-        ("mlb", "MLB"), ("nba", "NBA"), ("nfl", "NFL"),
-        ("nhl", "NHL"), ("lovb", "LOVB"), ("mls", "MLS"),
-        ("nwsl", "NWSL"),
-    ]
-
-    private var eventGameTeams: [Team] {
-        let names = [event.homeTeam, event.awayTeam].compactMap { $0 }
-        let gameTeamOrder = names
-        return allTeams
-            .filter { names.contains($0.name) }
-            .sorted { a, b in
-                let aIdx = gameTeamOrder.firstIndex(of: a.name) ?? 0
-                let bIdx = gameTeamOrder.firstIndex(of: b.name) ?? 0
-                return aIdx < bIdx
-            }
-    }
-
-    private var eventLeague: String? {
-        eventGameTeams.first?.sport ?? eventGameTeams.last?.sport
-    }
-
-    private var eventLeagueNonGameTeams: [Team] {
-        guard let league = eventLeague else { return [] }
-        let gameTeamNames = Set(eventGameTeams.map { $0.name })
-        let favoriteSet = Set(favoriteTeamNames)
-        return allTeams
-            .filter { $0.sport == league && !gameTeamNames.contains($0.name) }
-            .sorted { a, b in
-                let aFav = favoriteSet.contains(a.name)
-                let bFav = favoriteSet.contains(b.name)
-                if aFav && !bFav { return true }
-                if !aFav && bFav { return false }
-                return a.name < b.name
-            }
-    }
-
-    private var otherLeagues: [OtherLeague] {
-        allLeagues
-            .filter { $0.id != eventLeague }
-            .map { OtherLeague(id: $0.id, label: $0.label) }
-    }
-
-    private var availableLeagues: [OtherLeague] {
-        allLeagues.compactMap { league in
-            guard allTeams.contains(where: { $0.sport == league.id }) else { return nil }
-            return OtherLeague(id: league.id, label: league.label)
-        }
+    private var favoriteTeamNames: [String] {
+        favoriteTeamsString.split(separator: ",").map(String.init).filter { !$0.isEmpty }
     }
 
     var body: some View {
         Form {
             Section("Team") {
-                teamMenu
+                SightingTeamPicker(
+                    homeTeamName: event.homeTeam,
+                    awayTeamName: event.awayTeam,
+                    allTeams: allTeams,
+                    favoriteTeamNames: favoriteTeamNames,
+                    selectedTeam: $selectedTeam,
+                    selectedLeague: $selectedOtherLeague
+                )
             }
             .listRowBackground(GlassListRowBackground())
 
             Section("Player (Optional)") {
                 HStack {
                     TextField("First", text: $playerFirstName)
-                        .onChange(of: playerFirstName) { _, new in
-                            if new.count > 50 { playerFirstName = String(new.prefix(50)) }
-                        }
+                        .onChange(of: playerFirstName) { _, value in playerFirstName = String(value.prefix(50)) }
                     TextField("Last", text: $playerLastName)
-                        .onChange(of: playerLastName) { _, new in
-                            if new.count > 50 { playerLastName = String(new.prefix(50)) }
-                        }
+                        .onChange(of: playerLastName) { _, value in playerLastName = String(value.prefix(50)) }
                 }
                 TextField("Number", text: $playerNumber)
                     .keyboardType(.numberPad)
-                    .onChange(of: playerNumber) { _, new in
-                        if new.count > 10 { playerNumber = String(new.prefix(10)) }
-                    }
+                    .onChange(of: playerNumber) { _, value in playerNumber = String(value.prefix(10)) }
             }
             .listRowBackground(GlassListRowBackground())
 
@@ -107,10 +59,7 @@ struct AddSightingView: View {
                 Section("Photo (Optional)") {
                     PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
                         if let photoData, let image = UIImage(data: photoData) {
-                            Image(uiImage: image)
-                                .resizable()
-                                .scaledToFit()
-                                .frame(maxHeight: 200)
+                            Image(uiImage: image).resizable().scaledToFit().frame(maxHeight: 200)
                                 .clipShape(RoundedRectangle(cornerRadius: 8))
                         } else {
                             Label("Select Photo", systemImage: "photo")
@@ -120,140 +69,86 @@ struct AddSightingView: View {
                 .listRowBackground(GlassListRowBackground())
             }
 
-            Button("Add Sighting") {
-                addSighting()
-            }
-            .font(.urbanist(.headline))
-            .frame(maxWidth: .infinity)
-            .disabled(selectedTeam == nil)
-            .sensoryFeedback(.success, trigger: didSaveSighting)
-            .listRowBackground(GlassListRowBackground())
+            Button("Add Sighting") { addSighting() }
+                .font(.urbanist(.headline))
+                .frame(maxWidth: .infinity)
+                .disabled(selectedTeam == nil || isPhotoLoading)
+                .sensoryFeedback(.success, trigger: didSaveSighting)
+                .listRowBackground(GlassListRowBackground())
         }
         .navigationTitle("Add Sighting")
         .navigationBarTitleDisplayMode(.inline)
         .scrollContentBackground(.hidden)
         .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
         .background { StadiumBackdrop(usesDailyImage: true) }
-        .toolbar {
-            ToolbarItem(placement: .topBarLeading) {
-                Button("Cancel") { dismiss() }
-            }
-        }
-        .onChange(of: selectedPhotoItem) { _, item in
-            Task(priority: .userInitiated) {
-                do {
-                    guard let data = try await item?.loadTransferable(type: Data.self) else { return }
-                    let compressed = await Task.detached(priority: .userInitiated) {
-                        data.downsampledImage(maxDimension: 1200)
-                    }.value
-                    await MainActor.run {
-                        photoData = compressed
-                    }
-                } catch {
-                    Logger(subsystem: Bundle.main.bundleIdentifier ?? "com.seenat", category: "Photo")
-                        .error("Failed to load/resize photo: \(error, privacy: .auto)")
-                }
-            }
-        }
-        .alert("Save Failed", isPresented: $showingSaveError) {
-            Button("OK") { }
-        } message: {
+        .toolbar { ToolbarItem(placement: .topBarLeading) { Button("Cancel") { dismiss() } } }
+        .onChange(of: selectedPhotoItem) { _, item in loadPhoto(item) }
+        .onDisappear(perform: cancelPhotoLoad)
+        .alert("Save Failed", isPresented: $showingSaveError) { Button("OK") {} } message: {
             Text("Could not save the sighting. Please try again.")
         }
         .sensoryFeedback(.error, trigger: saveErrorHaptic)
         .sheet(item: $selectedOtherLeague) { league in
-            OtherLeaguePicker(league: league, allTeams: allTeams, favoriteTeamNames: favoriteTeamNames) { team in
+            SightingLeaguePicker(league: league, allTeams: allTeams, favoriteTeamNames: favoriteTeamNames) { team in
                 selectedTeam = team
                 selectedOtherLeague = nil
             }
         }
     }
 
-    private var teamMenu: some View {
-        Menu {
-            Button("Choose...") { selectedTeam = nil }
-
-            if !eventGameTeams.isEmpty {
-                ForEach(eventGameTeams) { team in
-                    teamButton(team)
-                }
-                Divider()
-            }
-
-            if let _ = eventLeague {
-                ForEach(eventLeagueNonGameTeams) { team in
-                    teamButton(team)
-                }
-                Divider()
-
-                ForEach(otherLeagues) { league in
-                    Button(league.label) {
-                        selectedOtherLeague = league
-                    }
-                }
-            } else {
-                ForEach(availableLeagues) { league in
-                    Button(league.label) {
-                        selectedOtherLeague = league
-                    }
+    private func loadPhoto(_ item: PhotosPickerItem?) {
+        photoLoadTask?.cancel()
+        photoLoadGeneration += 1
+        let generation = photoLoadGeneration
+        guard let item else {
+            photoData = nil
+            photoLoadTask = nil
+            isPhotoLoading = false
+            return
+        }
+        isPhotoLoading = true
+        photoLoadTask = Task { @MainActor in
+            defer {
+                if photoLoadGeneration == generation {
+                    photoLoadTask = nil
+                    isPhotoLoading = false
                 }
             }
-        } label: {
-            HStack {
-                Text("Select Team")
-                Spacer()
-                if let team = selectedTeam {
-                    HStack(spacing: 8) {
-                        Circle()
-                            .fill(team.primaryColor)
-                            .frame(width: 12, height: 12)
-                            .accessibilityHidden(true)
-                        Text(team.name)
-                            .foregroundStyle(.secondary)
-                    }
-                } else {
-                    Text("Choose...")
-                        .foregroundStyle(.secondary)
-                }
+            do {
+                guard let data = try await item.loadTransferable(type: Data.self), !Task.isCancelled else { return }
+                let compressed = await Self.compressPhoto(data)
+                guard !Task.isCancelled, photoLoadGeneration == generation else { return }
+                photoData = compressed
+            } catch {
+                guard !Task.isCancelled else { return }
+                Logger(subsystem: Bundle.main.bundleIdentifier ?? "com.seenat", category: "Photo")
+                    .error("Failed to load/resize photo: \(error, privacy: .auto)")
             }
         }
     }
 
-    private func teamButton(_ team: Team) -> some View {
-        Button {
-            selectedTeam = team
-        } label: {
-            HStack {
-                Circle()
-                    .fill(team.primaryColor)
-                    .frame(width: 12, height: 12)
-                    .accessibilityHidden(true)
-                Text(team.name)
-                if favoriteTeamNames.contains(team.name) {
-                    Spacer()
-                    Image(systemName: "star.fill")
-                        .foregroundStyle(.yellow)
-                        .font(.caption)
-                }
-            }
-        }
+    private func cancelPhotoLoad() {
+        photoLoadGeneration += 1
+        photoLoadTask?.cancel()
+        photoLoadTask = nil
+        isPhotoLoading = false
+    }
+
+    private nonisolated static func compressPhoto(_ data: Data) async -> Data? {
+        data.downsampledImage(maxDimension: 1200)
     }
 
     private func addSighting() {
-        guard let team = selectedTeam else { return }
+        guard let selectedTeam, !isPhotoLoading else { return }
         guard !EventPreviewPolicy.isReadOnly(event) else {
             dismiss()
             return
         }
-
-        let sighting = JerseySighting(
-            team: team,
-            firstName: playerFirstName.trimmingCharacters(in: .whitespaces).isEmpty ? nil : playerFirstName.trimmingCharacters(in: .whitespaces),
-            lastName: playerLastName.trimmingCharacters(in: .whitespaces).isEmpty ? nil : playerLastName.trimmingCharacters(in: .whitespaces),
-            playerNumber: playerNumber.trimmingCharacters(in: .whitespaces).isEmpty ? nil : playerNumber.trimmingCharacters(in: .whitespaces),
-            photoData: photoData,
-            event: event
-        )
+        let trim: (String) -> String? = { value in
+            let trimmed = value.trimmingCharacters(in: .whitespaces)
+            return trimmed.isEmpty ? nil : trimmed
+        }
+        let sighting = JerseySighting(team: selectedTeam, firstName: trim(playerFirstName), lastName: trim(playerLastName), playerNumber: trim(playerNumber), photoData: photoData, event: event)
         context.insert(sighting)
         guard context.saveAndLog("Failed to save sighting") else {
             context.delete(sighting)
@@ -262,73 +157,7 @@ struct AddSightingView: View {
             return
         }
         didSaveSighting.toggle()
-        Task {
-            await LiveActivityManager.startOrUpdate(for: event, teams: allTeams)
-        }
+        Task { await LiveActivityManager.updateIfActive(for: event, teams: allTeams) }
         dismiss()
-    }
-}
-
-private struct OtherLeague: Identifiable {
-    let id: String
-    let label: String
-}
-
-private struct OtherLeaguePicker: View {
-    let league: OtherLeague
-    let allTeams: [Team]
-    let favoriteTeamNames: [String]
-    let onSelect: (Team) -> Void
-
-    @Environment(\.dismiss) private var dismiss
-
-    private var leagueTeams: [Team] {
-        let favoriteSet = Set(favoriteTeamNames)
-        return allTeams
-            .filter { $0.sport == league.id }
-            .sorted { a, b in
-                let aFav = favoriteSet.contains(a.name)
-                let bFav = favoriteSet.contains(b.name)
-                if aFav && !bFav { return true }
-                if !aFav && bFav { return false }
-                return a.name < b.name
-            }
-    }
-
-    var body: some View {
-        NavigationStack {
-            List(leagueTeams) { team in
-                Button {
-                    onSelect(team)
-                    dismiss()
-                } label: {
-                    HStack {
-                        Circle()
-                            .fill(team.primaryColor)
-                            .frame(width: 12, height: 12)
-                            .accessibilityHidden(true)
-                        Text(team.name)
-                            .font(favoriteTeamNames.contains(team.name) ? .urbanist(.body, weight: .bold) : .urbanist(.body))
-                        if favoriteTeamNames.contains(team.name) {
-                            Spacer()
-                            Image(systemName: "star.fill")
-                                .foregroundStyle(.yellow)
-                                .font(.caption)
-                        }
-                    }
-                }
-                .foregroundStyle(.primary)
-            }
-            .scrollContentBackground(.hidden)
-            .listRowBackground(GlassListRowBackground())
-            .background { StadiumBackdrop(usesDailyImage: true) }
-            .navigationTitle(league.label)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button("Cancel") { dismiss() }
-                }
-            }
-        }
     }
 }

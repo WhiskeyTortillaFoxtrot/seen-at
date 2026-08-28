@@ -173,6 +173,26 @@ final class LiveActivityManagerTests: XCTestCase {
         )
     }
 
+    func testUpdateIfActiveDoesNotStartAnInactiveActivity() async {
+        let event = TestDataFactory.makeEvent()
+        let client = MockLiveActivityClient()
+
+        await LiveActivityManager.updateIfActive(for: event, teams: [], client: client)
+
+        XCTAssertEqual(client.requestCount, 0)
+        XCTAssertTrue(client.updatedEventIDs.isEmpty)
+    }
+
+    func testUpdateIfActiveRefreshesAnActiveActivity() async {
+        let event = TestDataFactory.makeEvent()
+        let client = MockLiveActivityClient(activeEventIDs: [event.id])
+
+        await LiveActivityManager.updateIfActive(for: event, teams: [], client: client)
+
+        XCTAssertEqual(client.updatedEventIDs, [event.id])
+        XCTAssertEqual(client.requestCount, 0)
+    }
+
     func testStartOrUpdateRequestsActivityWhenEventIsNotActive() async {
         let event = TestDataFactory.makeEvent(awayTeam: "Away", homeTeam: "Home")
         let awayTeam = TestDataFactory.makeTeam(name: "Away", secondaryHex: "away-color")
