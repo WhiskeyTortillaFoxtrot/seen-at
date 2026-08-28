@@ -95,7 +95,24 @@ enum LiveActivityManager {
             teams: teams,
             client: client,
             generation: generation,
-            globalGeneration: globalGeneration
+            globalGeneration: globalGeneration,
+            allowsStart: true
+        )
+    }
+
+    static func updateIfActive(
+        for event: Event,
+        teams: [Team],
+        client: any LiveActivityClient = ActivityKitLiveActivityClient()
+    ) async {
+        let generation = lifecycleGenerations[event.id, default: 0]
+        await startOrUpdate(
+            for: event,
+            teams: teams,
+            client: client,
+            generation: generation,
+            globalGeneration: globalLifecycleGeneration,
+            allowsStart: false
         )
     }
 
@@ -104,7 +121,8 @@ enum LiveActivityManager {
         teams: [Team],
         client: any LiveActivityClient,
         generation: Int,
-        globalGeneration: Int
+        globalGeneration: Int,
+        allowsStart: Bool
     ) async {
         if let endingAllTask {
             await endingAllTask.value
@@ -114,7 +132,8 @@ enum LiveActivityManager {
                 teams: teams,
                 client: client,
                 generation: lifecycleGenerations[event.id, default: 0],
-                globalGeneration: globalLifecycleGeneration
+                globalGeneration: globalLifecycleGeneration,
+                allowsStart: allowsStart
             )
         }
 
@@ -127,7 +146,8 @@ enum LiveActivityManager {
                 teams: teams,
                 client: client,
                 generation: generation,
-                globalGeneration: globalGeneration
+                globalGeneration: globalGeneration,
+                allowsStart: allowsStart
             )
         }
 
@@ -140,7 +160,8 @@ enum LiveActivityManager {
                 teams: teams,
                 client: client,
                 generation: generation,
-                globalGeneration: globalGeneration
+                globalGeneration: globalGeneration,
+                allowsStart: allowsStart
             )
         }
 
@@ -173,6 +194,8 @@ enum LiveActivityManager {
             await pendingStart.value
             return
         }
+
+        guard hasActiveActivity || allowsStart else { return }
 
         if hasActiveActivity {
             if let pendingUpdate = pendingUpdateTasks[event.id] {

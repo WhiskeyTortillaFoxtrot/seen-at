@@ -12,6 +12,7 @@ struct LiveTrackingView: View {
     @State private var summaryHaptic = 0
     @State private var expandedSighting: JerseySighting?
     @State private var fullScreenSighting: JerseySighting?
+    @State private var selectedSighting: JerseySighting?
     @State private var showPieChart = false
     @State private var showShareOptions = false
     @ScaledMetric(relativeTo: .largeTitle) private var heroCountSize: CGFloat = 72
@@ -94,6 +95,15 @@ struct LiveTrackingView: View {
         .sheet(isPresented: $showingAddSighting) {
             NavigationStack {
                 AddSightingView(event: event)
+            }
+        }
+        .sheet(item: $selectedSighting) { sighting in
+            NavigationStack {
+                SightingEditorView(sighting: sighting) {
+                    Task {
+                        await LiveActivityManager.startOrUpdate(for: event, teams: relevantTeams)
+                    }
+                }
             }
         }
         .navigationDestination(isPresented: $showingSummary) {
@@ -297,6 +307,15 @@ struct LiveTrackingView: View {
                                     Text(sighting.timestamp, style: .time)
                                         .font(.urbanist(.caption))
                                         .foregroundStyle(.secondary)
+
+                                    Button {
+                                        selectedSighting = sighting
+                                    } label: {
+                                        Image(systemName: "pencil.circle")
+                                            .font(.urbanist(.title3))
+                                    }
+                                    .buttonStyle(.plain)
+                                    .accessibilityLabel("Edit \(sighting.displayName.isEmpty ? "sighting" : sighting.displayName)")
                                 }
                                 .padding(.leading, 8)
                             }
