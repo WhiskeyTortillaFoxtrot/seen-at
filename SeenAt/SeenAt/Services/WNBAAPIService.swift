@@ -5,6 +5,15 @@ import Foundation
 enum WNBAAPIService: LeagueAPIService {
     static let scheduleURL = URL(string: "https://cdn.wnba.com/static/json/staticData/scheduleLeagueV2.json")!
 
+    private static var scheduleRequest: URLRequest {
+        var request = URLRequest(url: scheduleURL)
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.setValue("https://www.wnba.com", forHTTPHeaderField: "Origin")
+        request.setValue("https://www.wnba.com/", forHTTPHeaderField: "Referer")
+        request.setValue("SeenAt/1.0 (iOS)", forHTTPHeaderField: "User-Agent")
+        return request
+    }
+
     /// The feed schedules by Eastern Time day (its `gameDate` group labels are
     /// MM/dd/yyyy Eastern days), so both the requested date and each game's day
     /// are compared in America/New_York rather than the device's time zone.
@@ -26,7 +35,7 @@ enum WNBAAPIService: LeagueAPIService {
 
         DiagnosticsService.shared.log(category: "WNBA", level: .info, message: "Fetching WNBA schedule for \(dateString)")
         do {
-            let (data, response) = try await session.data(from: scheduleURL)
+            let (data, response) = try await session.data(for: scheduleRequest)
             guard let httpResponse = response as? HTTPURLResponse,
                   200...299 ~= httpResponse.statusCode
             else {

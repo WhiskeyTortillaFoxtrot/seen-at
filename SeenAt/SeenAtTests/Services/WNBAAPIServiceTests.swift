@@ -17,6 +17,10 @@ final class WNBAAPIServiceTests: XCTestCase {
     func testFetchGamesMapsCurrentScheduleFeedAndFiltersDate() async throws {
         MockURLProtocol.requestHandler = { request in
             XCTAssertEqual(request.url, WNBAAPIService.scheduleURL)
+            XCTAssertEqual(request.value(forHTTPHeaderField: "Accept"), "application/json")
+            XCTAssertEqual(request.value(forHTTPHeaderField: "Origin"), "https://www.wnba.com")
+            XCTAssertEqual(request.value(forHTTPHeaderField: "Referer"), "https://www.wnba.com/")
+            XCTAssertEqual(request.value(forHTTPHeaderField: "User-Agent"), "SeenAt/1.0 (iOS)")
             return (self.response(for: request), Self.scheduleJSON.data(using: .utf8)!)
         }
 
