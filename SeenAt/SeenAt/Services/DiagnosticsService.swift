@@ -126,10 +126,12 @@ final class DiagnosticsService: @unchecked Sendable {
     }
 
     @MainActor
-    func exportURL(context: ModelContext) throws -> URL {
+    func exportURL(
+        context: ModelContext,
+        destinationDirectory: URL = FileManager.default.temporaryDirectory
+    ) throws -> URL {
         let report = generateReport(context: context)
-        let tempDir = FileManager.default.temporaryDirectory
-        let url = tempDir.appendingPathComponent("SeenAt-Diagnostics-\(exportDateFormatter.string(from: Date())).txt")
+        let url = destinationDirectory.appendingPathComponent("SeenAt-Diagnostics-\(exportDateFormatter.string(from: Date())).txt")
         try report.write(to: url, atomically: true, encoding: .utf8)
         return url
     }

@@ -17,8 +17,9 @@ struct SettingsView: View {
     @State private var showingResetAlert = false
     @State private var showingDeleteError = false
     @State private var showingResetError = false
-    @State private var showShareSheet = false
-    @State private var diagnosticsReport = ""
+    @State private var showingDiagnosticsShareSheet = false
+    @State private var diagnosticsExportURL: URL?
+    @State private var showingDiagnosticsExportError = false
 
     var body: some View {
         Form {
@@ -91,13 +92,9 @@ struct SettingsView: View {
 
             Section("Diagnostics") {
                 Button {
-                    diagnosticsReport = DiagnosticsService.shared.generateReport(context: context)
-                    showShareSheet = true
+                    shareDiagnostics()
                 } label: {
                     Label("Share Diagnostics", systemImage: "square.and.arrow.up")
-                }
-                .sheet(isPresented: $showShareSheet) {
-                    ShareLink(item: diagnosticsReport, preview: SharePreview("SeenAt Diagnostics"))
                 }
                 .accessibilityHint("Shares a diagnostics report for troubleshooting")
             }
@@ -129,6 +126,16 @@ struct SettingsView: View {
         .scrollContentBackground(.hidden)
         .toolbarBackground(.hidden, for: .navigationBar)
         .background { StadiumBackdrop(usesDailyImage: true) }
+        .sheet(isPresented: $showingDiagnosticsShareSheet) {
+            if let diagnosticsExportURL {
+                ShareLink(item: diagnosticsExportURL, preview: SharePreview("SeenAt Diagnostics"))
+            }
+        }
+        .alert("Diagnostics Export Failed", isPresented: $showingDiagnosticsExportError) {
+            Button("OK") {}
+        } message: {
+            Text("Could not create the diagnostics file. Please try again.")
+        }
     }
 
     private func deleteAllSightings() {
@@ -144,6 +151,15 @@ struct SettingsView: View {
             if !(await SettingsService.resetAllData(context: context)) {
                 showingResetError = true
             }
+        }
+    }
+
+    private func shareDiagnostics() {
+        do {
+            diagnosticsExportURL = try DiagnosticsService.shared.exportURL(context: context)
+            showingDiagnosticsShareSheet = true
+        } catch {
+            showingDiagnosticsExportError = true
         }
     }
 }
