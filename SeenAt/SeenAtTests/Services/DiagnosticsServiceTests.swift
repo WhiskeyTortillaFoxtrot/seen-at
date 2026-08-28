@@ -77,12 +77,24 @@ final class DiagnosticsServiceTests: XCTestCase {
 
     func testExportURLProducesWritableFile() throws {
         DiagnosticsService.shared.log(category: "Test", level: .info, message: "export test")
-        let url = try DiagnosticsService.shared.exportURL(context: context)
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let url = try DiagnosticsService.shared.exportURL(context: context, destinationDirectory: directory)
 
         XCTAssertTrue(FileManager.default.fileExists(atPath: url.path))
-        XCTAssertGreaterThan(try Data(contentsOf: url).count, 0)
+        XCTAssertTrue(try String(contentsOf: url, encoding: .utf8).contains("export test"))
+    }
 
-        try? FileManager.default.removeItem(at: url)
+    func testExportURLSurfacesWriteFailure() throws {
+        let fileURL = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try Data().write(to: fileURL)
+        defer { try? FileManager.default.removeItem(at: fileURL) }
+
+        XCTAssertThrowsError(try DiagnosticsService.shared.exportURL(context: context, destinationDirectory: fileURL)) { error in
+            XCTAssertEqual((error as NSError).domain, NSCocoaErrorDomain)
+        }
     }
 
     func testResetClearsEntries() {
