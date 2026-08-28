@@ -128,7 +128,7 @@ struct SettingsView: View {
         .background { StadiumBackdrop(usesDailyImage: true) }
         .sheet(isPresented: $showingDiagnosticsShareSheet) {
             if let diagnosticsExportURL {
-                ShareLink(item: diagnosticsExportURL, preview: SharePreview("SeenAt Diagnostics"))
+                ActivityViewController(items: [diagnosticsExportURL])
             }
         }
         .alert("Diagnostics Export Failed", isPresented: $showingDiagnosticsExportError) {
