@@ -5,7 +5,10 @@ import Foundation
 enum WNBAAPIService: LeagueAPIService {
     static let scheduleURL = URL(string: "https://cdn.wnba.com/static/json/staticData/scheduleLeagueV2.json")!
 
-    private static let dateFormatter: DateFormatter = {
+    /// The feed schedules by Eastern Time day (its `gameDate` group labels are
+    /// MM/dd/yyyy Eastern days), so both the requested date and each game's day
+    /// are compared in America/New_York rather than the device's time zone.
+    private static let easternDayFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.calendar = Calendar(identifier: .gregorian)
         formatter.locale = Locale(identifier: "en_US_POSIX")
@@ -15,7 +18,7 @@ enum WNBAAPIService: LeagueAPIService {
     }()
 
     static func fetchGames(on date: Date, session: URLSession = APICacheService.session) async throws -> [LeagueGame] {
-        let dateString = dateFormatter.string(from: date)
+        let dateString = easternDayFormatter.string(from: date)
         if let cached = APICacheService.getCachedGames(league: "wnba", date: date) {
             DiagnosticsService.shared.log(category: "WNBA", level: .debug, message: "Cache hit for WNBA \(dateString)")
             return cached
@@ -32,9 +35,14 @@ enum WNBAAPIService: LeagueAPIService {
 
             let schedule = try JSONDecoder().decode(WNBAScheduleResponse.self, from: data)
             let games = schedule.leagueSchedule.gameDates
-                .first(where: { $0.gameDate == dateString })?
-                .games
-                .map(\.leagueGame) ?? []
+                .flatMap(\.games)
+                .compactMap { game -> LeagueGame? in
+                    guard let startUTC = game.gameDateTimeUTC,
+                          let start = parseISODate(startUTC),
+                          easternDayFormatter.string(from: start) == dateString
+                    else { return nil }
+                    return game.leagueGame(dateString: startUTC)
+                }
             APICacheService.setCachedGames(games, league: "wnba", date: date)
             DiagnosticsService.shared.log(category: "WNBA", level: .info, message: "Fetched \(games.count) WNBA games")
             return games
@@ -58,24 +66,38 @@ private struct WNBALeagueSchedule: Decodable {
 }
 
 private struct WNBAGameDate: Decodable {
-    let gameDate: String
     let games: [WNBAScheduleGame]
 }
 
+/// The NBA-platform feeds have encoded `gameId` as both a JSON string and a
+/// JSON number across seasons; accept either representation.
+private struct WNBAGameID: Decodable {
+    let rawValue: String
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        if let value = try? container.decode(String.self) {
+            rawValue = value
+        } else {
+            rawValue = String(try container.decode(Int.self))
+        }
+    }
+}
+
 private struct WNBAScheduleGame: Decodable {
-    let gameId: String
-    let gameDateTimeUTC: String
+    let gameId: WNBAGameID
+    let gameDateTimeUTC: String?
     let awayTeam: WNBAScheduleTeam
     let homeTeam: WNBAScheduleTeam
     let arenaName: String?
 
-    var leagueGame: LeagueGame {
+    func leagueGame(dateString: String) -> LeagueGame {
         LeagueGame(
-            id: "wnba-\(gameId)",
+            id: "wnba-\(gameId.rawValue)",
             awayTeam: awayTeam.displayName,
             homeTeam: homeTeam.displayName,
             venueName: arenaName ?? "",
-            dateString: gameDateTimeUTC,
+            dateString: dateString,
             league: "wnba",
             url: nil,
             dayNight: nil

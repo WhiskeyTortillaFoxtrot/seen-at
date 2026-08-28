@@ -75,6 +75,47 @@ final class WNBAAPIServiceTests: XCTestCase {
         }
     }
 
+    func testFetchGamesMatchesRealFeedGameByEasternDay() async throws {
+        MockURLProtocol.requestHandler = { request in
+            (self.response(for: request), Self.realFeedExcerptJSON.data(using: .utf8)!)
+        }
+
+        // Verbatim feed excerpt: the game starts at 00:30 UTC on April 26 but
+        // is an 8:30 PM Eastern game on April 25, so it belongs to April 25.
+        let april25 = try await WNBAAPIService.fetchGames(on: Self.date("2026-04-25"), session: mockSession())
+
+        XCTAssertEqual(april25.count, 1)
+        XCTAssertEqual(april25[0].id, "wnba-1012600005")
+        XCTAssertEqual(april25[0].awayTeam, "Seattle Storm")
+        XCTAssertEqual(april25[0].homeTeam, "Golden State Valkyries")
+        XCTAssertEqual(april25[0].venueName, "Chase Center")
+        XCTAssertEqual(april25[0].dateString, "2026-04-26T00:30:00Z")
+
+        let april26 = try await WNBAAPIService.fetchGames(on: Self.date("2026-04-26"), session: mockSession())
+        XCTAssertTrue(april26.isEmpty)
+    }
+
+    func testFetchGamesDecodesNumericGameIDs() async throws {
+        MockURLProtocol.requestHandler = { request in
+            (self.response(for: request), Self.numericGameIDJSON.data(using: .utf8)!)
+        }
+
+        let games = try await WNBAAPIService.fetchGames(on: Self.date("2026-06-21"), session: mockSession())
+
+        XCTAssertEqual(games.count, 1)
+        XCTAssertEqual(games[0].id, "wnba-1022600042")
+    }
+
+    func testFetchGamesSkipsGamesWithoutStartTime() async throws {
+        MockURLProtocol.requestHandler = { request in
+            (self.response(for: request), Self.missingStartTimeJSON.data(using: .utf8)!)
+        }
+
+        let games = try await WNBAAPIService.fetchGames(on: Self.date("2026-06-21"), session: mockSession())
+
+        XCTAssertTrue(games.isEmpty)
+    }
+
     private func mockSession() -> URLSession {
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [MockURLProtocol.self]
@@ -99,7 +140,7 @@ final class WNBAAPIServiceTests: XCTestCase {
       "leagueSchedule": {
         "gameDates": [
           {
-            "gameDate": "2026-06-21",
+            "gameDate": "06/21/2026 00:00:00",
             "games": [
               {
                 "gameId": "1022600042",
@@ -111,8 +152,71 @@ final class WNBAAPIServiceTests: XCTestCase {
             ]
           },
           {
-            "gameDate": "2026-06-23",
+            "gameDate": "06/23/2026 00:00:00",
             "games": []
+          }
+        ]
+      }
+    }
+    """
+
+    private static let realFeedExcerptJSON = """
+    {
+      "leagueSchedule": {
+        "gameDates": [
+          {
+            "gameDate": "04/25/2026 00:00:00",
+            "games": [
+              {
+                "gameId": "1012600005",
+                "gameDateTimeUTC": "2026-04-26T00:30:00Z",
+                "arenaName": "Chase Center",
+                "awayTeam": { "teamCity": "Seattle", "teamName": "Storm" },
+                "homeTeam": { "teamCity": "Golden State", "teamName": "Valkyries" }
+              }
+            ]
+          }
+        ]
+      }
+    }
+    """
+
+    private static let numericGameIDJSON = """
+    {
+      "leagueSchedule": {
+        "gameDates": [
+          {
+            "gameDate": "06/21/2026 00:00:00",
+            "games": [
+              {
+                "gameId": 1022600042,
+                "gameDateTimeUTC": "2026-06-21T19:00:00Z",
+                "arenaName": "Crypto.com Arena",
+                "awayTeam": { "teamCity": "New York", "teamName": "Liberty" },
+                "homeTeam": { "teamCity": "Los Angeles", "teamName": "Sparks" }
+              }
+            ]
+          }
+        ]
+      }
+    }
+    """
+
+    private static let missingStartTimeJSON = """
+    {
+      "leagueSchedule": {
+        "gameDates": [
+          {
+            "gameDate": "06/21/2026 00:00:00",
+            "games": [
+              {
+                "gameId": "1022600042",
+                "gameDateTimeUTC": null,
+                "arenaName": "Crypto.com Arena",
+                "awayTeam": { "teamCity": "New York", "teamName": "Liberty" },
+                "homeTeam": { "teamCity": "Los Angeles", "teamName": "Sparks" }
+              }
+            ]
           }
         ]
       }
