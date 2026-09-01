@@ -240,7 +240,7 @@ struct EventFormView: View {
             case "nba":
                 fetched = try await ESPNService.fetchGames(on: date, sportPath: "basketball/nba")
             case "wnba":
-                fetched = try await WNBAAPIService.fetchGames(on: date)
+                fetched = try await WNBAAPIService.fetchGames(onCalendarDate: date)
             case "nfl":
                 fetched = try await ESPNService.fetchGames(on: date, sportPath: "football/nfl")
             case "nwsl":

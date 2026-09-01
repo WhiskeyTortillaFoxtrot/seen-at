@@ -18,8 +18,8 @@ final class WNBAAPIServiceTests: XCTestCase {
         MockURLProtocol.requestHandler = { request in
             XCTAssertEqual(request.url, WNBAAPIService.scheduleURL)
             XCTAssertEqual(request.value(forHTTPHeaderField: "Accept"), "application/json")
-            XCTAssertEqual(request.value(forHTTPHeaderField: "Origin"), "https://www.wnba.com")
-            XCTAssertEqual(request.value(forHTTPHeaderField: "Referer"), "https://www.wnba.com/")
+            XCTAssertNil(request.value(forHTTPHeaderField: "Origin"))
+            XCTAssertNil(request.value(forHTTPHeaderField: "Referer"))
             XCTAssertEqual(request.value(forHTTPHeaderField: "User-Agent"), "SeenAt/1.0 (iOS)")
             return (self.response(for: request), Self.scheduleJSON.data(using: .utf8)!)
         }
@@ -42,6 +42,25 @@ final class WNBAAPIServiceTests: XCTestCase {
 
         let games = try await WNBAAPIService.fetchGames(on: Self.date("2026-06-22"), session: mockSession())
         XCTAssertTrue(games.isEmpty)
+    }
+
+    func testFetchGamesCalendarDateDoesNotShiftForDeviceTimezone() async throws {
+        MockURLProtocol.requestHandler = { request in
+            (self.response(for: request), Self.scheduleJSON.data(using: .utf8)!)
+        }
+
+        var tokyoCalendar = Calendar(identifier: .gregorian)
+        tokyoCalendar.timeZone = TimeZone(identifier: "Asia/Tokyo")!
+        let tokyoDate = tokyoCalendar.date(from: DateComponents(year: 2026, month: 6, day: 21))!
+
+        let games = try await WNBAAPIService.fetchGames(
+            onCalendarDate: tokyoDate,
+            calendar: tokyoCalendar,
+            session: mockSession()
+        )
+
+        XCTAssertEqual(games.count, 1)
+        XCTAssertEqual(games[0].id, "wnba-1022600042")
     }
 
     func testFetchGamesUsesCacheAfterInitialFetch() async throws {

@@ -118,6 +118,30 @@ final class TeamSeedServiceTests: XCTestCase {
         XCTAssertEqual(athletics?.abbreviation, "ATH", "Abbreviation should be updated from OAK to ATH")
     }
 
+    func testReseedSyncsTeamColors() async throws {
+        await TeamSeedService.seedIfNeeded(modelContext: context)
+
+        let predicate = #Predicate<Team> { $0.name == "Indiana Fever" }
+        let descriptor = FetchDescriptor<Team>(predicate: predicate)
+        let seeded = try context.fetch(descriptor)
+        let originalPrimary = seeded.first?.primaryColorHex
+        let originalSecondary = seeded.first?.secondaryColorHex
+        XCTAssertNotNil(originalPrimary)
+
+        // Simulate an install whose stored colors drifted from the seed values.
+        let fever = seeded.first!
+        fever.primaryColorHex = "#000000"
+        try? context.save()
+
+        UserDefaults.standard.set(3, forKey: AppPreferences.seedVersionKey)
+
+        await TeamSeedService.seedIfNeeded(modelContext: context)
+
+        let refreshed = try context.fetch(descriptor)
+        XCTAssertEqual(refreshed.first?.primaryColorHex, originalPrimary)
+        XCTAssertEqual(refreshed.first?.secondaryColorHex, originalSecondary)
+    }
+
     func testResetClearsSeedVersionAllowingReseed() async {
         await TeamSeedService.seedIfNeeded(modelContext: context)
 
