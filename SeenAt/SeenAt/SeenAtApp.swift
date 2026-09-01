@@ -35,7 +35,7 @@ struct SeenAtApp: App {
     @State private var deepLinkEventID: UUID?
     @State private var deepLinkError: DeepLinkError?
     @State private var splashState = SplashState()
-    @State private var storeState = StoreState()
+    @State private var storeState: StoreState
     @Environment(\.scenePhase) private var scenePhase
 
     /// All backup/restore work runs synchronously on `@MainActor` because
@@ -68,9 +68,11 @@ struct SeenAtApp: App {
         }
         if let resetError {
             container = nil
-            storeState.error = resetError
-            storeState.storeURL = StoreBackupService.defaultStoreURL()
-            storeState.failureReason = .storeLoad
+            let state = StoreState()
+            state.error = resetError
+            state.storeURL = StoreBackupService.defaultStoreURL()
+            state.failureReason = .storeLoad
+            _storeState = State(initialValue: state)
             return
         }
         #endif
@@ -82,9 +84,7 @@ struct SeenAtApp: App {
             )
         }
         container = result.container
-        storeState.error = result.storeState.error
-        storeState.storeURL = result.storeState.storeURL
-        storeState.failureReason = result.storeState.failureReason
+        _storeState = State(initialValue: result.storeState)
 
         guard let c = container else { return }
         let state = splashState
