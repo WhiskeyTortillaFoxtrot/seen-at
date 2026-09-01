@@ -37,6 +37,7 @@ struct EventFormView: View {
     private let leagues: [(id: String, label: String)] = [
         ("mlb", "MLB"),
         ("nba", "NBA"),
+        ("wnba", "WNBA"),
         ("nfl", "NFL"),
         ("nhl", "NHL"),
         ("lovb", "LOVB"),
@@ -238,6 +239,8 @@ struct EventFormView: View {
                 fetched = try await NHLAPIService.fetchGames(on: date)
             case "nba":
                 fetched = try await ESPNService.fetchGames(on: date, sportPath: "basketball/nba")
+            case "wnba":
+                fetched = try await WNBAAPIService.fetchGames(onCalendarDate: date)
             case "nfl":
                 fetched = try await ESPNService.fetchGames(on: date, sportPath: "football/nfl")
             case "nwsl":

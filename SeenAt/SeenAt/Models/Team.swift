@@ -31,6 +31,7 @@ final class Team {
         switch sport.lowercased() {
         case "mlb": "baseball.fill"
         case "nba": "basketball.fill"
+        case "wnba": "basketball.fill"
         case "nfl": "football.fill"
         case "nhl": "hockey.puck.fill"
         case "lovb": "volleyball.fill"

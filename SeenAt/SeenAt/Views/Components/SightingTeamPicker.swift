@@ -8,6 +8,7 @@ struct SightingLeague: Identifiable {
 let sightingLeagueOptions = [
     SightingLeague(id: "mlb", label: "MLB"),
     SightingLeague(id: "nba", label: "NBA"),
+    SightingLeague(id: "wnba", label: "WNBA"),
     SightingLeague(id: "nfl", label: "NFL"),
     SightingLeague(id: "nhl", label: "NHL"),
     SightingLeague(id: "lovb", label: "LOVB"),

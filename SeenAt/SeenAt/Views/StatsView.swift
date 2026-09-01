@@ -232,6 +232,7 @@ struct StatsView: View {
         switch sport {
         case "MLB": return .blue
         case "NBA": return .orange
+        case "WNBA": return .purple
         case "NFL": return .green
         case "NHL": return .red
         case "MLS": return .purple

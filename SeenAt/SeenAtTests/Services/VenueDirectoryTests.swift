@@ -21,7 +21,7 @@ final class VenueDirectoryTests: XCTestCase {
     }
 
     func testAllVenuesPresent() {
-        XCTAssertEqual(VenueDirectory.all.count, 147)
+        XCTAssertEqual(VenueDirectory.all.count, 153)
     }
 
     func testHomeVenueMLB() {
@@ -32,6 +32,12 @@ final class VenueDirectoryTests: XCTestCase {
     func testHomeVenueNBA() {
         let venue = VenueDirectory.homeVenue(for: "Los Angeles Lakers")
         XCTAssertEqual(venue, "Crypto.com Arena")
+    }
+
+    func testHomeVenueWNBA() {
+        XCTAssertEqual(VenueDirectory.homeVenue(for: "Indiana Fever"), "Gainbridge Fieldhouse")
+        XCTAssertEqual(VenueDirectory.homeVenue(for: "Toronto Tempo"), "Coca-Cola Coliseum")
+        XCTAssertEqual(VenueDirectory.homeVenue(for: "Washington Mystics"), "Entertainment & Sports Arena")
     }
 
     func testHomeVenueNFL() {
