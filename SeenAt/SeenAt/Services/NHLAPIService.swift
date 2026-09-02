@@ -18,7 +18,8 @@ enum NHLAPIService: LeagueAPIService {
         DiagnosticsService.shared.log(category: "NHL", level: .info, message: "Fetching games for \(dateString)")
         let url = URL(string: "https://api-web.nhle.com/v1/schedule/\(dateString)")!
         do {
-            let (data, _) = try await session.data(from: url)
+            let request = APICacheService.makeRequest(url: url)
+            let data = try await APICacheService.validatedData(for: request, session: session)
             let decoder = JSONDecoder()
             let response = try decoder.decode(NHLScheduleResponse.self, from: data)
             let games = response.gameWeek.first(where: { $0.date == dateString })?.games.map { $0.toLeagueGame(fallbackDateString: dateString) } ?? []
@@ -26,7 +27,7 @@ enum NHLAPIService: LeagueAPIService {
             DiagnosticsService.shared.log(category: "NHL", level: .info, message: "Fetched \(games.count) games")
             return games
         } catch {
-            if let cached = APICacheService.getCachedGames(league: "nhl", date: date) {
+            if let cached = APICacheService.getStaleGames(league: "nhl", date: date) {
                 DiagnosticsService.shared.log(category: "NHL", level: .warning, message: "Fetch failed, using cache: \(error.localizedDescription)")
                 return cached
             }

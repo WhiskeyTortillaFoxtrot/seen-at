@@ -31,7 +31,8 @@ enum ESPNService {
         DiagnosticsService.shared.log(category: "ESPN", level: .info, message: "Fetching \(league) games for \(dateString)")
         let url = URL(string: "https://site.api.espn.com/apis/site/v2/sports/\(sportPath)/scoreboard?dates=\(dateString)")!
         do {
-            let (data, _) = try await session.data(from: url)
+            let request = APICacheService.makeRequest(url: url)
+            let data = try await APICacheService.validatedData(for: request, session: session)
             let decoder = JSONDecoder()
             let response = try decoder.decode(ESPNResponse.self, from: data)
             let games = response.events.map { $0.toLeagueGame(sportPath: sportPath) }
@@ -39,7 +40,7 @@ enum ESPNService {
             DiagnosticsService.shared.log(category: "ESPN", level: .info, message: "Fetched \(games.count) \(league) games")
             return games
         } catch {
-            if let cached = APICacheService.getCachedGames(league: league, date: date) {
+            if let cached = APICacheService.getStaleGames(league: league, date: date) {
                 DiagnosticsService.shared.log(category: "ESPN", level: .warning, message: "Fetch failed for \(league), using cache: \(error.localizedDescription)")
                 return cached
             }
