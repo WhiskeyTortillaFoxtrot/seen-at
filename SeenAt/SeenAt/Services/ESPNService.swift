@@ -66,7 +66,7 @@ struct ESPNEvent: Codable, Identifiable {
         let venueName = competitions.first?.venue?.fullName ?? ""
         let awayName = competitions.first?.competitors.first(where: { $0.homeAway == "away" })?.team.name ?? ""
         let homeName = competitions.first?.competitors.first(where: { $0.homeAway == "home" })?.team.name ?? ""
-        let gameURL = links?.compactMap(\.web?.href).first.flatMap(URL.init)
+        let gameURL = LeagueGame.resolveGameLink(links?.compactMap(\.web?.href).first, base: URL(string: "https://www.espn.com")!)
         return LeagueGame(
             id: "\(league)-\(id)",
             awayTeam: awayName,

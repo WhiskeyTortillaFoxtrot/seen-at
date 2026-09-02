@@ -46,8 +46,8 @@ struct ExportService {
         return renderer.uiImage
     }
 
-    static func generateAllDataCSV(context: ModelContext) -> String {
-        let events = (try? context.fetch(FetchDescriptor<Event>(sortBy: [SortDescriptor(\Event.date, order: .reverse)]))) ?? []
+    static func generateAllDataCSV(context: ModelContext) throws -> String {
+        let events = try context.fetch(FetchDescriptor<Event>(sortBy: [SortDescriptor(\Event.date, order: .reverse)]))
 
         let header = "Event Title,Date,Venue,Watch Location,Total Sightings,Team,First Name,Last Name,Player Number"
         var rows: [String] = []
@@ -75,13 +75,18 @@ struct ExportService {
         return ([header] + rows).joined(separator: "\n") + "\n"
     }
 
+    /// Neutralizes spreadsheet formulas per OWASP CSV injection guidance (prefix `=` `+`
+    /// `-` `@` with an apostrophe), then applies RFC 4180 quoting. The prefix goes on the
+    /// raw value *before* quoting so the apostrophe stays inside the quotes; quoting first
+    /// and prefixing after would produce `'\"=SUM(1, 2)\"'`, which parsers reject and which
+    /// shifts columns on values containing commas.
     private static func escapeCSV(_ value: String) -> String {
         var escaped = value
-        if value.contains(",") || value.contains("\"") || value.contains("\n") {
-            escaped = "\"\(value.replacingOccurrences(of: "\"", with: "\"\""))\""
-        }
-        if let first = value.first, first == "=" || first == "+" || first == "-" || first == "@" {
+        if let first = escaped.first, first == "=" || first == "+" || first == "-" || first == "@" {
             escaped = "'" + escaped
+        }
+        if escaped.contains(",") || escaped.contains("\"") || escaped.contains("\n") {
+            escaped = "\"\(escaped.replacingOccurrences(of: "\"", with: "\"\""))\""
         }
         return escaped
     }
