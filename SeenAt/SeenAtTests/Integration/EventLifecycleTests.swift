@@ -19,7 +19,7 @@ final class EventLifecycleTests: XCTestCase {
         super.tearDown()
     }
 
-    func testCreateEventAddSightingsAndVerifySummary() {
+    func testCreateEventAddSightingsAndVerifySummary() throws {
         let event = TestDataFactory.makeEvent(title: "Yankees @ Red Sox", venue: "Yankee Stadium")
         context.insert(event)
 
@@ -57,7 +57,7 @@ final class EventLifecycleTests: XCTestCase {
         XCTAssertTrue(summary.contains("Yankees @ Red Sox"))
         XCTAssertTrue(summary.contains("Yankee Stadium"))
 
-        let csv = ExportService.generateAllDataCSV(context: context)
+        let csv = try ExportService.generateAllDataCSV(context: context)
         XCTAssertTrue(csv.contains("New York Yankees"))
         XCTAssertTrue(csv.contains("Boston Red Sox"))
     }

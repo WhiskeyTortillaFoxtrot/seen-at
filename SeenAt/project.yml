@@ -14,7 +14,11 @@ targets:
     type: application
     platform: iOS
     sources:
-      - SeenAt
+      - path: SeenAt
+        excludes:
+          - "PrivacyInfo.xcprivacy"
+      - path: SeenAt/PrivacyInfo.xcprivacy
+        buildPhase: resources
     dependencies:
       - target: SeenAtWidget
         embed: true

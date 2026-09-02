@@ -21,7 +21,7 @@ enum NHLAPIService: LeagueAPIService {
             let (data, _) = try await session.data(from: url)
             let decoder = JSONDecoder()
             let response = try decoder.decode(NHLScheduleResponse.self, from: data)
-            let games = response.gameWeek.first(where: { $0.date == dateString })?.games.map { $0.toLeagueGame(dateString: dateString) } ?? []
+            let games = response.gameWeek.first(where: { $0.date == dateString })?.games.map { $0.toLeagueGame(fallbackDateString: dateString) } ?? []
             APICacheService.setCachedGames(games, league: "nhl", date: date)
             DiagnosticsService.shared.log(category: "NHL", level: .info, message: "Fetched \(games.count) games")
             return games
@@ -50,21 +50,22 @@ struct NHLGame: Codable {
     let venue: NHLVenue
     let homeTeam: NHLTeamWrapper
     let awayTeam: NHLTeamWrapper
-    let gameLink: String?
+    let startTimeUTC: String?
+    let gameCenterLink: String?
 
     var title: String {
         "\(awayTeam.name.default) @ \(homeTeam.name.default)"
     }
 
-    func toLeagueGame(dateString: String) -> LeagueGame {
+    func toLeagueGame(fallbackDateString: String) -> LeagueGame {
         LeagueGame(
             id: "nhl-\(id)",
             awayTeam: awayTeam.name.default,
             homeTeam: homeTeam.name.default,
             venueName: venue.default,
-            dateString: dateString,
+            dateString: startTimeUTC ?? fallbackDateString,
             league: "nhl",
-            url: gameLink.flatMap(URL.init),
+            url: LeagueGame.resolveGameLink(gameCenterLink, base: URL(string: "https://www.nhl.com")!),
             dayNight: nil
         )
     }

@@ -20,6 +20,7 @@ struct SettingsView: View {
     @State private var showingDiagnosticsShareSheet = false
     @State private var diagnosticsExportURL: URL?
     @State private var showingDiagnosticsExportError = false
+    @State private var showingExportError = false
 
     var body: some View {
         Form {
@@ -45,8 +46,13 @@ struct SettingsView: View {
             Section("Export") {
                 Button("Export All Data as CSV") {
                     UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                    exportCSV = ExportService.generateAllDataCSV(context: context)
-                    showingExporter = true
+                    do {
+                        exportCSV = try ExportService.generateAllDataCSV(context: context)
+                        showingExporter = true
+                    } catch {
+                        DiagnosticsService.shared.log(category: "Export", level: .error, message: "CSV export failed: \(error.localizedDescription)")
+                        showingExportError = true
+                    }
                 }
                 .accessibilityHint("Creates a CSV file with all your data")
             }
@@ -136,6 +142,11 @@ struct SettingsView: View {
             Button("OK") {}
         } message: {
             Text("Could not create the diagnostics file. Please try again.")
+        }
+        .alert("Export Failed", isPresented: $showingExportError) {
+            Button("OK") {}
+        } message: {
+            Text("We couldn't gather your data for export. Please try again.")
         }
     }
 

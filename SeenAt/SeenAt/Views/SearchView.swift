@@ -1,21 +1,6 @@
 import SwiftUI
 import SwiftData
 
-struct SearchFilters {
-    var league: String?
-    var watchLocation: WatchLocation?
-    var venueQuery = ""
-    var dateRangeStart = Calendar.current.date(byAdding: .day, value: -7, to: Date()) ?? Date()
-    var dateRangeEnd = Date()
-    var dateRangeActive = false
-    var playerNumber = ""
-    var showMoreFilters = false
-
-    var hasActiveFilters: Bool {
-        league != nil || watchLocation != nil || !venueQuery.isEmpty || dateRangeActive || !playerNumber.isEmpty
-    }
-}
-
 struct SearchView: View {
     @Environment(\.modelContext) private var context
     @State private var searchText = ""
@@ -226,86 +211,11 @@ struct SearchView: View {
         }
 
         hasSearched = true
-        var candidateIDs = Set<UUID>()
+        let outcome = SearchQueryService.search(term: term, numberTerm: numberTerm, filters: filters, context: context)
 
-        if !term.isEmpty {
-            let titlePredicate = #Predicate<Event> { event in
-                event.title.localizedStandardContains(term)
-            }
-            let titleDescriptor = FetchDescriptor<Event>(
-                predicate: titlePredicate,
-                sortBy: [SortDescriptor(\.date, order: .reverse)]
-            )
-            if let matched = try? context.fetch(titleDescriptor) {
-                candidateIDs.formUnion(matched.map { $0.id })
-            }
-
-            let namePredicate = #Predicate<JerseySighting> { sighting in
-                sighting.firstName?.localizedStandardContains(term) == true ||
-                sighting.lastName?.localizedStandardContains(term) == true
-            }
-            let nameDescriptor = FetchDescriptor<JerseySighting>(predicate: namePredicate)
-            if let matched = try? context.fetch(nameDescriptor) {
-                candidateIDs.formUnion(matched.compactMap { $0.event?.id })
-            }
-        }
-
-        if !numberTerm.isEmpty {
-            let numberPredicate = #Predicate<JerseySighting> { sighting in
-                sighting.playerNumber?.localizedStandardContains(numberTerm) == true
-            }
-            let numberDescriptor = FetchDescriptor<JerseySighting>(predicate: numberPredicate)
-            if let matched = try? context.fetch(numberDescriptor) {
-                candidateIDs.formUnion(matched.compactMap { $0.event?.id })
-            }
-        }
-
-        var eventsToFilter: [Event]
-        if !candidateIDs.isEmpty {
-            let idList = Array(candidateIDs)
-            let idPredicate = #Predicate<Event> { idList.contains($0.id) }
-            let descriptor = FetchDescriptor<Event>(
-                predicate: idPredicate,
-                sortBy: [SortDescriptor(\.date, order: .reverse)]
-            )
-            eventsToFilter = (try? context.fetch(descriptor)) ?? []
-        } else {
-            let allDescriptor = FetchDescriptor<Event>(sortBy: [SortDescriptor(\.date, order: .reverse)])
-            eventsToFilter = (try? context.fetch(allDescriptor)) ?? []
-        }
-
-        if filters.hasActiveFilters {
-            if let league = filters.league {
-                let teamNames = Set(
-                    (try? context.fetch(
-                        FetchDescriptor<Team>(predicate: #Predicate { $0.sport == league })
-                    ))?.map { $0.name } ?? []
-                )
-                eventsToFilter = eventsToFilter.filter {
-                    guard let away = $0.awayTeam, let home = $0.homeTeam else { return false }
-                    return teamNames.contains(away) || teamNames.contains(home)
-                }
-            }
-
-            if let watchLocation = filters.watchLocation {
-                eventsToFilter = eventsToFilter.filter { $0.watchLocation == watchLocation }
-            }
-
-            let venueTerm = filters.venueQuery.trimmingCharacters(in: .whitespaces).lowercased()
-            if !venueTerm.isEmpty {
-                eventsToFilter = eventsToFilter.filter { $0.venue?.lowercased().contains(venueTerm) == true }
-            }
-
-            if filters.dateRangeActive {
-                eventsToFilter = eventsToFilter.filter {
-                    $0.date >= filters.dateRangeStart && $0.date <= filters.dateRangeEnd
-                }
-            }
-        }
-
-        results = eventsToFilter.map { event in
+        results = outcome.events.map { event in
             let matchedBy: String
-            if candidateIDs.contains(event.id) {
+            if outcome.matchedEventIDs.contains(event.id) {
                 if !numberTerm.isEmpty && term.isEmpty {
                     matchedBy = "Number match"
                 } else {
