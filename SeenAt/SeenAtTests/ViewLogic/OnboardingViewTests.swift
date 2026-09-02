@@ -3,8 +3,8 @@ import XCTest
 
 final class OnboardingViewTests: XCTestCase {
 
-    private let hasSeenKey = "hasSeenOnboarding"
-    private let favoriteTeamsKey = "favoriteTeams"
+    private let hasSeenKey = AppPreferences.hasSeenOnboardingKey
+    private let favoriteTeamsKey = AppPreferences.favoriteTeamsKey
 
     override func setUp() {
         super.setUp()

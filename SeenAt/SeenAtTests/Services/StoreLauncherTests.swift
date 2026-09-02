@@ -62,12 +62,12 @@ final class StoreLauncherTests: XCTestCase {
     }
 
     func testSeedIfNeededInsertsTeams() async throws {
-        UserDefaults.standard.removeObject(forKey: "seedVersion")
+        UserDefaults.standard.removeObject(forKey: AppPreferences.seedVersionKey)
 
         let container = TestModelContainer.create()
         defer {
             TestModelContainer.cleanupSQLite(container)
-            UserDefaults.standard.removeObject(forKey: "seedVersion")
+            UserDefaults.standard.removeObject(forKey: AppPreferences.seedVersionKey)
         }
 
         let beforeCount = (try? container.mainContext.fetch(FetchDescriptor<Team>()))?.count ?? 0
@@ -79,12 +79,12 @@ final class StoreLauncherTests: XCTestCase {
     }
 
     func testSeedIfNeededIsIdempotent() async throws {
-        UserDefaults.standard.removeObject(forKey: "seedVersion")
+        UserDefaults.standard.removeObject(forKey: AppPreferences.seedVersionKey)
 
         let container = TestModelContainer.create()
         defer {
             TestModelContainer.cleanupSQLite(container)
-            UserDefaults.standard.removeObject(forKey: "seedVersion")
+            UserDefaults.standard.removeObject(forKey: AppPreferences.seedVersionKey)
         }
 
         await StoreLauncher.seedIfNeeded(in: container)

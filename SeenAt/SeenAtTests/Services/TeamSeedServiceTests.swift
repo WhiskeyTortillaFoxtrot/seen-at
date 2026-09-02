@@ -9,7 +9,7 @@ final class TeamSeedServiceTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
-        UserDefaults.standard.removeObject(forKey: "seedVersion")
+        UserDefaults.standard.removeObject(forKey: AppPreferences.seedVersionKey)
         container = TestModelContainer.create()
         context = container.mainContext
     }
@@ -17,7 +17,7 @@ final class TeamSeedServiceTests: XCTestCase {
     override func tearDown() {
         container = nil
         context = nil
-        UserDefaults.standard.removeObject(forKey: "seedVersion")
+        UserDefaults.standard.removeObject(forKey: AppPreferences.seedVersionKey)
         super.tearDown()
     }
 
@@ -75,7 +75,7 @@ final class TeamSeedServiceTests: XCTestCase {
     }
 
     func testReseedsWhenSeedVersionIsOld() async {
-        UserDefaults.standard.set(0, forKey: "seedVersion")
+        UserDefaults.standard.set(0, forKey: AppPreferences.seedVersionKey)
 
         await TeamSeedService.seedIfNeeded(modelContext: context)
 
@@ -102,7 +102,7 @@ final class TeamSeedServiceTests: XCTestCase {
         context.insert(oldU)
         try? context.save()
 
-        UserDefaults.standard.set(0, forKey: "seedVersion")
+        UserDefaults.standard.set(0, forKey: AppPreferences.seedVersionKey)
 
         await TeamSeedService.seedIfNeeded(modelContext: context)
 
@@ -148,13 +148,13 @@ final class TeamSeedServiceTests: XCTestCase {
         let countAfterSeed = try? context.fetchCount(FetchDescriptor<Team>())
         XCTAssertEqual(countAfterSeed, 191)
 
-        UserDefaults.standard.removeObject(forKey: "seedVersion")
+        UserDefaults.standard.removeObject(forKey: AppPreferences.seedVersionKey)
 
         await TeamSeedService.seedIfNeeded(modelContext: context)
 
         let countAfterReset = try? context.fetchCount(FetchDescriptor<Team>())
         XCTAssertEqual(countAfterReset, 191, "Re-seeding after reset should still produce all built-in teams")
-        let storedVersion = UserDefaults.standard.integer(forKey: "seedVersion")
+        let storedVersion = UserDefaults.standard.integer(forKey: AppPreferences.seedVersionKey)
         XCTAssertGreaterThan(storedVersion, 0, "seedVersion should be set again after re-seeding")
     }
 
