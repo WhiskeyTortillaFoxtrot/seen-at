@@ -10,8 +10,13 @@ final class LeagueGameTests: XCTestCase {
     }
 
     func testResolveGameLinkPassesAbsoluteURLThrough() {
-        let url = LeagueGame.resolveGameLink("https://www.espn.com/nhl/game/_/id/401234567", base: base)
+        let espnBase = URL(string: "https://www.espn.com")!
+        let url = LeagueGame.resolveGameLink("https://www.espn.com/nhl/game/_/id/401234567", base: espnBase)
         XCTAssertEqual(url?.absoluteString, "https://www.espn.com/nhl/game/_/id/401234567")
+    }
+
+    func testResolveGameLinkRejectsAbsoluteURLOnAnotherHost() {
+        XCTAssertNil(LeagueGame.resolveGameLink("https://evil.example.com/game", base: base))
     }
 
     func testResolveGameLinkReturnsNilForNilAndEmptyInput() {

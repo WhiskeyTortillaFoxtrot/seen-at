@@ -21,7 +21,9 @@ extension LeagueGame {
     /// never resolve to a different domain.
     static func resolveGameLink(_ raw: String?, base: URL) -> URL? {
         guard let raw, !raw.isEmpty else { return nil }
-        if let absolute = URL(string: raw), absolute.scheme == "http" || absolute.scheme == "https" {
+        if let absolute = URL(string: raw),
+           absolute.scheme == "http" || absolute.scheme == "https",
+           absolute.host == base.host {
             return absolute
         }
         guard raw.hasPrefix("/"),
