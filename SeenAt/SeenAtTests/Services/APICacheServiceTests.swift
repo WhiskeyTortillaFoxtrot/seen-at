@@ -159,6 +159,28 @@ final class APICacheServiceTests: XCTestCase {
         XCTAssertNotNil(APICacheService.getStaleGames(league: "mlb", date: newestDate))
     }
 
+    func testLRUPruningKeepsRecentlyReadEntry() {
+        // Fill to capacity with recent timestamps (all within the stale window) so
+        // getStaleGames can refresh lastAccessed. Use staggered insertion times so
+        // eviction order is deterministic.
+        for index in 0..<APICacheService.maxEntries {
+            let date = Date(timeIntervalSince1970: TimeInterval(index) * 86_400)
+            let games = [LeagueGame(id: "cap-\(index)", awayTeam: "A", homeTeam: "B", venueName: "S", dateString: "2026-07-23", league: "mlb", url: nil, dayNight: nil)]
+            let timestamp = Date().addingTimeInterval(Double(index - APICacheService.maxEntries))
+            APICacheService.setCachedGames(games, league: "mlb", date: date, timestamp: timestamp)
+        }
+        // Touch the oldest entry so its lastAccessed becomes now (newest).
+        let oldestDate = Date(timeIntervalSince1970: 0)
+        _ = APICacheService.getStaleGames(league: "mlb", date: oldestDate)
+        // Insert one more; the least-recently-used (index 1) should be evicted, not the touched index 0.
+        let newDate = Date(timeIntervalSince1970: TimeInterval(APICacheService.maxEntries) * 86_400)
+        let newGames = [LeagueGame(id: "cap-new", awayTeam: "A", homeTeam: "B", venueName: "S", dateString: "2026-07-23", league: "mlb", url: nil, dayNight: nil)]
+        APICacheService.setCachedGames(newGames, league: "mlb", date: newDate)
+        XCTAssertNotNil(APICacheService.getStaleGames(league: "mlb", date: oldestDate), "Recently-read entry must survive LRU eviction")
+        let secondDate = Date(timeIntervalSince1970: 1 * 86_400)
+        XCTAssertNil(APICacheService.getStaleGames(league: "mlb", date: secondDate), "Least-recently-used entry must be evicted")
+    }
+
     // MARK: - Shared HTTP boundary
 
     func testValidatedDataSucceedsWithJSON() async throws {
@@ -239,11 +261,36 @@ final class APICacheServiceTests: XCTestCase {
         }
     }
 
+    func testValidatedDataRejectsOversizeViaContentLengthPreflight() async {
+        let url = URL(string: "https://example.com/schedule")!
+        let request = APICacheService.makeRequest(url: url)
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [MockURLProtocol.self]
+        let session = URLSession(configuration: config)
+        MockURLProtocol.requestHandler = { _ in
+            let response = HTTPURLResponse(
+                url: url, statusCode: 200, httpVersion: nil,
+                headerFields: ["Content-Type": "application/json", "Content-Length": "\(APICacheService.maxValidatedBytes)"]
+            )!
+            return (response, Data())
+        }
+        do {
+            _ = try await APICacheService.validatedData(for: request, session: session)
+            XCTFail("Expected dataLengthExceedsMaximum via Content-Length preflight")
+        } catch let error as URLError {
+            XCTAssertEqual(error.code, .dataLengthExceedsMaximum)
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+    }
+
     func testSessionDisablesCookiesAndCredentialStorage() {
         let config = APICacheService.session.configuration
         XCTAssertEqual(config.httpShouldSetCookies, false)
         XCTAssertNil(config.httpCookieStorage)
         XCTAssertEqual(config.httpCookieAcceptPolicy, .never)
+        XCTAssertNil(config.urlCredentialStorage)
         XCTAssertEqual(config.requestCachePolicy, .reloadIgnoringLocalCacheData)
+        XCTAssertNil(config.urlCache, "URLCache is unnecessary when every request uses reloadIgnoringLocalCacheData")
     }
 }

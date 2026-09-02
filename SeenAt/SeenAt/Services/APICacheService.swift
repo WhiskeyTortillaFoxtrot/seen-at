@@ -7,22 +7,23 @@ enum APICacheService {
     static let maxValidatedBytes = 2 * 1024 * 1024
 
     static let session: URLSession = {
-        let cache = URLCache(memoryCapacity: 5_000_000, diskCapacity: 20_000_000, diskPath: "api-cache")
         let config = URLSessionConfiguration.default
-        config.urlCache = cache
         config.timeoutIntervalForRequest = 30
         config.timeoutIntervalForResource = 60
         config.waitsForConnectivity = true
         config.httpShouldSetCookies = false
         config.httpCookieStorage = nil
         config.httpCookieAcceptPolicy = .never
+        config.urlCredentialStorage = nil
         config.requestCachePolicy = .reloadIgnoringLocalCacheData
+        config.urlCache = nil
         return URLSession(configuration: config)
     }()
 
     struct CacheEntry {
         let games: [LeagueGame]
         let timestamp: Date
+        var lastAccessed: Date
     }
 
     // The cache is accessed by concurrent API tasks; both the dictionary and
@@ -45,26 +46,32 @@ enum APICacheService {
     }
 
     /// Fresh entry within `cacheTTL`. Expired entries are kept for bounded stale-on-error use.
+    /// On a hit the entry's `lastAccessed` is refreshed so frequently-read schedules survive
+    /// oldest-entry pruning (LRU).
     static func getCachedGames(league: String, date: Date) -> [LeagueGame]? {
         let key = cacheKey(league: league, date: date)
         return cacheLock.withLock {
-            guard let entry = cache[key] else { return nil }
+            guard var entry = cache[key] else { return nil }
             guard Date().timeIntervalSince(entry.timestamp) < cacheTTL else { return nil }
+            entry.lastAccessed = Date()
+            cache[key] = entry
             return entry.games
         }
     }
 
     /// Entry within the 6h stale window, for offline fallback after a network failure.
-    /// Entries beyond the window are evicted lazily.
+    /// Entries beyond the window are evicted lazily. On a hit `lastAccessed` is refreshed.
     static func getStaleGames(league: String, date: Date) -> [LeagueGame]? {
         let key = cacheKey(league: league, date: date)
         return cacheLock.withLock {
-            guard let entry = cache[key] else { return nil }
+            guard var entry = cache[key] else { return nil }
             let age = Date().timeIntervalSince(entry.timestamp)
             guard age < staleWindow else {
                 cache.removeValue(forKey: key)
                 return nil
             }
+            entry.lastAccessed = Date()
+            cache[key] = entry
             return entry.games
         }
     }
@@ -72,8 +79,9 @@ enum APICacheService {
     static func setCachedGames(_ games: [LeagueGame], league: String, date: Date) {
         let key = cacheKey(league: league, date: date)
         cacheLock.withLock {
-            cache[key] = CacheEntry(games: games, timestamp: Date())
-            pruneIfNeededLocked()
+            let now = Date()
+            cache[key] = CacheEntry(games: games, timestamp: now, lastAccessed: now)
+            pruneOldestIfNeededLocked()
         }
     }
 
@@ -81,8 +89,8 @@ enum APICacheService {
     static func setCachedGames(_ games: [LeagueGame], league: String, date: Date, timestamp: Date) {
         let key = cacheKey(league: league, date: date)
         cacheLock.withLock {
-            cache[key] = CacheEntry(games: games, timestamp: timestamp)
-            pruneIfNeededLocked()
+            cache[key] = CacheEntry(games: games, timestamp: timestamp, lastAccessed: timestamp)
+            pruneOldestIfNeededLocked()
         }
     }
 
@@ -105,9 +113,13 @@ enum APICacheService {
     /// Validates that the response is `200...299`, that an explicit Content-Type (when present)
     /// is JSON, and that the payload does not exceed `maxValidatedBytes`. A missing
     /// Content-Type is tolerated because `HTTPURLResponse` synthesizes `text/plain` on
-    /// device even when the server sent no header.
+    /// device even when the server sent no header. The `Content-Length` is preflighted when
+    /// available, and the body is streamed so a malicious endpoint cannot force more than
+    /// 2 MB to be buffered before the error is surfaced.
     static func validatedData(for request: URLRequest, session: URLSession) async throws -> Data {
-        let (data, response) = try await session.data(for: request)
+        // Use the async bytes API so we can abort once the limit is exceeded instead of
+        // buffering an unbounded response via `data(for:)`.
+        let (bytes, response) = try await session.bytes(for: request)
         guard let httpResponse = response as? HTTPURLResponse,
               200...299 ~= httpResponse.statusCode
         else {
@@ -117,18 +129,30 @@ enum APICacheService {
            !contentType.lowercased().contains("json") {
             throw URLError(.badServerResponse)
         }
-        guard data.count < maxValidatedBytes else {
+        if httpResponse.expectedContentLength > 0,
+           httpResponse.expectedContentLength >= Int64(maxValidatedBytes) {
             throw URLError(.dataLengthExceedsMaximum)
+        }
+        var data = Data()
+        if httpResponse.expectedContentLength > 0 {
+            data.reserveCapacity(min(Int(httpResponse.expectedContentLength), maxValidatedBytes))
+        }
+        for try await byte in bytes {
+            data.append(byte)
+            if data.count >= maxValidatedBytes {
+                throw URLError(.dataLengthExceedsMaximum)
+            }
         }
         return data
     }
 
     // MARK: - Private
 
-    /// Must be called with `cacheLock` held.
-    private static func pruneIfNeededLocked() {
+    /// Evicts the least-recently-used entries when over `maxEntries`. Must be called with
+    /// `cacheLock` held. Eviction is LRU by `lastAccessed`, so a read keeps an entry alive.
+    private static func pruneOldestIfNeededLocked() {
         guard cache.count > maxEntries else { return }
-        let sorted = cache.sorted { $0.value.timestamp < $1.value.timestamp }
+        let sorted = cache.sorted { $0.value.lastAccessed < $1.value.lastAccessed }
         let toRemove = cache.count - maxEntries
         for (key, _) in sorted.prefix(toRemove) {
             cache.removeValue(forKey: key)
