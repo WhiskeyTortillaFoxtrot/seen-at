@@ -2,7 +2,19 @@ import SwiftUI
 import UIKit
 
 enum VenueImageService {
-    private nonisolated(unsafe) static let cache = NSCache<NSString, UIImage>()
+    private nonisolated(unsafe) static let cache: NSCache<NSString, UIImage> = {
+        let c = NSCache<NSString, UIImage>()
+        c.totalCostLimit = 50 * 1024 * 1024
+        c.countLimit = 100
+        return c
+    }()
+
+    private static func decodedCost(for image: UIImage) -> Int {
+        if let cgImage = image.cgImage {
+            return cgImage.bytesPerRow * cgImage.height
+        }
+        return Int(image.size.width * image.size.height * 4)
+    }
 
     static func image(for venueKey: String) -> Image? {
         let normalized = normalize(venueKey)
@@ -15,10 +27,10 @@ enum VenueImageService {
 
         for ext in ["png", "jpg", "jpeg"] {
             guard let url = Bundle.main.url(forResource: normalized, withExtension: ext),
-                  let data = try? Data(contentsOf: url),
-                  let uiImage = UIImage(data: data)
+                   let data = try? Data(contentsOf: url),
+                   let uiImage = UIImage(data: data)
             else { continue }
-            cache.setObject(uiImage, forKey: cacheKey)
+            cache.setObject(uiImage, forKey: cacheKey, cost: decodedCost(for: uiImage))
             return Image(uiImage: uiImage)
         }
         return nil
@@ -42,7 +54,7 @@ enum VenueImageService {
 
         let day = calendar.ordinality(of: .day, in: .era, for: date) ?? 0
         guard let uiImage = UIImage(contentsOfFile: images[day % images.count].path) else { return nil }
-        cache.setObject(uiImage, forKey: cacheKey)
+        cache.setObject(uiImage, forKey: cacheKey, cost: decodedCost(for: uiImage))
         return Image(uiImage: uiImage)
     }
 

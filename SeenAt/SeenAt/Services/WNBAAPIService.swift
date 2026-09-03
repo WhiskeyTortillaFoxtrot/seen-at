@@ -12,25 +12,27 @@ enum WNBAAPIService: LeagueAPIService {
             DiagnosticsService.shared.log(category: "WNBA", level: .debug, message: "Cache hit for WNBA \(dateString)")
             return cached
         }
+        if let byDay = getIndexedScheduleIfFresh() {
+            let games = byDay[dateString] ?? []
+            APICacheService.setCachedGames(games, league: "wnba", date: date)
+            DiagnosticsService.shared.log(category: "WNBA", level: .debug, message: "Indexed cache hit for WNBA \(dateString)")
+            return games
+        }
 
         DiagnosticsService.shared.log(category: "WNBA", level: .info, message: "Fetching WNBA schedule for \(dateString)")
         do {
-            let data = try await APICacheService.validatedData(for: scheduleRequest, session: session)
-
-            let schedule = try JSONDecoder().decode(WNBAScheduleResponse.self, from: data)
-            let games = schedule.leagueSchedule.gameDates
-                .flatMap(\.games)
-                .compactMap { game -> LeagueGame? in
-                    guard let startUTC = game.gameDateTimeUTC,
-                          let start = Self.isoUTCDate(from: startUTC) ?? parseISODate(startUTC),
-                          easternDayString(from: start) == dateString
-                    else { return nil }
-                    return game.leagueGame(dateString: startUTC)
-                }
+            let byDay = try await fetchIndexedSchedule(session: session)
+            storeIndexedSchedule(byDay)
+            let games = byDay[dateString] ?? []
             APICacheService.setCachedGames(games, league: "wnba", date: date)
             DiagnosticsService.shared.log(category: "WNBA", level: .info, message: "Fetched \(games.count) WNBA games")
             return games
         } catch {
+            if let byDay = getIndexedScheduleIfStale() {
+                let games = byDay[dateString] ?? []
+                DiagnosticsService.shared.log(category: "WNBA", level: .warning, message: "Fetch failed for WNBA, using indexed cache: \(error.localizedDescription)")
+                return games
+            }
             if let cached = APICacheService.getStaleGames(league: "wnba", date: date) {
                 DiagnosticsService.shared.log(category: "WNBA", level: .warning, message: "Fetch failed for WNBA, using cache: \(error.localizedDescription)")
                 return cached
@@ -49,6 +51,87 @@ enum WNBAAPIService: LeagueAPIService {
             throw URLError(.badURL)
         }
         return try await fetchGames(on: easternDate, session: session)
+    }
+
+    // MARK: - Indexed schedule cache (full-season, Eastern-day keyed)
+
+    private nonisolated(unsafe) static var indexedByDay: [String: [LeagueGame]]?
+    private nonisolated(unsafe) static var indexedTimestamp: Date?
+    private struct InFlightSchedule {
+        let id: UUID
+        let task: Task<[String: [LeagueGame]], Error>
+    }
+
+    private nonisolated(unsafe) static var inFlightSchedule: InFlightSchedule?
+    private static let indexedLock = NSLock()
+
+    private static func getIndexedScheduleIfFresh() -> [String: [LeagueGame]]? {
+        indexedLock.withLock {
+            guard let byDay = indexedByDay, let ts = indexedTimestamp,
+                  Date().timeIntervalSince(ts) < APICacheService.cacheTTL else { return nil }
+            return byDay
+        }
+    }
+
+    private static func getIndexedScheduleIfStale() -> [String: [LeagueGame]]? {
+        indexedLock.withLock {
+            guard let byDay = indexedByDay, let ts = indexedTimestamp else { return nil }
+            guard Date().timeIntervalSince(ts) < APICacheService.staleWindow else {
+                indexedByDay = nil
+                indexedTimestamp = nil
+                return nil
+            }
+            return byDay
+        }
+    }
+
+    private static func storeIndexedSchedule(_ byDay: [String: [LeagueGame]]) {
+        indexedLock.withLock {
+            indexedByDay = byDay
+            indexedTimestamp = Date()
+        }
+    }
+
+    /// Coalesces concurrent date requests into one season-file download and decode.
+    private static func fetchIndexedSchedule(session: URLSession) async throws -> [String: [LeagueGame]] {
+        let inFlight = indexedLock.withLock { () -> InFlightSchedule in
+            if let inFlightSchedule { return inFlightSchedule }
+
+            let inFlight = InFlightSchedule(id: UUID(), task: Task {
+                let data = try await APICacheService.validatedData(for: scheduleRequest, session: session)
+                let schedule = try JSONDecoder().decode(WNBAScheduleResponse.self, from: data)
+                return buildIndexedMap(from: schedule)
+            })
+            inFlightSchedule = inFlight
+            return inFlight
+        }
+
+        defer {
+            indexedLock.withLock {
+                guard inFlightSchedule?.id == inFlight.id else { return }
+                inFlightSchedule = nil
+            }
+        }
+        return try await inFlight.task.value
+    }
+
+    static func clearIndexedCacheForTesting() {
+        indexedLock.withLock {
+            indexedByDay = nil
+            indexedTimestamp = nil
+            inFlightSchedule = nil
+        }
+    }
+
+    private static func buildIndexedMap(from schedule: WNBAScheduleResponse) -> [String: [LeagueGame]] {
+        var map: [String: [LeagueGame]] = [:]
+        for game in schedule.leagueSchedule.gameDates.flatMap(\.games) {
+            guard let startUTC = game.gameDateTimeUTC,
+                  let start = isoUTCDate(from: startUTC) ?? parseISODate(startUTC) else { continue }
+            let day = easternDayString(from: start)
+            map[day, default: []].append(game.leagueGame(dateString: startUTC))
+        }
+        return map
     }
 
     /// The feed groups games by Eastern Time day (its `gameDate` labels are MM/dd/yyyy
