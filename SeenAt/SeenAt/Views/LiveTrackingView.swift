@@ -22,28 +22,20 @@ struct LiveTrackingView: View {
         event.watchLocation ?? .stadium
     }
 
-    private var relevantTeams: [Team] {
-        let names = [event.homeTeam, event.awayTeam].compactMap { $0 }
-        guard !names.isEmpty else { return [] }
-        let descriptor = FetchDescriptor<Team>(
-            predicate: #Predicate<Team> { names.contains($0.name) }
-        )
-        return (try? context.fetch(descriptor)) ?? []
+    @State private var cachedTeams: [Team] = []
+
+    private var teamKey: String {
+        "\(event.homeTeam ?? "")_\(event.awayTeam ?? "")"
     }
 
     var homeTeamColor: Color {
         guard let name = event.homeTeam else { return .white }
-        return relevantTeams.first { $0.name == name }?.primaryColor ?? .white
-    }
-
-    var homeTeamSecondaryColor: Color {
-        guard let name = event.homeTeam else { return .accentColor }
-        return relevantTeams.first { $0.name == name }?.secondaryColor ?? .accentColor
+        return cachedTeams.first { $0.name == name }?.primaryColor ?? .white
     }
 
     var awayTeamColor: Color? {
         guard let name = event.awayTeam else { return nil }
-        return relevantTeams.first { $0.name == name }?.primaryColor
+        return cachedTeams.first { $0.name == name }?.primaryColor
     }
 
     var body: some View {
@@ -101,7 +93,7 @@ struct LiveTrackingView: View {
             NavigationStack {
                 SightingEditorView(sighting: sighting) {
                     Task {
-                        await LiveActivityManager.startOrUpdate(for: event, teams: relevantTeams)
+                        await LiveActivityManager.startOrUpdate(for: event, teams: cachedTeams)
                     }
                 }
             }
@@ -132,13 +124,16 @@ struct LiveTrackingView: View {
         }
         .onChange(of: event.sightings.count) { _, _ in
             Task {
-                await LiveActivityManager.startOrUpdate(for: event, teams: relevantTeams)
+                await LiveActivityManager.startOrUpdate(for: event, teams: cachedTeams)
             }
         }
         .fullScreenCover(item: $fullScreenSighting) { sighting in
             if let data = sighting.photoData, let image = PhotoCacheService.image(for: "\(sighting.persistentModelID)", data: data) {
                 FullScreenPhotoView(image: image)
             }
+        }
+        .task(id: teamKey) {
+            cachedTeams = TeamResolver.teams(for: event, context: context)
         }
     }
 

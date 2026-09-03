@@ -6,11 +6,13 @@ final class WNBAAPIServiceTests: XCTestCase {
         super.setUp()
         MockURLProtocol.requestHandler = nil
         APICacheService.clearCache()
+        WNBAAPIService.clearIndexedCacheForTesting()
     }
 
     override func tearDown() {
         MockURLProtocol.requestHandler = nil
         APICacheService.clearCache()
+        WNBAAPIService.clearIndexedCacheForTesting()
         super.tearDown()
     }
 
@@ -137,6 +139,22 @@ final class WNBAAPIServiceTests: XCTestCase {
         let games = try await WNBAAPIService.fetchGames(on: Self.date("2026-06-21"), session: mockSession())
 
         XCTAssertTrue(games.isEmpty)
+    }
+
+    func testFetchGamesReusesDecodedScheduleAcrossDates() async throws {
+        var requestCount = 0
+        MockURLProtocol.requestHandler = { request in
+            requestCount += 1
+            return (self.response(for: request), Self.scheduleJSON.data(using: .utf8)!)
+        }
+
+        let gamesJune21 = try await WNBAAPIService.fetchGames(on: Self.date("2026-06-21"), session: mockSession())
+        XCTAssertEqual(gamesJune21.count, 1)
+
+        // Second date is within the same season file; indexed cache must serve it without a second network hit.
+        let gamesJune23 = try await WNBAAPIService.fetchGames(on: Self.date("2026-06-23"), session: mockSession())
+        XCTAssertTrue(gamesJune23.isEmpty)
+        XCTAssertEqual(requestCount, 1, "Full-season file must be fetched once and indexed by Eastern day")
     }
 
     private func mockSession() -> URLSession {
