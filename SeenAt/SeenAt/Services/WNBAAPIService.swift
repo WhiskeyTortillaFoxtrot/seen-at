@@ -15,12 +15,7 @@ enum WNBAAPIService: LeagueAPIService {
 
         DiagnosticsService.shared.log(category: "WNBA", level: .info, message: "Fetching WNBA schedule for \(dateString)")
         do {
-            let (data, response) = try await session.data(for: scheduleRequest)
-            guard let httpResponse = response as? HTTPURLResponse,
-                  200...299 ~= httpResponse.statusCode
-            else {
-                throw URLError(.badServerResponse)
-            }
+            let data = try await APICacheService.validatedData(for: scheduleRequest, session: session)
 
             let schedule = try JSONDecoder().decode(WNBAScheduleResponse.self, from: data)
             let games = schedule.leagueSchedule.gameDates
@@ -36,7 +31,7 @@ enum WNBAAPIService: LeagueAPIService {
             DiagnosticsService.shared.log(category: "WNBA", level: .info, message: "Fetched \(games.count) WNBA games")
             return games
         } catch {
-            if let cached = APICacheService.getCachedGames(league: "wnba", date: date) {
+            if let cached = APICacheService.getStaleGames(league: "wnba", date: date) {
                 DiagnosticsService.shared.log(category: "WNBA", level: .warning, message: "Fetch failed for WNBA, using cache: \(error.localizedDescription)")
                 return cached
             }
@@ -97,13 +92,7 @@ enum WNBAAPIService: LeagueAPIService {
     }
 
     private static var scheduleRequest: URLRequest {
-        // The default URLSession user-agent already passes the CDN's bot filtering, so we
-        // only set an honest app identity and Accept type. Origin/Referer are omitted on
-        // purpose so the request is not misrepresented as coming from a browser.
-        var request = URLRequest(url: scheduleURL)
-        request.setValue("application/json", forHTTPHeaderField: "Accept")
-        request.setValue("SeenAt/1.0 (iOS)", forHTTPHeaderField: "User-Agent")
-        return request
+        APICacheService.makeRequest(url: scheduleURL)
     }
 }
 

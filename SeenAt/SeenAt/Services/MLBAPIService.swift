@@ -18,7 +18,8 @@ enum MLBAPIService: LeagueAPIService {
         DiagnosticsService.shared.log(category: "MLB", level: .info, message: "Fetching games for \(dateString)")
         let url = URL(string: "https://statsapi.mlb.com/api/v1/schedule?date=\(dateString)&sportId=1")!
         do {
-            let (data, _) = try await session.data(from: url)
+            let request = APICacheService.makeRequest(url: url)
+            let data = try await APICacheService.validatedData(for: request, session: session)
             let decoder = JSONDecoder()
             let response = try decoder.decode(ScheduleResponse.self, from: data)
             let games = response.dates.first?.games.map { $0.toLeagueGame } ?? []
@@ -26,7 +27,7 @@ enum MLBAPIService: LeagueAPIService {
             DiagnosticsService.shared.log(category: "MLB", level: .info, message: "Fetched \(games.count) games")
             return games
         } catch {
-            if let cached = APICacheService.getCachedGames(league: "mlb", date: date) {
+            if let cached = APICacheService.getStaleGames(league: "mlb", date: date) {
                 DiagnosticsService.shared.log(category: "MLB", level: .warning, message: "Fetch failed, using cache: \(error.localizedDescription)")
                 return cached
             }
