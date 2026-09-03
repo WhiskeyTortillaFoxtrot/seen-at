@@ -32,28 +32,26 @@ struct EventSummaryView: View {
         EventPreviewPolicy.isReadOnly(event, now: currentDate)
     }
 
+    @State private var cachedTeams: [Team] = []
+    @State private var hasLoadedTeams = false
+
+    private var teamKey: String {
+        "\(event.homeTeam ?? "")_\(event.awayTeam ?? "")"
+    }
+
     var topTeamColors: [Color] {
         let teams = event.teamBreakdown.prefix(2).map { $0.team.primaryColor }
         return teams.isEmpty ? [Color.accentColor] : teams
     }
 
-    private var relevantTeams: [Team] {
-        let names = [event.homeTeam, event.awayTeam].compactMap { $0 }
-        guard !names.isEmpty else { return [] }
-        let descriptor = FetchDescriptor<Team>(
-            predicate: #Predicate<Team> { names.contains($0.name) }
-        )
-        return (try? context.fetch(descriptor)) ?? []
-    }
-
     private var awayTeamColor: Color? {
         guard let name = event.awayTeam else { return nil }
-        return relevantTeams.first { $0.name == name }?.primaryColor
+        return cachedTeams.first { $0.name == name }?.primaryColor
     }
 
     private var homeTeamColor: Color? {
         guard let name = event.homeTeam else { return nil }
-        return relevantTeams.first { $0.name == name }?.primaryColor
+        return cachedTeams.first { $0.name == name }?.primaryColor
     }
 
     var body: some View {
@@ -127,7 +125,7 @@ struct EventSummaryView: View {
                 SightingEditorView(sighting: sighting) {
                     photoSightings = event.sightings.filter { $0.photoData != nil }
                     Task { @MainActor in
-                        await LiveActivityManager.updateIfActive(for: event, teams: relevantTeams)
+                        await LiveActivityManager.updateIfActive(for: event, teams: teamsForLiveActivity)
                     }
                 }
             }
@@ -156,6 +154,14 @@ struct EventSummaryView: View {
             }
         }
         .sensoryFeedback(.warning, trigger: deleteErrorHaptic)
+        .task(id: teamKey) {
+            cachedTeams = TeamResolver.teams(for: event, context: context)
+            hasLoadedTeams = true
+        }
+    }
+
+    private var teamsForLiveActivity: [Team] {
+        hasLoadedTeams ? cachedTeams : TeamResolver.teams(for: event, context: context)
     }
 
     private var addSightingButton: some View {
