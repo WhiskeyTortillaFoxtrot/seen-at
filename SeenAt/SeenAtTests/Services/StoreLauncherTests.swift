@@ -71,10 +71,34 @@ final class StoreLauncherTests: XCTestCase {
         }
     }
 
+    func testWithTimeoutReturnsBeforeDetachedNonCooperativeOperationFinishes() async {
+        let start = Date()
+        do {
+            _ = try await StoreLauncher.withTimeout(seconds: 0) {
+                await Task.detached {
+                    Self.nonCooperativeDelay()
+                }.value
+            }
+            XCTFail("Expected LaunchTimeoutError")
+        } catch {
+            XCTAssertTrue(error is LaunchTimeoutError)
+        }
+        XCTAssertLessThan(
+            Date().timeIntervalSince(start),
+            0.25,
+            "The watchdog must not wait for detached non-cooperative work to finish"
+        )
+    }
+
     func testLaunchTimeoutErrorHasHumanMessage() {
         let message = LaunchTimeoutError().errorDescription
         XCTAssertNotNil(message)
         XCTAssertTrue(message?.contains("try again") == true)
+    }
+
+    private nonisolated static func nonCooperativeDelay() -> String {
+        Thread.sleep(forTimeInterval: 0.5)
+        return "late"
     }
 
     func testStoreErrorAllowsResetAfterRestoreFailure() {

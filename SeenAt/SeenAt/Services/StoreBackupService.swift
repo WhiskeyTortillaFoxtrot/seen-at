@@ -1267,12 +1267,9 @@ enum StoreBackupService {
                   let attributes = try? fileManager.attributesOfItem(atPath: url.path),
                   let byteCount = (attributes[.size] as? NSNumber)?.int64Value,
                   byteCount == artifact.byteCount,
-                  let data = try? Data(contentsOf: url, options: .mappedIfSafe) else {
+                  let digest = try? sha256Hex(of: url) else {
                 return false
             }
-            let digest = SHA256.hash(data: data)
-                .map { String(format: "%02x", $0) }
-                .joined()
             return digest == artifact.sha256
         }
     }

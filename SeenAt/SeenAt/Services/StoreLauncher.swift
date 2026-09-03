@@ -35,6 +35,31 @@ struct LaunchFileError: LocalizedError, Sendable {
     var errorDescription: String? { message }
 }
 
+/// Resolves an async timeout race exactly once. It is lock-protected because the
+/// operation and watchdog intentionally run as independent, unstructured tasks.
+private final class TimeoutState<Value: Sendable>: @unchecked Sendable {
+    private let lock = NSLock()
+    private var continuation: CheckedContinuation<Value, Error>?
+    private var isResolved = false
+
+    init(_ continuation: CheckedContinuation<Value, Error>) {
+        self.continuation = continuation
+    }
+
+    func resolve(_ result: Result<Value, Error>) {
+        let continuation = lock.withLock { () -> CheckedContinuation<Value, Error>? in
+            guard !isResolved else { return nil }
+            isResolved = true
+            defer { self.continuation = nil }
+            return self.continuation
+        }
+        switch result {
+        case .success(let value): continuation?.resume(returning: value)
+        case .failure(let error): continuation?.resume(throwing: error)
+        }
+    }
+}
+
 struct StoreLauncher {
     struct Result {
         let container: ModelContainer?
@@ -44,6 +69,7 @@ struct StoreLauncher {
     /// Per-phase watchdog for background file work. `ModelContainer` creation itself
     /// stays on the main actor (a SwiftData requirement) and is not guarded by this.
     static let launchTimeoutSeconds: UInt64 = 20
+    private static let backgroundFileWorkLock = NSLock()
 
     /// Async entry point. File traversal, copying, validation, and hashing run on
     /// detached background tasks; `ModelContainer` creation and all `StoreState`
@@ -57,21 +83,40 @@ struct StoreLauncher {
         await runLaunch(containerFactory: containerFactory, onPhase: onPhase, timeoutSeconds: timeoutSeconds)
     }
 
-    /// Races `operation` against a sleep. Only used to bound background file work;
-    /// callers map `LaunchTimeoutError` to a retryable store-load failure.
+    /// Races `operation` against a sleep without structurally awaiting the losing task.
+    /// This is essential for non-cooperative FileManager work: a task group would wait
+    /// for a cancelled child to finish and therefore fail to surface the timeout.
     static func withTimeout<T: Sendable>(seconds: UInt64, operation: @Sendable @escaping () async throws -> T) async throws -> T {
-        try await withThrowingTaskGroup(of: T.self) { group in
-            group.addTask(operation: operation)
-            group.addTask {
-                try await Task.sleep(nanoseconds: seconds * 1_000_000_000)
-                throw LaunchTimeoutError()
+        try await withCheckedThrowingContinuation { continuation in
+            let state = TimeoutState(continuation)
+            let operationTask = Task {
+                do {
+                    state.resolve(.success(try await operation()))
+                } catch {
+                    state.resolve(.failure(error))
+                }
             }
-            guard let first = try await group.next() else {
-                throw LaunchTimeoutError()
+
+            Task {
+                try? await Task.sleep(nanoseconds: seconds * 1_000_000_000)
+                state.resolve(.failure(LaunchTimeoutError()))
+                operationTask.cancel()
             }
-            group.cancelAll()
-            return first
         }
+    }
+
+    /// Runs mutating backup work one phase at a time. A timed-out operation can continue
+    /// briefly because FileManager calls are not cancellable, so serializing workers keeps
+    /// a retry from racing the unfinished attempt against the same store files.
+    private static func runBackgroundFileWork<T: Sendable>(
+        _ operation: @Sendable @escaping () throws -> T
+    ) async throws -> T {
+        try await Task.detached(priority: .userInitiated) {
+            try backgroundFileWorkLock.withLock {
+                try Task.checkCancellation()
+                return try operation()
+            }
+        }.value
     }
 
     // MARK: - Private
@@ -120,7 +165,7 @@ struct StoreLauncher {
         let prep: PrepOutcome
         do {
             prep = try await withTimeout(seconds: timeoutSeconds) {
-                await Task.detached(priority: .userInitiated) {
+                try await runBackgroundFileWork {
                     let fileManager = FileManager()
                     var validationFailure: BackupValidationFailure?
                     do {
@@ -137,7 +182,7 @@ struct StoreLauncher {
                     } catch {
                         return PrepOutcome(rollbackID: nil, validationFailure: nil, failureReason: .storeLoad, failure: .other(message: error.localizedDescription))
                     }
-                }.value
+                }
             }
         } catch {
             return timeoutResult(storeURL: storeURL, underlying: error)
@@ -176,9 +221,9 @@ struct StoreLauncher {
             onPhase?(.finalizing)
             do {
                 try await withTimeout(seconds: timeoutSeconds) {
-                    try await Task.detached(priority: .userInitiated) {
+                    try await runBackgroundFileWork {
                         try StoreBackupService.completeMigrationAttempt(applicationSupportURL: applicationSupportURL)
-                    }.value
+                    }
                 }
                 DiagnosticsService.shared.log(category: "Store", level: .info, message: "Migration attempt finalized")
             } catch {
@@ -194,9 +239,9 @@ struct StoreLauncher {
             }
             do {
                 try await withTimeout(seconds: timeoutSeconds) {
-                    try await Task.detached(priority: .userInitiated) {
+                    try await runBackgroundFileWork {
                         try StoreBackupService.cleanupAfterSuccessfulLaunch(applicationSupportURL: applicationSupportURL)
-                    }.value
+                    }
                 }
             } catch {
                 logger.error("Post-launch migration cleanup failed: \(error, privacy: .public)")
@@ -218,7 +263,7 @@ struct StoreLauncher {
             var recoveryError: Error?
             do {
                 try await withTimeout(seconds: timeoutSeconds) {
-                    try await Task.detached(priority: .userInitiated) {
+                    try await runBackgroundFileWork {
                         try StoreBackupService.restoreCurrentBackup(
                             storeURL: storeURL,
                             applicationSupportURL: applicationSupportURL,
@@ -226,16 +271,16 @@ struct StoreLauncher {
                             backupID: rollbackID,
                             fileManager: FileManager()
                         )
-                    }.value
+                    }
                 }
 
                 let recoveredContainer = try containerFactory(config)
                 onPhase?(.finalizing)
                 do {
                     try await withTimeout(seconds: timeoutSeconds) {
-                        try await Task.detached(priority: .userInitiated) {
+                        try await runBackgroundFileWork {
                             try StoreBackupService.completeMigrationAttempt(applicationSupportURL: applicationSupportURL)
-                        }.value
+                        }
                     }
                 } catch {
                     if error is LaunchTimeoutError {
@@ -251,9 +296,9 @@ struct StoreLauncher {
                 }
                 do {
                     try await withTimeout(seconds: timeoutSeconds) {
-                        try await Task.detached(priority: .userInitiated) {
+                        try await runBackgroundFileWork {
                             try StoreBackupService.cleanupAfterSuccessfulLaunch(applicationSupportURL: applicationSupportURL)
-                        }.value
+                        }
                     }
                 } catch {
                     logger.error("Post-restore migration cleanup failed: \(error, privacy: .public)")
@@ -269,9 +314,9 @@ struct StoreLauncher {
                 recoveryError = error
                 logger.error("Could not restore the migration backup: \(error, privacy: .public)")
                 DiagnosticsService.shared.log(category: "Store", level: .error, message: "Backup restoration failed: \(error.localizedDescription)")
-                await Task.detached(priority: .userInitiated) {
+                _ = try? await runBackgroundFileWork {
                     try? StoreBackupService.completeMigrationAttempt(applicationSupportURL: applicationSupportURL)
-                }.value
+                }
             }
             storeState.error = recoveryError ?? migrationError
             storeState.storeURL = storeURL
