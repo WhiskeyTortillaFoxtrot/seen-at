@@ -157,6 +157,29 @@ final class WNBAAPIServiceTests: XCTestCase {
         XCTAssertEqual(requestCount, 1, "Full-season file must be fetched once and indexed by Eastern day")
     }
 
+    func testConcurrentDateRequestsShareOneSeasonDownload() async throws {
+        let requestLock = NSLock()
+        var requestCount = 0
+        MockURLProtocol.requestHandler = { request in
+            requestLock.withLock { requestCount += 1 }
+            // Keep the first request in flight long enough for the second caller to join it.
+            Thread.sleep(forTimeInterval: 0.1)
+            return (self.response(for: request), Self.scheduleJSON.data(using: .utf8)!)
+        }
+
+        let june21Date = Self.date("2026-06-21")
+        let june23Date = Self.date("2026-06-23")
+        let firstSession = mockSession()
+        let secondSession = mockSession()
+        async let june21 = WNBAAPIService.fetchGames(on: june21Date, session: firstSession)
+        async let june23 = WNBAAPIService.fetchGames(on: june23Date, session: secondSession)
+        let (gamesJune21, gamesJune23) = try await (june21, june23)
+
+        XCTAssertEqual(gamesJune21.count, 1)
+        XCTAssertTrue(gamesJune23.isEmpty)
+        XCTAssertEqual(requestLock.withLock { requestCount }, 1, "Concurrent date requests must share one season download")
+    }
+
     private func mockSession() -> URLSession {
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [MockURLProtocol.self]

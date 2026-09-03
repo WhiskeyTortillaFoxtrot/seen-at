@@ -23,6 +23,7 @@ struct LiveTrackingView: View {
     }
 
     @State private var cachedTeams: [Team] = []
+    @State private var hasLoadedTeams = false
 
     private var teamKey: String {
         "\(event.homeTeam ?? "")_\(event.awayTeam ?? "")"
@@ -93,7 +94,7 @@ struct LiveTrackingView: View {
             NavigationStack {
                 SightingEditorView(sighting: sighting) {
                     Task {
-                        await LiveActivityManager.startOrUpdate(for: event, teams: cachedTeams)
+                        await LiveActivityManager.startOrUpdate(for: event, teams: teamsForLiveActivity)
                     }
                 }
             }
@@ -124,7 +125,7 @@ struct LiveTrackingView: View {
         }
         .onChange(of: event.sightings.count) { _, _ in
             Task {
-                await LiveActivityManager.startOrUpdate(for: event, teams: cachedTeams)
+                await LiveActivityManager.startOrUpdate(for: event, teams: teamsForLiveActivity)
             }
         }
         .fullScreenCover(item: $fullScreenSighting) { sighting in
@@ -134,7 +135,12 @@ struct LiveTrackingView: View {
         }
         .task(id: teamKey) {
             cachedTeams = TeamResolver.teams(for: event, context: context)
+            hasLoadedTeams = true
         }
+    }
+
+    private var teamsForLiveActivity: [Team] {
+        hasLoadedTeams ? cachedTeams : TeamResolver.teams(for: event, context: context)
     }
 
     private var headerSection: some View {

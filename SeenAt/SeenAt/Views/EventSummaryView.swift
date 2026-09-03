@@ -33,6 +33,7 @@ struct EventSummaryView: View {
     }
 
     @State private var cachedTeams: [Team] = []
+    @State private var hasLoadedTeams = false
 
     private var teamKey: String {
         "\(event.homeTeam ?? "")_\(event.awayTeam ?? "")"
@@ -124,7 +125,7 @@ struct EventSummaryView: View {
                 SightingEditorView(sighting: sighting) {
                     photoSightings = event.sightings.filter { $0.photoData != nil }
                     Task { @MainActor in
-                        await LiveActivityManager.updateIfActive(for: event, teams: cachedTeams)
+                        await LiveActivityManager.updateIfActive(for: event, teams: teamsForLiveActivity)
                     }
                 }
             }
@@ -155,7 +156,12 @@ struct EventSummaryView: View {
         .sensoryFeedback(.warning, trigger: deleteErrorHaptic)
         .task(id: teamKey) {
             cachedTeams = TeamResolver.teams(for: event, context: context)
+            hasLoadedTeams = true
         }
+    }
+
+    private var teamsForLiveActivity: [Team] {
+        hasLoadedTeams ? cachedTeams : TeamResolver.teams(for: event, context: context)
     }
 
     private var addSightingButton: some View {

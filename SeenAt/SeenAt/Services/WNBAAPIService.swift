@@ -21,10 +21,7 @@ enum WNBAAPIService: LeagueAPIService {
 
         DiagnosticsService.shared.log(category: "WNBA", level: .info, message: "Fetching WNBA schedule for \(dateString)")
         do {
-            let data = try await APICacheService.validatedData(for: scheduleRequest, session: session)
-
-            let schedule = try JSONDecoder().decode(WNBAScheduleResponse.self, from: data)
-            let byDay = buildIndexedMap(from: schedule)
+            let byDay = try await fetchIndexedSchedule(session: session)
             storeIndexedSchedule(byDay)
             let games = byDay[dateString] ?? []
             APICacheService.setCachedGames(games, league: "wnba", date: date)
@@ -60,6 +57,12 @@ enum WNBAAPIService: LeagueAPIService {
 
     private nonisolated(unsafe) static var indexedByDay: [String: [LeagueGame]]?
     private nonisolated(unsafe) static var indexedTimestamp: Date?
+    private struct InFlightSchedule {
+        let id: UUID
+        let task: Task<[String: [LeagueGame]], Error>
+    }
+
+    private nonisolated(unsafe) static var inFlightSchedule: InFlightSchedule?
     private static let indexedLock = NSLock()
 
     private static func getIndexedScheduleIfFresh() -> [String: [LeagueGame]]? {
@@ -89,10 +92,34 @@ enum WNBAAPIService: LeagueAPIService {
         }
     }
 
+    /// Coalesces concurrent date requests into one season-file download and decode.
+    private static func fetchIndexedSchedule(session: URLSession) async throws -> [String: [LeagueGame]] {
+        let inFlight = indexedLock.withLock { () -> InFlightSchedule in
+            if let inFlightSchedule { return inFlightSchedule }
+
+            let inFlight = InFlightSchedule(id: UUID(), task: Task {
+                let data = try await APICacheService.validatedData(for: scheduleRequest, session: session)
+                let schedule = try JSONDecoder().decode(WNBAScheduleResponse.self, from: data)
+                return buildIndexedMap(from: schedule)
+            })
+            inFlightSchedule = inFlight
+            return inFlight
+        }
+
+        defer {
+            indexedLock.withLock {
+                guard inFlightSchedule?.id == inFlight.id else { return }
+                inFlightSchedule = nil
+            }
+        }
+        return try await inFlight.task.value
+    }
+
     static func clearIndexedCacheForTesting() {
         indexedLock.withLock {
             indexedByDay = nil
             indexedTimestamp = nil
+            inFlightSchedule = nil
         }
     }
 
