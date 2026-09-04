@@ -9,6 +9,7 @@ SeenAt lets you log jerseys you spot at live sporting events, track which teams 
 - Create events for MLB, NBA, NFL, NHL, LOVB, MLS, and NWSL games
 - Log jersey sightings with team, player name, number, and photo
 - Live Activities (Dynamic Island + Lock Screen) for in-game tracking
+- Home and Lock Screen widgets for calendar-year jersey totals, the last tracked game, the top team, and daily tracking streaks
 - Choose between **At Stadium** or **On TV** watch location
 - Upcoming events list for future games
 - Stats dashboard by team, league, and top players with toggleable bar/pie charts
@@ -73,7 +74,14 @@ Build and run from Xcode on a simulator or device.
 - **SwiftUI** for all views
 - **ActivityKit** for Live Activities (widget extension)
 - **XcodeGen** for project generation
+- **App Groups** for sharing a compact, versioned stats snapshot with widgets
 - URL scheme `seenat://live-tracking/{eventUUID}` for deep linking
+
+### Widget terminology and behavior
+
+For the **Season Total widget only**, “season” means the current calendar year; it does not use league-specific season dates. The Tracking Streak widget counts consecutive calendar days with at least one tracked game, using each game’s start time and midnight in Hawaii (`Pacific/Honolulu`) as the day boundary.
+
+Widget data is a read-only summary stored in the `group.com.seenat.app` App Group. When signing the app for a device, enable that App Group for both the SeenAt app and SeenAtWidget extension identifiers in the Apple Developer portal. The Last Game widget opens that game’s summary; the other widgets open Stats.
 
 ## Project Structure
 
@@ -86,7 +94,7 @@ SeenAt/
     VenueImages/ — Venue photos (see Venue Images section below)
   Views/         — HomeView, LiveTrackingView, EventSummaryView, StatsView, SettingsView, SearchView, ...
   Extensions/    — Color+Hex, Color+Luminance
-SeenAtWidget/    — Live Activity widget (Dynamic Island + Lock Screen)
+SeenAtWidget/    — Live Activity plus Home and Lock Screen widgets
 SeenAtTests/     — Unit tests
 SeenAtUITests/   — UI tests (screenshot capture)
 ```

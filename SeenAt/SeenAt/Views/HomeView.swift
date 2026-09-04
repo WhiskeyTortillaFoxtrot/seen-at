@@ -8,6 +8,7 @@ struct HomeView: View {
     @Query(sort: \Event.date, order: .reverse) private var events: [Event]
 
     @Binding var eventToTrack: Event?
+    @Binding var eventToSummarize: Event?
 
     @State private var showingNewEvent = false
     @State private var selectedDestination: HomeDestination?
@@ -162,6 +163,12 @@ struct HomeView: View {
                     selectedDestination = .live(event)
                 }
                 eventToTrack = nil
+            }
+        }
+        .onChange(of: eventToSummarize) { _, event in
+            if let event {
+                selectedDestination = .preview(event)
+                eventToSummarize = nil
             }
         }
         .background { StadiumBackdrop(usesDailyImage: true) }

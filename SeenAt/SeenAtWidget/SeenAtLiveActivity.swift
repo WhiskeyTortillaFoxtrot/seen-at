@@ -2,8 +2,7 @@ import ActivityKit
 import WidgetKit
 import SwiftUI
 
-@main
-struct SeenAtWidget: Widget {
+struct SeenAtLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: SeenAtActivityAttributes.self) { context in
             LockScreenView(context: context)
