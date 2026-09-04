@@ -192,4 +192,25 @@ final class SearchQueryServiceTests: XCTestCase {
         XCTAssertEqual(filters.activeFilterCount, 0)
         XCTAssertFalse(filters.hasActiveFilters)
     }
+
+    func testDateRangeIncludesTheEntireSelectedEndDay() throws {
+        let calendar = Calendar(identifier: .gregorian)
+        let selectedDay = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 9, day: 3)))
+        let evening = try XCTUnwrap(calendar.date(byAdding: .hour, value: 20, to: selectedDay))
+        let nextDay = try XCTUnwrap(calendar.date(byAdding: .day, value: 1, to: selectedDay))
+        let selectedEvent = TestDataFactory.makeEvent(title: "Selected day", date: evening)
+        let excludedEvent = TestDataFactory.makeEvent(title: "Next day", date: nextDay)
+        context.insert(selectedEvent)
+        context.insert(excludedEvent)
+        try context.save()
+
+        var filters = SearchFilters()
+        filters.dateRangeActive = true
+        filters.dateRangeStart = selectedDay
+        filters.dateRangeEnd = selectedDay
+
+        let outcome = SearchQueryService.search(term: "", numberTerm: "", filters: filters, context: context)
+
+        XCTAssertEqual(outcome.events.map(\.title), ["Selected day"])
+    }
 }

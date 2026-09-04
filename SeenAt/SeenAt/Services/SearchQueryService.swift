@@ -123,8 +123,15 @@ enum SearchQueryService {
             }
 
             if filters.dateRangeActive {
+                let calendar = Calendar.current
+                let startOfRange = calendar.startOfDay(for: filters.dateRangeStart)
+                let startOfDayAfterRange = calendar.date(
+                    byAdding: .day,
+                    value: 1,
+                    to: calendar.startOfDay(for: filters.dateRangeEnd)
+                ) ?? filters.dateRangeEnd
                 eventsToFilter = eventsToFilter.filter {
-                    $0.date >= filters.dateRangeStart && $0.date <= filters.dateRangeEnd
+                    $0.date >= startOfRange && $0.date < startOfDayAfterRange
                 }
             }
         }

@@ -109,10 +109,20 @@ struct SearchView: View {
                             HStack {
                                 DatePicker("From", selection: $filters.dateRangeStart, displayedComponents: .date)
                                     .datePickerStyle(.compact)
-                                    .onChange(of: filters.dateRangeStart) { performSearch() }
+                                    .onChange(of: filters.dateRangeStart) {
+                                        if filters.dateRangeStart > filters.dateRangeEnd {
+                                            filters.dateRangeEnd = filters.dateRangeStart
+                                        }
+                                        performSearch()
+                                    }
                                 DatePicker("To", selection: $filters.dateRangeEnd, displayedComponents: .date)
                                     .datePickerStyle(.compact)
-                                    .onChange(of: filters.dateRangeEnd) { performSearch() }
+                                    .onChange(of: filters.dateRangeEnd) {
+                                        if filters.dateRangeEnd < filters.dateRangeStart {
+                                            filters.dateRangeStart = filters.dateRangeEnd
+                                        }
+                                        performSearch()
+                                    }
                             }
                         }
 
