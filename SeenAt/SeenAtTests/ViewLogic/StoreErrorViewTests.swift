@@ -52,4 +52,15 @@ final class StoreErrorViewTests: XCTestCase {
         state.failureReason = .restoredMigrationFinalization
         XCTAssertFalse(StoreErrorView(state: state).allowsReset)
     }
+
+    func testRetryDefaultsToNil() {
+        let state = StoreState()
+        XCTAssertNil(StoreErrorView(state: state).onRetry)
+    }
+
+    func testRetryCallbackIsStored() {
+        let state = StoreState()
+        let view = StoreErrorView(state: state, onRetry: {})
+        XCTAssertNotNil(view.onRetry)
+    }
 }

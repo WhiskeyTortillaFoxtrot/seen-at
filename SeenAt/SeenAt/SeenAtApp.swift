@@ -2,7 +2,7 @@ import SwiftUI
 import SwiftData
 import Observation
 
-enum StoreFailureReason {
+enum StoreFailureReason: Sendable {
     case storeLoad
     case restoreFailed
     case migrationFinalization
@@ -28,25 +28,27 @@ private enum DeepLinkError: Identifiable {
 @MainActor
 @main
 struct SeenAtApp: App {
-    let container: ModelContainer?
+    @State private var container: ModelContainer?
+    @State private var isLaunching = true
+    @State private var launchInFlight = false
 
     @AppStorage(AppPreferences.hasSeenOnboardingKey) private var hasSeenOnboarding = false
 
     @State private var deepLinkEventID: UUID?
     @State private var deepLinkError: DeepLinkError?
     @State private var splashState = SplashState()
-    @State private var storeState: StoreState
+    @State private var storeState = StoreState()
     @Environment(\.scenePhase) private var scenePhase
 
-    /// All backup/restore work runs synchronously on `@MainActor` because
-    /// SwiftData's `ModelContainer` must be created on the main actor, and the
-    /// backup must exist *before* container creation so the recovery path can
-    /// restore it on failure.  If launch time becomes a concern, the escape
-    /// hatch is pre-warming the backup on a background thread during a push
-    /// notification handler or app extension.
+    /// Launch is async: backup inspection, copying, validation, and hashing run on
+    /// detached background tasks inside `StoreLauncher.launchAsync`, while
+    /// `ModelContainer` creation (a SwiftData main-actor requirement) and all
+    /// `StoreState` mutation stay on the main actor. The splash screen stays up
+    /// with coarse progress until the container is ready or launch fails.
     init() {
         #if DEBUG
-        var resetError: Error?
+        // DEBUG-only reset path stays synchronous: it only deletes files and the
+        // screenshot harness depends on it completing before first render.
         if ProcessInfo.processInfo.arguments.contains("--resetData") {
             let storeURL = StoreBackupService.defaultStoreURL()
             do {
@@ -54,100 +56,118 @@ struct SeenAtApp: App {
                     storeURL: storeURL,
                     applicationSupportURL: StoreBackupService.applicationSupportURL(for: storeURL)
                 )
-            } catch {
-                resetError = error
-            }
-            if resetError == nil {
                 AppPreferences.resetForFreshStore()
                 UserDefaults.standard.set(
                     "Chicago Cubs,Los Angeles Dodgers,St. Louis Cardinals",
                     forKey: AppPreferences.favoriteTeamsKey
                 )
                 UserDefaults.standard.set(true, forKey: AppPreferences.hasSeenOnboardingKey)
+            } catch {
+                let state = StoreState()
+                state.error = error
+                state.storeURL = StoreBackupService.defaultStoreURL()
+                state.failureReason = .storeLoad
+                _storeState = State(initialValue: state)
+                _isLaunching = State(initialValue: false)
+                return
             }
         }
-        if let resetError {
-            container = nil
-            let state = StoreState()
-            state.error = resetError
-            state.storeURL = StoreBackupService.defaultStoreURL()
-            state.failureReason = .storeLoad
-            _storeState = State(initialValue: state)
-            return
-        }
         #endif
-        let result = StoreLauncher.launch { config in
-            try ModelContainer(
-                for: Team.self, Event.self, JerseySighting.self,
-                migrationPlan: SeenAtMigrationPlan.self,
-                configurations: config
-            )
-        }
-        container = result.container
-        _storeState = State(initialValue: result.storeState)
+    }
 
-        guard let c = container else { return }
-        let state = splashState
-        Task {
-            await StoreLauncher.seedIfNeeded(in: c)
-            state.isVisible = false
-            await StoreLauncher.startLiveActivities(for: c)
+    private func launch() async {
+        guard container == nil, !launchInFlight else { return }
+        launchInFlight = true
+        defer {
+            launchInFlight = false
+            isLaunching = false
         }
+        isLaunching = true
+
+        let result = await StoreLauncher.launchAsync(
+            containerFactory: { config in
+                try ModelContainer(
+                    for: Team.self, Event.self, JerseySighting.self,
+                    migrationPlan: SeenAtMigrationPlan.self,
+                    configurations: config
+                )
+            },
+            onPhase: { phase in splashState.phase = phase }
+        )
+        container = result.container
+        storeState = result.storeState
+
+        guard let c = result.container else { return }
+        await StoreLauncher.seedIfNeeded(in: c)
+        splashState.isVisible = false
+        splashState.phase = nil
+        await StoreLauncher.startLiveActivities(for: c)
+    }
+
+    private func retryLaunch() {
+        Task { await launch() }
     }
 
     var body: some Scene {
         WindowGroup {
-            if let container {
-                ZStack {
-                    ContentView(deepLinkEventID: $deepLinkEventID, onDeepLinkError: { deepLinkError = .eventNotFound })
+            Group {
+                if let container {
+                    ZStack {
+                        ContentView(deepLinkEventID: $deepLinkEventID, onDeepLinkError: { deepLinkError = .eventNotFound })
 
-                    if splashState.isVisible {
-                        SplashView()
-                            .transition(.opacity)
-                    }
+                        if splashState.isVisible {
+                            SplashView(phase: splashState.phase)
+                                .transition(.opacity)
+                        }
 
-                    if !hasSeenOnboarding, !splashState.isVisible {
-                        OnboardingView()
-                            .transition(.opacity)
+                        if !hasSeenOnboarding, !splashState.isVisible {
+                            OnboardingView()
+                                .transition(.opacity)
+                        }
                     }
-                }
-                .animation(.easeOut(duration: 0.5), value: splashState.isVisible)
-                .preferredColorScheme(.dark)
-                .onOpenURL { url in
-                    switch DeepLinkParser.parse(url) {
-                    case .success(let eventID):
-                        deepLinkEventID = eventID
-                    case .failure:
-                        deepLinkError = .malformedURL
+                    .animation(.easeOut(duration: 0.5), value: splashState.isVisible)
+                    .preferredColorScheme(.dark)
+                    .onOpenURL { url in
+                        switch DeepLinkParser.parse(url) {
+                        case .success(let eventID):
+                            deepLinkEventID = eventID
+                        case .failure:
+                            deepLinkError = .malformedURL
+                        }
                     }
-                }
-                .alert(item: Binding(
-                    get: { splashState.isVisible ? nil : deepLinkError },
-                    set: { deepLinkError = $0; if $0 == nil { deepLinkEventID = nil } }
-                )) { error in
-                    Alert(
-                        title: Text("Couldn’t Open Link"),
-                        message: Text(error.message),
-                        dismissButton: .default(Text("OK"))
-                    )
-                }
-                .modelContainer(container)
-                .onChange(of: scenePhase) { _, newPhase in
-                    switch newPhase {
-                    case .active:
-                        DiagnosticsService.shared.appDidBecomeActive()
-                        DiagnosticsService.shared.log(category: "App", level: .info, message: "App became active")
-                    case .background:
-                        DiagnosticsService.shared.appDidBackground()
-                        DiagnosticsService.shared.log(category: "App", level: .info, message: "App entered background")
-                    case .inactive:
-                        break
-                    @unknown default:
-                        break
+                    .alert(item: Binding(
+                        get: { splashState.isVisible ? nil : deepLinkError },
+                        set: { deepLinkError = $0; if $0 == nil { deepLinkEventID = nil } }
+                    )) { error in
+                        Alert(
+                            title: Text("Couldn’t Open Link"),
+                            message: Text(error.message),
+                            dismissButton: .default(Text("OK"))
+                        )
                     }
+                    .modelContainer(container)
+                    .onChange(of: scenePhase) { _, newPhase in
+                        switch newPhase {
+                        case .active:
+                            DiagnosticsService.shared.appDidBecomeActive()
+                            DiagnosticsService.shared.log(category: "App", level: .info, message: "App became active")
+                        case .background:
+                            DiagnosticsService.shared.appDidBackground()
+                            DiagnosticsService.shared.log(category: "App", level: .info, message: "App entered background")
+                        case .inactive:
+                            break
+                        @unknown default:
+                            break
+                        }
+                    }
+                } else if isLaunching {
+                    SplashView(phase: splashState.phase)
+                } else {
+                    StoreErrorView(state: storeState, onRetry: { retryLaunch() })
                 }
-            } else {
-                StoreErrorView(state: storeState)
+            }
+            .task {
+                await launch()
             }
         }
     }
@@ -157,6 +177,7 @@ struct SeenAtApp: App {
 @Observable
 final class SplashState {
     var isVisible = true
+    var phase: LaunchPhase?
 }
 
 @MainActor

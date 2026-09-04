@@ -3,7 +3,7 @@ import SwiftData
 import CryptoKit
 import Darwin
 
-struct StoreBackupArtifact: Codable, Equatable {
+struct StoreBackupArtifact: Codable, Equatable, Sendable {
     let path: String
     let byteCount: Int64
     let sha256: String
@@ -28,7 +28,7 @@ struct StoreMigrationAttempt: Codable {
     let stagingDirectoryPath: String?
 }
 
-struct StoreBackupManifest: Equatable {
+struct StoreBackupManifest: Equatable, Sendable {
     static let currentFormatVersion = 1
 
     let formatVersion: Int
@@ -87,7 +87,7 @@ extension StoreBackupManifest: Codable {
     }
 }
 
-enum BackupValidationFailure: Equatable {
+enum BackupValidationFailure: Equatable, Sendable {
     case backupDirectoryMissingOrNotDirectory
     case manifestMissingOrNotRegular(String)
     case duplicateArtifactPaths
@@ -132,7 +132,7 @@ enum BackupValidationFailure: Equatable {
 }
 
 enum StoreBackupService {
-    enum BackupError: LocalizedError {
+    enum BackupError: LocalizedError, Sendable {
         case invalidBackup(URL)
         case staleMigrationAttempt(URL)
         case migrationFinalization(URL)
@@ -670,6 +670,20 @@ enum StoreBackupService {
         try data.write(to: directory.appendingPathComponent("manifest.json"), options: .atomic)
     }
 
+    /// Streams a file through SHA-256 in 1 MB chunks instead of mapping the whole
+    /// file into memory, so multi-hundred-megabyte support files hash with bounded RAM.
+    static func sha256Hex(of url: URL) throws -> String {
+        let handle = try FileHandle(forReadingFrom: url)
+        defer { try? handle.close() }
+        var hasher = SHA256()
+        while let chunk = try handle.read(upToCount: 1024 * 1024), !chunk.isEmpty {
+            hasher.update(data: chunk)
+        }
+        return hasher.finalize()
+            .map { String(format: "%02x", $0) }
+            .joined()
+    }
+
     private static func makeArtifact(
         relativePath: String,
         backupDirectory: URL,
@@ -678,10 +692,7 @@ enum StoreBackupService {
         let url = backupDirectory.appendingPathComponent(relativePath)
         let attributes = try fileManager.attributesOfItem(atPath: url.path)
         let byteCount = (attributes[.size] as? NSNumber)?.int64Value ?? 0
-        let data = try Data(contentsOf: url, options: .mappedIfSafe)
-        let digest = SHA256.hash(data: data)
-            .map { String(format: "%02x", $0) }
-            .joined()
+        let digest = try sha256Hex(of: url)
         return StoreBackupArtifact(path: relativePath, byteCount: byteCount, sha256: digest)
     }
 
@@ -891,12 +902,9 @@ enum StoreBackupService {
                 return .byteCountMismatch(path: artifact.path, expected: artifact.byteCount, actual: byteCount)
             }
             guard verifyChecksums else { continue }
-            guard let data = try? Data(contentsOf: url, options: .mappedIfSafe) else {
+            guard let digest = try? sha256Hex(of: url) else {
                 return .checksumMismatch(artifact.path)
             }
-            let digest = SHA256.hash(data: data)
-                .map { String(format: "%02x", $0) }
-                .joined()
             guard digest == artifact.sha256 else {
                 return .checksumMismatch(artifact.path)
             }
@@ -1205,10 +1213,7 @@ enum StoreBackupService {
     ) throws -> StoreBackupArtifact {
         let attributes = try fileManager.attributesOfItem(atPath: url.path)
         let byteCount = (attributes[.size] as? NSNumber)?.int64Value ?? 0
-        let data = try Data(contentsOf: url, options: .mappedIfSafe)
-        let digest = SHA256.hash(data: data)
-            .map { String(format: "%02x", $0) }
-            .joined()
+        let digest = try sha256Hex(of: url)
         return StoreBackupArtifact(path: path, byteCount: byteCount, sha256: digest)
     }
 
@@ -1262,12 +1267,9 @@ enum StoreBackupService {
                   let attributes = try? fileManager.attributesOfItem(atPath: url.path),
                   let byteCount = (attributes[.size] as? NSNumber)?.int64Value,
                   byteCount == artifact.byteCount,
-                  let data = try? Data(contentsOf: url, options: .mappedIfSafe) else {
+                  let digest = try? sha256Hex(of: url) else {
                 return false
             }
-            let digest = SHA256.hash(data: data)
-                .map { String(format: "%02x", $0) }
-                .joined()
             return digest == artifact.sha256
         }
     }

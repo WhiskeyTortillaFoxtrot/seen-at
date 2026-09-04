@@ -2,6 +2,7 @@ import SwiftUI
 
 struct StoreErrorView: View {
     let state: StoreState
+    var onRetry: (() -> Void)?
     @State private var showResetConfirmation = false
     @State private var resetComplete = false
     @ScaledMetric(relativeTo: .largeTitle) private var iconSize: CGFloat = 48
@@ -54,6 +55,18 @@ struct StoreErrorView: View {
 
             Spacer()
 
+            if let onRetry {
+                Button {
+                    onRetry()
+                } label: {
+                    Text("Try Again")
+                        .font(.urbanist(.headline))
+                        .frame(maxWidth: 280, minHeight: 50)
+                }
+                .buttonStyle(.borderedProminent)
+                .padding(.bottom, allowsReset ? 12 : 48)
+            }
+
             if allowsReset {
                 Button(role: .destructive) {
                     showResetConfirmation = true
@@ -65,7 +78,7 @@ struct StoreErrorView: View {
                 .buttonStyle(.borderedProminent)
                 .tint(.red)
                 .padding(.bottom, 48)
-            } else {
+            } else if onRetry == nil {
                 Text("Close and reopen the app to retry.")
                     .font(.urbanist(.headline))
                     .foregroundStyle(.white.opacity(0.8))

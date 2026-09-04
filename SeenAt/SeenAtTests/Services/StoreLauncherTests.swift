@@ -4,8 +4,8 @@ import SwiftData
 
 @MainActor
 final class StoreLauncherTests: XCTestCase {
-    func testLaunchReturnsContainerOnSuccess() throws {
-        let result = StoreLauncher.launch { config in
+    func testLaunchReturnsContainerOnSuccess() async {
+        let result = await StoreLauncher.launchAsync { config in
             try ModelContainer(
                 for: Team.self, Event.self, JerseySighting.self,
                 configurations: config
@@ -16,27 +16,89 @@ final class StoreLauncherTests: XCTestCase {
         XCTAssertEqual(result.storeState.failureReason, .storeLoad)
     }
 
-    func testLaunchReturnsNilContainerOnFactoryFailure() throws {
+    func testLaunchReturnsNilContainerOnFactoryFailure() async {
         struct LaunchError: Error, LocalizedError {
             var errorDescription: String? { "test error" }
         }
 
-        let result = StoreLauncher.launch { _ in
+        let result = await StoreLauncher.launchAsync { _ in
             throw LaunchError()
         }
         XCTAssertNil(result.container)
         XCTAssertNotNil(result.storeState.error)
     }
 
-    func testLaunchSetsStoreURL() throws {
+    func testLaunchSetsStoreURL() async {
         struct LaunchError: Error, LocalizedError {
             var errorDescription: String? { "test error" }
         }
 
-        let result = StoreLauncher.launch { _ in
+        let result = await StoreLauncher.launchAsync { _ in
             throw LaunchError()
         }
         XCTAssertNotNil(result.storeState.storeURL)
+    }
+
+    func testLaunchAsyncReportsCoarsePhasesInOrder() async {
+        var phases: [LaunchPhase] = []
+        let result = await StoreLauncher.launchAsync(
+            containerFactory: { config in
+                try ModelContainer(
+                    for: Team.self, Event.self, JerseySighting.self,
+                    configurations: config
+                )
+            },
+            onPhase: { phases.append($0) }
+        )
+        XCTAssertNotNil(result.container)
+        XCTAssertEqual(phases, [.preparingBackup, .openingStore, .finalizing])
+    }
+
+    func testWithTimeoutReturnsFastOperation() async throws {
+        let value = try await StoreLauncher.withTimeout(seconds: 5) { "done" }
+        XCTAssertEqual(value, "done")
+    }
+
+    func testWithTimeoutThrowsTimeoutOnSlowOperation() async {
+        do {
+            _ = try await StoreLauncher.withTimeout(seconds: 0) {
+                try await Task.sleep(nanoseconds: 500_000_000)
+                return "too slow"
+            }
+            XCTFail("Expected LaunchTimeoutError")
+        } catch {
+            XCTAssertTrue(error is LaunchTimeoutError, "Expected LaunchTimeoutError, got \(error)")
+        }
+    }
+
+    func testWithTimeoutReturnsBeforeDetachedNonCooperativeOperationFinishes() async {
+        let start = Date()
+        do {
+            _ = try await StoreLauncher.withTimeout(seconds: 0) {
+                await Task.detached {
+                    Self.nonCooperativeDelay()
+                }.value
+            }
+            XCTFail("Expected LaunchTimeoutError")
+        } catch {
+            XCTAssertTrue(error is LaunchTimeoutError)
+        }
+        XCTAssertLessThan(
+            Date().timeIntervalSince(start),
+            0.25,
+            "The watchdog must not wait for detached non-cooperative work to finish"
+        )
+    }
+
+    func testLaunchTimeoutErrorHasHumanMessage() {
+        let message = LaunchTimeoutError().errorDescription
+        XCTAssertNotNil(message)
+        XCTAssertTrue(message?.contains("try again") == true)
+    }
+
+    private nonisolated static func nonCooperativeDelay() -> String {
+        Thread.sleep(forTimeInterval: 0.5)
+        return "late"
     }
 
     func testStoreErrorAllowsResetAfterRestoreFailure() {

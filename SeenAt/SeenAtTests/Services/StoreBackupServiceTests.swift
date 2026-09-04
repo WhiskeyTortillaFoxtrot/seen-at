@@ -1387,6 +1387,16 @@ final class StoreBackupServiceTests: XCTestCase {
         try Data(value.utf8).write(to: url)
     }
 
+    func testStreamingHashMatchesBufferedHash() throws {
+        // Multi-chunk payload (3 MB) so the test exercises more than one 1 MB read.
+        let bytes = Data((0..<(3 * 1024 * 1024)).map { UInt8($0 % 251) })
+        let url = rootURL.appendingPathComponent("payload.bin")
+        try bytes.write(to: url, options: .atomic)
+
+        let expected = SHA256.hash(data: bytes).map { String(format: "%02x", $0) }.joined()
+        XCTAssertEqual(try StoreBackupService.sha256Hex(of: url), expected)
+    }
+
     private func writeMigrationAttempt(_ attempt: StoreMigrationAttempt) throws {
         try FileManager.default.createDirectory(at: applicationSupportURL, withIntermediateDirectories: true)
         try JSONEncoder().encode(attempt).write(

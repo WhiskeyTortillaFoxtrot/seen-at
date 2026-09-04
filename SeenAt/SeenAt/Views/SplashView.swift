@@ -1,6 +1,8 @@
 import SwiftUI
 
 struct SplashView: View {
+    var phase: LaunchPhase?
+
     @ScaledMetric(relativeTo: .largeTitle) private var titleSize: CGFloat = 56
 
     var body: some View {
@@ -14,9 +16,19 @@ struct SplashView: View {
                 Color.black.ignoresSafeArea()
             }
 
-            Text("Seen At")
-                .font(.urbanist(size: titleSize, weight: .bold))
-                .foregroundStyle(.white)
+            VStack(spacing: 16) {
+                Text("Seen At")
+                    .font(.urbanist(size: titleSize, weight: .bold))
+                    .foregroundStyle(.white)
+
+                if let phase {
+                    ProgressView()
+                        .tint(.white)
+                    Text(phase.displayName)
+                        .font(.urbanist(.subheadline))
+                        .foregroundStyle(.white.opacity(0.8))
+                }
+            }
         }
     }
 }
