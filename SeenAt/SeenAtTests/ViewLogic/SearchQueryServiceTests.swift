@@ -165,4 +165,31 @@ final class SearchQueryServiceTests: XCTestCase {
 
         XCTAssertTrue(outcome.events.isEmpty)
     }
+
+    func testActiveFilterCountStartsAtZero() {
+        let filters = SearchFilters()
+        XCTAssertEqual(filters.activeFilterCount, 0)
+        XCTAssertFalse(filters.hasActiveFilters)
+    }
+
+    func testActiveFilterCountCountsEachFilterOnce() {
+        var filters = SearchFilters()
+        filters.league = "mlb"
+        filters.watchLocation = .tv
+        filters.venueQuery = "Garden"
+        filters.dateRangeActive = true
+        filters.playerNumber = "37"
+
+        XCTAssertEqual(filters.activeFilterCount, 5)
+        XCTAssertTrue(filters.hasActiveFilters)
+    }
+
+    func testActiveFilterCountIgnoresBlankText() {
+        var filters = SearchFilters()
+        filters.venueQuery = "   "
+        filters.playerNumber = "  "
+
+        XCTAssertEqual(filters.activeFilterCount, 0)
+        XCTAssertFalse(filters.hasActiveFilters)
+    }
 }

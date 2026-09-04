@@ -9,10 +9,18 @@ struct SearchFilters {
     var dateRangeEnd = Date()
     var dateRangeActive = false
     var playerNumber = ""
-    var showMoreFilters = false
+    var showFilters = false
+
+    var activeFilterCount: Int {
+        (league != nil ? 1 : 0)
+            + (watchLocation != nil ? 1 : 0)
+            + (!venueQuery.trimmingCharacters(in: .whitespaces).isEmpty ? 1 : 0)
+            + (dateRangeActive ? 1 : 0)
+            + (!playerNumber.trimmingCharacters(in: .whitespaces).isEmpty ? 1 : 0)
+    }
 
     var hasActiveFilters: Bool {
-        league != nil || watchLocation != nil || !venueQuery.isEmpty || dateRangeActive || !playerNumber.isEmpty
+        activeFilterCount > 0
     }
 }
 

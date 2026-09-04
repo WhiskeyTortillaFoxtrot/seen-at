@@ -29,36 +29,63 @@ struct SearchView: View {
             .padding()
 
             VStack(spacing: 8) {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 8) {
-                        leagueChip("All", icon: nil, id: nil)
-                        ForEach(leagues, id: \.id) { league in
-                            leagueChip(league.label, icon: Team.sportIcon(for: league.id), id: league.id)
+                HStack {
+                    Button {
+                        withAnimation { filters.showFilters.toggle() }
+                    } label: {
+                        HStack(spacing: 4) {
+                            Label(
+                                filters.showFilters ? "Hide Filters" : "Filters",
+                                systemImage: "line.3.horizontal.decrease.circle"
+                            )
+                            .font(.urbanist(.caption))
+                            if filters.activeFilterCount > 0 {
+                                Text("\(filters.activeFilterCount)")
+                                    .font(.urbanist(.caption2, weight: .bold))
+                                    .foregroundStyle(.white)
+                                    .padding(.horizontal, 6)
+                                    .padding(.vertical, 2)
+                                    .background(Capsule().fill(Color.blue))
+                            }
+                            Image(systemName: filters.showFilters ? "chevron.up" : "chevron.down")
+                                .font(.caption2)
                         }
                     }
-                    .padding(.horizontal, 4)
-                }
+                    .accessibilityLabel(filters.activeFilterCount > 0 ? "Filters, \(filters.activeFilterCount) active" : "Filters")
 
-                HStack(spacing: 8) {
-                    locationChip("All", location: nil)
-                    locationChip("Stadium", location: .stadium)
-                    locationChip("TV", location: .tv)
                     Spacer()
-                }
 
-                Button {
-                    withAnimation { filters.showMoreFilters.toggle() }
-                } label: {
-                    HStack(spacing: 4) {
-                        Text(filters.showMoreFilters ? "Less Filters" : "More Filters")
-                            .font(.urbanist(.caption))
-                        Image(systemName: filters.showMoreFilters ? "chevron.up" : "chevron.down")
-                            .font(.caption2)
+                    if filters.hasActiveFilters {
+                        Button("Clear all") {
+                            let showFilters = filters.showFilters
+                            filters = SearchFilters()
+                            filters.showFilters = showFilters
+                            performSearch()
+                        }
+                        .font(.urbanist(.caption))
+                        .foregroundStyle(.blue)
                     }
                 }
 
-                if filters.showMoreFilters {
+                if filters.showFilters {
                     VStack(spacing: 8) {
+                        Picker("League", selection: $filters.league) {
+                            Text("All").tag(nil as String?)
+                            ForEach(leagues, id: \.id) { league in
+                                Text(league.label).tag(league.id as String?)
+                            }
+                        }
+                        .pickerStyle(.menu)
+                        .onChange(of: filters.league) { performSearch() }
+
+                        Picker("Location", selection: $filters.watchLocation) {
+                            Text("All").tag(nil as WatchLocation?)
+                            Text("Stadium").tag(WatchLocation.stadium as WatchLocation?)
+                            Text("TV").tag(WatchLocation.tv as WatchLocation?)
+                        }
+                        .pickerStyle(.menu)
+                        .onChange(of: filters.watchLocation) { performSearch() }
+
                         TextField("Venue", text: $filters.venueQuery)
                             .textFieldStyle(.roundedBorder)
                             .onSubmit { performSearch() }
@@ -163,41 +190,6 @@ struct SearchView: View {
         } else {
             Text("Try a different search term")
         }
-    }
-
-    private func leagueChip(_ label: String, icon: String?, id: String?) -> some View {
-        Button {
-            filters.league = id
-            performSearch()
-        } label: {
-            if let icon {
-                Label(label, systemImage: icon)
-                    .font(.urbanist(.caption, weight: .semibold))
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
-            } else {
-                Text(label)
-                    .font(.urbanist(.caption, weight: .semibold))
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
-            }
-        }
-        .buttonStyle(.bordered)
-        .tint(filters.league == id ? Color.blue : .gray)
-    }
-
-    private func locationChip(_ label: String, location: WatchLocation?) -> some View {
-        Button {
-            filters.watchLocation = location
-            performSearch()
-        } label: {
-            Text(label)
-                .font(.urbanist(.caption, weight: .semibold))
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
-        }
-        .buttonStyle(.bordered)
-        .tint(filters.watchLocation == location ? Color.blue : .gray)
     }
 
     private func performSearch() {
