@@ -9,10 +9,18 @@ struct SearchFilters {
     var dateRangeEnd = Date()
     var dateRangeActive = false
     var playerNumber = ""
-    var showMoreFilters = false
+    var showFilters = false
+
+    var activeFilterCount: Int {
+        (league != nil ? 1 : 0)
+            + (watchLocation != nil ? 1 : 0)
+            + (!venueQuery.trimmingCharacters(in: .whitespaces).isEmpty ? 1 : 0)
+            + (dateRangeActive ? 1 : 0)
+            + (!playerNumber.trimmingCharacters(in: .whitespaces).isEmpty ? 1 : 0)
+    }
 
     var hasActiveFilters: Bool {
-        league != nil || watchLocation != nil || !venueQuery.isEmpty || dateRangeActive || !playerNumber.isEmpty
+        activeFilterCount > 0
     }
 }
 
@@ -115,8 +123,15 @@ enum SearchQueryService {
             }
 
             if filters.dateRangeActive {
+                let calendar = Calendar.current
+                let startOfRange = calendar.startOfDay(for: filters.dateRangeStart)
+                let startOfDayAfterRange = calendar.date(
+                    byAdding: .day,
+                    value: 1,
+                    to: calendar.startOfDay(for: filters.dateRangeEnd)
+                ) ?? filters.dateRangeEnd
                 eventsToFilter = eventsToFilter.filter {
-                    $0.date >= filters.dateRangeStart && $0.date <= filters.dateRangeEnd
+                    $0.date >= startOfRange && $0.date < startOfDayAfterRange
                 }
             }
         }
