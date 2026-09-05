@@ -26,16 +26,22 @@ final class StoreBackupServiceTests: XCTestCase {
         let privateApplicationSupportURL = try XCTUnwrap(
             FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
         )
-        let appGroupURL = try XCTUnwrap(
-            FileManager.default.containerURL(
-                forSecurityApplicationGroupIdentifier: WidgetSnapshotStore.appGroupIdentifier
-            )
-        )
 
         XCTAssertEqual(
             StoreBackupService.defaultStoreURL(),
             privateApplicationSupportURL.appendingPathComponent("default.store", isDirectory: false)
         )
+        XCTAssertEqual(
+            StoreBackupService.defaultStoreURL(),
+            ModelConfiguration().url,
+            "Hardcoded private path must match SwiftData's default so existing stores keep resolving"
+        )
+
+        guard let appGroupURL = FileManager.default.containerURL(
+            forSecurityApplicationGroupIdentifier: WidgetSnapshotStore.appGroupIdentifier
+        ) else {
+            throw XCTSkip("App Group container unavailable; private-container check requires it")
+        }
         XCTAssertFalse(
             StoreBackupService.defaultStoreURL().path.hasPrefix(appGroupURL.path),
             "Adding widget sharing must not relocate the existing SwiftData store"
