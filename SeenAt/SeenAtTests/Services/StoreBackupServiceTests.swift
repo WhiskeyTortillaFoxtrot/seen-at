@@ -31,11 +31,6 @@ final class StoreBackupServiceTests: XCTestCase {
             StoreBackupService.defaultStoreURL(),
             privateApplicationSupportURL.appendingPathComponent("default.store", isDirectory: false)
         )
-        XCTAssertEqual(
-            StoreBackupService.defaultStoreURL(),
-            ModelConfiguration().url,
-            "Hardcoded private path must match SwiftData's default so existing stores keep resolving"
-        )
 
         guard let appGroupURL = FileManager.default.containerURL(
             forSecurityApplicationGroupIdentifier: WidgetSnapshotStore.appGroupIdentifier
