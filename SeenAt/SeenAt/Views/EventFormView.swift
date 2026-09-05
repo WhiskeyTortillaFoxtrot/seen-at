@@ -34,6 +34,12 @@ struct EventFormView: View {
 
     let onSave: ((Event) -> Void)?
 
+    init(onSave: ((Event) -> Void)? = nil) {
+        self.onSave = onSave
+        let stored = UserDefaults.standard.string(forKey: AppPreferences.defaultWatchLocationKey)
+        _watchLocation = State(initialValue: WatchLocation(rawValue: stored ?? "") ?? .stadium)
+    }
+
     private let leagues: [(id: String, label: String)] = [
         ("mlb", "MLB"),
         ("nba", "NBA"),
@@ -281,7 +287,7 @@ struct EventFormView: View {
             showingSaveError = true
             return
         }
-        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        Haptics.impact(.medium)
         onSave?(event)
     }
 
@@ -310,7 +316,7 @@ struct EventFormView: View {
             showingSaveError = true
             return
         }
-        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        Haptics.impact(.medium)
         onSave?(event)
     }
 }

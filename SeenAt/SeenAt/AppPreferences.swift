@@ -6,6 +6,12 @@ enum AppPreferences {
     static let legacyFavoriteTeamKey = "favoriteTeam"
     static let hasSeenOnboardingKey = "hasSeenOnboarding"
     static let defaultSportKey = "defaultSport"
+    static let appearanceOverrideKey = "appearanceOverride"
+    static let hapticsEnabledKey = "hapticsEnabled"
+    static let defaultWatchLocationKey = "defaultWatchLocation"
+    static let photoQualityKey = "photoQuality"
+    static let liveActivityAutoEndKey = "liveActivityAutoEnd"
+    static let notificationReminderMinutesKey = "notificationReminderMinutes"
 
     static let resettableKeys: Set<String> = [
         seedVersionKey,
@@ -13,6 +19,12 @@ enum AppPreferences {
         legacyFavoriteTeamKey,
         hasSeenOnboardingKey,
         defaultSportKey,
+        appearanceOverrideKey,
+        hapticsEnabledKey,
+        defaultWatchLocationKey,
+        photoQualityKey,
+        liveActivityAutoEndKey,
+        notificationReminderMinutesKey,
     ]
 
     /// Preferences explicitly approved for inclusion in a user-shareable diagnostics report.
@@ -21,6 +33,9 @@ enum AppPreferences {
         seedVersionKey,
         hasSeenOnboardingKey,
         defaultSportKey,
+        appearanceOverrideKey,
+        hapticsEnabledKey,
+        defaultWatchLocationKey,
     ]
 
     static func resetForFreshStore() {

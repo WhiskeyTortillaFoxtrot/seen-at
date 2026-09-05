@@ -14,6 +14,7 @@ struct HomeView: View {
     @State private var selectedDestination: HomeDestination?
     @State private var currentDate = Date.now
     @State private var showingDeleteError = false
+    @AppStorage(AppPreferences.hapticsEnabledKey) private var hapticsEnabled = true
     @State private var deleteErrorHaptic = 0
     @State private var deleteEventHaptic = 0
 
@@ -104,8 +105,8 @@ struct HomeView: View {
             .scrollContentBackground(.hidden)
             .listStyle(.plain)
         }
-        .sensoryFeedback(.success, trigger: deleteEventHaptic)
-        .sensoryFeedback(.warning, trigger: deleteErrorHaptic)
+        .sensoryFeedback(.success, trigger: hapticsEnabled ? deleteEventHaptic : 0)
+        .sensoryFeedback(.warning, trigger: hapticsEnabled ? deleteErrorHaptic : 0)
         .navigationTitle("SeenAt")
         .toolbarBackground(.hidden, for: .navigationBar)
         .navigationDestination(for: Event.self) { event in

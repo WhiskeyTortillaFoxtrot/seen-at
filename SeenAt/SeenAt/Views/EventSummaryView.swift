@@ -9,6 +9,7 @@ struct EventSummaryView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var context
     @State private var showingAddSighting = false
+    @AppStorage(AppPreferences.hapticsEnabledKey) private var hapticsEnabled = true
     @State private var addSightingHaptic = 0
     @State private var showLiveTracking = false
     @State private var liveTrackingHaptic = 0
@@ -153,7 +154,7 @@ struct EventSummaryView: View {
                 currentDate = .now
             }
         }
-        .sensoryFeedback(.warning, trigger: deleteErrorHaptic)
+        .sensoryFeedback(.warning, trigger: hapticsEnabled ? deleteErrorHaptic : 0)
         .task(id: teamKey) {
             cachedTeams = TeamResolver.teams(for: event, context: context)
             hasLoadedTeams = true
@@ -174,7 +175,7 @@ struct EventSummaryView: View {
                 .frame(maxWidth: .infinity, minHeight: 44)
         }
         .buttonStyle(.borderedProminent)
-        .sensoryFeedback(.impact(weight: .light), trigger: addSightingHaptic)
+        .sensoryFeedback(.impact(weight: .light), trigger: hapticsEnabled ? addSightingHaptic : 0)
     }
 
     private var liveTrackingButton: some View {
@@ -187,7 +188,7 @@ struct EventSummaryView: View {
                 .frame(maxWidth: .infinity, minHeight: 44)
         }
         .buttonStyle(.bordered)
-        .sensoryFeedback(.impact(weight: .light), trigger: liveTrackingHaptic)
+        .sensoryFeedback(.impact(weight: .light), trigger: hapticsEnabled ? liveTrackingHaptic : 0)
     }
 
     private func totalCountCard(topTeamColors: [Color]) -> some View {
@@ -363,7 +364,7 @@ struct EventSummaryView: View {
                                                      if !EventActionHandler.deletePlayer(team: team, name: name, event: event, context: context) {
                                                          showingDeleteError = true
                                                      } else {
-                                                         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                                                         Haptics.impact(.medium)
                                                      }
                                                  } label: {
                                                      Label("Delete", systemImage: "trash")
@@ -522,7 +523,7 @@ struct EventSummaryView: View {
 
     private var shareButton: some View {
         Button {
-            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            Haptics.impact(.light)
             showShareOptions = true
         } label: {
             Label("Share Summary", systemImage: "square.and.arrow.up")

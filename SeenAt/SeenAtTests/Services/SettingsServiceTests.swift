@@ -121,6 +121,12 @@ final class SettingsServiceTests: XCTestCase {
         UserDefaults.standard.set(true, forKey: AppPreferences.hasSeenOnboardingKey)
         UserDefaults.standard.set(2, forKey: AppPreferences.seedVersionKey)
         UserDefaults.standard.set("Legacy Team", forKey: AppPreferences.legacyFavoriteTeamKey)
+        UserDefaults.standard.set("dark", forKey: AppPreferences.appearanceOverrideKey)
+        UserDefaults.standard.set(false, forKey: AppPreferences.hapticsEnabledKey)
+        UserDefaults.standard.set("tv", forKey: AppPreferences.defaultWatchLocationKey)
+        UserDefaults.standard.set("high", forKey: AppPreferences.photoQualityKey)
+        UserDefaults.standard.set(false, forKey: AppPreferences.liveActivityAutoEndKey)
+        UserDefaults.standard.set(30, forKey: AppPreferences.notificationReminderMinutesKey)
         defer { restorePreferences(previousPreferences) }
         let event = TestDataFactory.makeEvent()
         let sighting = TestDataFactory.makeSighting(firstName: "Test", event: event)
@@ -146,6 +152,12 @@ final class SettingsServiceTests: XCTestCase {
         XCTAssertNil(UserDefaults.standard.object(forKey: AppPreferences.hasSeenOnboardingKey))
         XCTAssertNil(UserDefaults.standard.object(forKey: AppPreferences.seedVersionKey))
         XCTAssertNil(UserDefaults.standard.object(forKey: AppPreferences.legacyFavoriteTeamKey))
+        XCTAssertNil(UserDefaults.standard.object(forKey: AppPreferences.appearanceOverrideKey))
+        XCTAssertNil(UserDefaults.standard.object(forKey: AppPreferences.hapticsEnabledKey))
+        XCTAssertNil(UserDefaults.standard.object(forKey: AppPreferences.defaultWatchLocationKey))
+        XCTAssertNil(UserDefaults.standard.object(forKey: AppPreferences.photoQualityKey))
+        XCTAssertNil(UserDefaults.standard.object(forKey: AppPreferences.liveActivityAutoEndKey))
+        XCTAssertNil(UserDefaults.standard.object(forKey: AppPreferences.notificationReminderMinutesKey))
     }
 
     func testResetAllDataReturnsFalseWhenFetchingEventsFailsWithoutSideEffects() async {
