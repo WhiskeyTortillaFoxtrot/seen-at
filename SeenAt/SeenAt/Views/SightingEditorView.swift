@@ -163,7 +163,7 @@ struct SightingEditorView: View {
     }
 
     private nonisolated static func compressPhoto(_ data: Data) async -> Data? {
-        data.downsampledImage(maxDimension: 1200)
+        PhotoCompression.compressPhoto(data)
     }
 
     private func save() {

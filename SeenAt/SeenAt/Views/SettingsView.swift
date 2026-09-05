@@ -10,6 +10,12 @@ struct SettingsView: View {
     @AppStorage(AppPreferences.favoriteTeamsKey) private var favoriteTeamsString: String = ""
     @AppStorage(AppPreferences.defaultSportKey) private var defaultSport: String = "mlb"
     @AppStorage(AppPreferences.hasSeenOnboardingKey) private var hasSeenOnboarding = false
+    @AppStorage(AppPreferences.appearanceOverrideKey) private var appearanceOverride = AppearanceOverride.system.rawValue
+    @AppStorage(AppPreferences.hapticsEnabledKey) private var hapticsEnabled = true
+    @AppStorage(AppPreferences.defaultWatchLocationKey) private var defaultWatchLocationRaw = WatchLocation.stadium.rawValue
+    @AppStorage(AppPreferences.photoQualityKey) private var photoQualityRaw = PhotoQuality.standard.rawValue
+    @AppStorage(AppPreferences.liveActivityAutoEndKey) private var liveActivityAutoEnd = true
+    @AppStorage(AppPreferences.notificationReminderMinutesKey) private var reminderMinutes = 60
 
     @State private var showingExporter = false
     @State private var exportCSV: String = ""
@@ -43,9 +49,67 @@ struct SettingsView: View {
             }
             .listRowBackground(GlassListRowBackground())
 
+            Section("Appearance") {
+                Picker("Appearance", selection: $appearanceOverride) {
+                    Text("System").tag(AppearanceOverride.system.rawValue)
+                    Text("Light").tag(AppearanceOverride.light.rawValue)
+                    Text("Dark").tag(AppearanceOverride.dark.rawValue)
+                }
+                .pickerStyle(.menu)
+            }
+            .listRowBackground(GlassListRowBackground())
+
+            Section("Haptics") {
+                Toggle("Haptic Feedback", isOn: $hapticsEnabled)
+                    .accessibilityHint("Vibrations for button presses and confirmations")
+            }
+            .listRowBackground(GlassListRowBackground())
+
+            Section("Events") {
+                Picker("Default Watch Location", selection: $defaultWatchLocationRaw) {
+                    Text("At the Stadium").tag(WatchLocation.stadium.rawValue)
+                    Text("On TV").tag(WatchLocation.tv.rawValue)
+                }
+                .pickerStyle(.menu)
+                .accessibilityHint("Watch location preselected on new games")
+            }
+            .listRowBackground(GlassListRowBackground())
+
+            Section("Photos") {
+                Picker("Photo Quality", selection: $photoQualityRaw) {
+                    ForEach(PhotoQuality.allCases, id: \.self) { quality in
+                        Text(quality.displayName).tag(quality.rawValue)
+                    }
+                }
+                .pickerStyle(.menu)
+                .accessibilityHint("Resolution of newly saved sighting photos")
+            }
+            .listRowBackground(GlassListRowBackground())
+
+            Section("Live Activity") {
+                Toggle("Auto-End Past Activities", isOn: $liveActivityAutoEnd)
+                    .accessibilityHint("Closes Live Activities for events that are no longer today")
+            }
+            .listRowBackground(GlassListRowBackground())
+
+            Section {
+                Picker("Reminder Time", selection: $reminderMinutes) {
+                    Text("15 minutes before").tag(15)
+                    Text("30 minutes before").tag(30)
+                    Text("1 hour before").tag(60)
+                    Text("2 hours before").tag(120)
+                }
+                .pickerStyle(.menu)
+            } header: {
+                Text("Notifications")
+            } footer: {
+                Text("Reminder notifications are coming soon — this choice will apply when they arrive.")
+            }
+            .listRowBackground(GlassListRowBackground())
+
             Section("Export") {
                 Button("Export All Data as CSV") {
-                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                    Haptics.impact(.light)
                     do {
                         exportCSV = try ExportService.generateAllDataCSV(context: context)
                         showingExporter = true
@@ -112,6 +176,10 @@ struct SettingsView: View {
                     hasSeenOnboarding = false
                 }
 
+                NavigationLink("Privacy Policy") {
+                    PrivacyPolicyView()
+                }
+
                 NavigationLink("Photo Credits") {
                     PhotoCreditsView()
                 }
@@ -151,14 +219,14 @@ struct SettingsView: View {
     }
 
     private func deleteAllSightings() {
-        UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
+        Haptics.impact(.heavy)
         if !SettingsService.deleteAllSightings(context: context) {
             showingDeleteError = true
         }
     }
 
     private func resetAllData() {
-        UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
+        Haptics.impact(.heavy)
         Task {
             if !(await SettingsService.resetAllData(context: context)) {
                 showingResetError = true

@@ -9,6 +9,7 @@ struct LiveTrackingView: View {
 
     @State private var showingAddSighting = false
     @State private var showingSummary = false
+    @AppStorage(AppPreferences.hapticsEnabledKey) private var hapticsEnabled = true
     @State private var summaryHaptic = 0
     @State private var expandedSighting: JerseySighting?
     @State private var fullScreenSighting: JerseySighting?
@@ -66,7 +67,7 @@ struct LiveTrackingView: View {
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
                 Button {
-                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                    Haptics.impact(.light)
                     showShareOptions = true
                 } label: {
                     Image(systemName: "square.and.arrow.up")
@@ -82,7 +83,7 @@ struct LiveTrackingView: View {
                     }
                 }
                 .accessibilityHint("Ends live tracking and shows the event summary")
-                .sensoryFeedback(.success, trigger: summaryHaptic)
+                .sensoryFeedback(.success, trigger: hapticsEnabled ? summaryHaptic : 0)
             }
         }
         .sheet(isPresented: $showingAddSighting) {
@@ -179,7 +180,7 @@ struct LiveTrackingView: View {
                 .foregroundStyle(.white.opacity(0.8))
 
             Button {
-                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                Haptics.impact(.light)
                 showingAddSighting = true
             } label: {
                 Label("Add Sighting", systemImage: "plus.circle.fill")
@@ -404,6 +405,7 @@ struct TeamBarRow: View {
 struct FullScreenPhotoView: View {
     let image: UIImage
     @Environment(\.dismiss) private var dismiss
+    @AppStorage(AppPreferences.appearanceOverrideKey) private var appearanceOverride = AppearanceOverride.system.rawValue
 
     var body: some View {
         Color.black
@@ -435,6 +437,6 @@ struct FullScreenPhotoView: View {
             .onTapGesture {
                 dismiss()
             }
-            .preferredColorScheme(.dark)
+            .preferredColorScheme(AppearanceOverride(rawValue: appearanceOverride)?.colorScheme)
     }
 }

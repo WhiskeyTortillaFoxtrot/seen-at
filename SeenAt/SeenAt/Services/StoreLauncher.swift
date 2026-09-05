@@ -368,6 +368,12 @@ struct StoreLauncher {
         DiagnosticsService.shared.log(category: "Store", level: .info, message: "Team seeding completed")
     }
 
+    /// Whether past Live Activities end automatically at launch. Testable separately
+    /// from `startLiveActivities` so the gate has direct unit coverage.
+    static func liveActivityAutoEndEnabled() -> Bool {
+        UserDefaults.standard.object(forKey: AppPreferences.liveActivityAutoEndKey) as? Bool ?? true
+    }
+
     @MainActor
     static func startLiveActivities(for container: ModelContainer) async {
         let cal = Calendar.current
@@ -382,7 +388,9 @@ struct StoreLauncher {
         let context = container.mainContext
         let todayEvents = (try? context.fetch(FetchDescriptor(predicate: todayPredicate))) ?? []
         DiagnosticsService.shared.log(category: "Store", level: .info, message: "Found \(todayEvents.count) today events for Live Activity startup")
-        await LiveActivityManager.endStaleActivities(for: todayEvents)
+        if liveActivityAutoEndEnabled() {
+            await LiveActivityManager.endStaleActivities(for: todayEvents)
+        }
         if let event = LiveActivityManager.findBestTodayEvent(in: todayEvents) {
             let names = [event.homeTeam, event.awayTeam].compactMap { $0 }
             let teamPredicate = #Predicate<Team> { names.contains($0.name) }

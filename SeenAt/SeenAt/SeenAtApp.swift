@@ -33,6 +33,11 @@ struct SeenAtApp: App {
     @State private var launchInFlight = false
 
     @AppStorage(AppPreferences.hasSeenOnboardingKey) private var hasSeenOnboarding = false
+    @AppStorage(AppPreferences.appearanceOverrideKey) private var appearanceOverride = AppearanceOverride.system.rawValue
+
+    private var colorSchemeOverride: ColorScheme? {
+        AppearanceOverride(rawValue: appearanceOverride)?.colorScheme
+    }
 
     @State private var deepLinkDestination: DeepLinkDestination?
     @State private var deepLinkError: DeepLinkError?
@@ -129,7 +134,7 @@ struct SeenAtApp: App {
                         }
                     }
                     .animation(.easeOut(duration: 0.5), value: splashState.isVisible)
-                    .preferredColorScheme(.dark)
+                    .preferredColorScheme(colorSchemeOverride)
                     .onOpenURL { url in
                         switch DeepLinkParser.parse(url) {
                         case .success(let destination):

@@ -9,6 +9,7 @@ struct AddSightingView: View {
     @Bindable var event: Event
     @Query(sort: \Team.name) private var allTeams: [Team]
     @AppStorage(AppPreferences.favoriteTeamsKey) private var favoriteTeamsString: String = ""
+    @AppStorage(AppPreferences.hapticsEnabledKey) private var hapticsEnabled = true
 
     @State private var selectedTeam: Team?
     @State private var playerFirstName = ""
@@ -73,7 +74,7 @@ struct AddSightingView: View {
                 .font(.urbanist(.headline))
                 .frame(maxWidth: .infinity)
                 .disabled(selectedTeam == nil || isPhotoLoading)
-                .sensoryFeedback(.success, trigger: didSaveSighting)
+                .sensoryFeedback(.success, trigger: hapticsEnabled && didSaveSighting)
                 .listRowBackground(GlassListRowBackground())
         }
         .navigationTitle("Add Sighting")
@@ -87,7 +88,7 @@ struct AddSightingView: View {
         .alert("Save Failed", isPresented: $showingSaveError) { Button("OK") {} } message: {
             Text("Could not save the sighting. Please try again.")
         }
-        .sensoryFeedback(.error, trigger: saveErrorHaptic)
+        .sensoryFeedback(.error, trigger: hapticsEnabled ? saveErrorHaptic : 0)
         .sheet(item: $selectedOtherLeague) { league in
             SightingLeaguePicker(league: league, allTeams: allTeams, favoriteTeamNames: favoriteTeamNames) { team in
                 selectedTeam = team
@@ -135,7 +136,7 @@ struct AddSightingView: View {
     }
 
     private nonisolated static func compressPhoto(_ data: Data) async -> Data? {
-        data.downsampledImage(maxDimension: 1200)
+        PhotoCompression.compressPhoto(data)
     }
 
     private func addSighting() {
