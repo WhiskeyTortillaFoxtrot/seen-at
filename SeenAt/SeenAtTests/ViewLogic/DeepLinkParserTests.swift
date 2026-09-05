@@ -7,17 +7,27 @@ final class DeepLinkParserTests: XCTestCase {
 
     func testValidURL() {
         let url = URL(string: "seenat://live-tracking/\(validUUID)")!
-        XCTAssertEqual(DeepLinkParser.parse(url), .success(validUUID))
+        XCTAssertEqual(DeepLinkParser.parse(url), .success(.liveTracking(validUUID)))
     }
 
     func testCaseInsensitiveScheme() {
         let url = URL(string: "SEENAT://live-tracking/\(validUUID)")!
-        XCTAssertEqual(DeepLinkParser.parse(url), .success(validUUID))
+        XCTAssertEqual(DeepLinkParser.parse(url), .success(.liveTracking(validUUID)))
     }
 
     func testCaseInsensitiveHost() {
         let url = URL(string: "seenat://LIVE-TRACKING/\(validUUID)")!
-        XCTAssertEqual(DeepLinkParser.parse(url), .success(validUUID))
+        XCTAssertEqual(DeepLinkParser.parse(url), .success(.liveTracking(validUUID)))
+    }
+
+    func testEventSummaryURL() {
+        let url = URL(string: "seenat://event-summary/\(validUUID)")!
+        XCTAssertEqual(DeepLinkParser.parse(url), .success(.eventSummary(validUUID)))
+    }
+
+    func testStatsURL() {
+        let url = URL(string: "seenat://stats")!
+        XCTAssertEqual(DeepLinkParser.parse(url), .success(.stats))
     }
 
     func testWrongScheme() {

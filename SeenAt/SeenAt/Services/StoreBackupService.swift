@@ -1,5 +1,4 @@
 import Foundation
-import SwiftData
 import CryptoKit
 import Darwin
 
@@ -165,7 +164,12 @@ enum StoreBackupService {
     static let recoveryQuarantineDirectoryPrefix = "recovery-quarantine-"
 
     static func defaultStoreURL() -> URL {
-        ModelConfiguration().url
+        // Keep the database in the app's private container. ModelConfiguration's
+        // default URL moves into an App Group container when the app gains that
+        // entitlement, which would make an existing private store appear missing.
+        FileManager.default
+            .urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("default.store", isDirectory: false)
     }
 
     private static let maxBackupAttempts = 2

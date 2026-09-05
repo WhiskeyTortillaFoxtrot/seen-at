@@ -37,15 +37,49 @@ final class DeepLinkServiceTests: XCTestCase {
         let deepLinkID = UUID()
         var state = DeepLinkNavigationState(
             eventToTrack: nil,
+            eventToSummarize: nil,
             selectedTab: 3,
-            deepLinkEventID: deepLinkID
+            deepLinkDestination: .liveTracking(deepLinkID)
         )
 
-        state.apply(.openEvent(event, selectedTab: 0))
+        state.apply(.openEvent(event, selectedTab: 0), as: .liveTracking(deepLinkID))
 
         XCTAssertEqual(state.eventToTrack?.id, event.id)
         XCTAssertEqual(state.selectedTab, 0)
-        XCTAssertNil(state.deepLinkEventID)
+        XCTAssertNil(state.deepLinkDestination)
+        XCTAssertFalse(state.shouldReportError)
+    }
+
+    func testNavigationStateRoutesEventSummarySeparatelyFromTracking() {
+        let event = TestDataFactory.makeEvent()
+        let deepLinkID = event.id
+        var state = DeepLinkNavigationState(
+            eventToTrack: nil,
+            eventToSummarize: nil,
+            selectedTab: 2,
+            deepLinkDestination: .eventSummary(deepLinkID)
+        )
+
+        state.apply(.openEvent(event, selectedTab: 0), as: .eventSummary(deepLinkID))
+
+        XCTAssertNil(state.eventToTrack)
+        XCTAssertEqual(state.eventToSummarize?.id, event.id)
+        XCTAssertEqual(state.selectedTab, 0)
+        XCTAssertNil(state.deepLinkDestination)
+    }
+
+    func testNavigationStateOpensStats() {
+        var state = DeepLinkNavigationState(
+            eventToTrack: nil,
+            eventToSummarize: nil,
+            selectedTab: 0,
+            deepLinkDestination: .stats
+        )
+
+        state.openStats()
+
+        XCTAssertEqual(state.selectedTab, 1)
+        XCTAssertNil(state.deepLinkDestination)
         XCTAssertFalse(state.shouldReportError)
     }
 
@@ -69,14 +103,15 @@ final class DeepLinkServiceTests: XCTestCase {
         let deepLinkID = UUID()
         var state = DeepLinkNavigationState(
             eventToTrack: nil,
+            eventToSummarize: nil,
             selectedTab: 2,
-            deepLinkEventID: deepLinkID
+            deepLinkDestination: .liveTracking(deepLinkID)
         )
 
-        state.apply(.notFound)
+        state.apply(.notFound, as: .liveTracking(deepLinkID))
 
         XCTAssertEqual(state.selectedTab, 2)
-        XCTAssertEqual(state.deepLinkEventID, deepLinkID)
+        XCTAssertEqual(state.deepLinkDestination, .liveTracking(deepLinkID))
         XCTAssertTrue(state.shouldReportError)
     }
 

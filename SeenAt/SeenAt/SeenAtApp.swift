@@ -34,7 +34,7 @@ struct SeenAtApp: App {
 
     @AppStorage(AppPreferences.hasSeenOnboardingKey) private var hasSeenOnboarding = false
 
-    @State private var deepLinkEventID: UUID?
+    @State private var deepLinkDestination: DeepLinkDestination?
     @State private var deepLinkError: DeepLinkError?
     @State private var splashState = SplashState()
     @State private var storeState = StoreState()
@@ -113,7 +113,10 @@ struct SeenAtApp: App {
             Group {
                 if let container {
                     ZStack {
-                        ContentView(deepLinkEventID: $deepLinkEventID, onDeepLinkError: { deepLinkError = .eventNotFound })
+                        ContentView(
+                            deepLinkDestination: $deepLinkDestination,
+                            onDeepLinkError: { deepLinkError = .eventNotFound }
+                        )
 
                         if splashState.isVisible {
                             SplashView(phase: splashState.phase)
@@ -129,15 +132,15 @@ struct SeenAtApp: App {
                     .preferredColorScheme(.dark)
                     .onOpenURL { url in
                         switch DeepLinkParser.parse(url) {
-                        case .success(let eventID):
-                            deepLinkEventID = eventID
+                        case .success(let destination):
+                            deepLinkDestination = destination
                         case .failure:
                             deepLinkError = .malformedURL
                         }
                     }
                     .alert(item: Binding(
                         get: { splashState.isVisible ? nil : deepLinkError },
-                        set: { deepLinkError = $0; if $0 == nil { deepLinkEventID = nil } }
+                        set: { deepLinkError = $0; if $0 == nil { deepLinkDestination = nil } }
                     )) { error in
                         Alert(
                             title: Text("Couldn’t Open Link"),
